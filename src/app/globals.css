@@ -162,3 +162,8 @@
 .account-card input { width: 100%; }
 .account-card form button { width: 100%; justify-content: center; }
 .account-card p a, .account-card .tour-link { text-decoration: underline; }
+
+.account-submit { display: inline-flex; align-items: center; gap: 8px; }
+.account-spinner { animation: account-spin .8s linear infinite; }
+@keyframes account-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .account-spinner { animation: none; } }
