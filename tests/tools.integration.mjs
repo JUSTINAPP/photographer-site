@@ -49,5 +49,22 @@ try{
  assert.ifError(otherMedia.error);
  assert.deepEqual(otherMedia.data, []);
  console.log('PASS: sign-ins reuse their own workspace and imported media stays private.');
+ const rename = await owner.rpc('rename_studio_portfolio', {studio_id:workspace,portfolio_name:'Renamed studio'});
+ assert.ifError(rename.error);
+ assert.ok((await other.rpc('rename_studio_portfolio', {studio_id:workspace,portfolio_name:'Forbidden'})).error);
+ assert.equal((await websites.select('draft').eq('workspace_id',workspace).single()).data.draft.name,'Renamed studio');
+ const post = {workspace_id:workspace,kind:'social',title:'Campaign launch',day:'2026-11-10',local_time:'10:30',category:'Instagram',status:'scheduled',media_id:media.data.id};
+ const scheduled = await owner.from('studio_schedule').insert(post).select('id').single();
+ assert.ifError(scheduled.error);
+ for (const client of [guest,other]) {
+   const result = await client.from('studio_schedule').select('id').eq('id',scheduled.data.id);
+   if (client === guest && result.error) assert.equal(result.error.code,'42501');
+   else { assert.ifError(result.error); assert.deepEqual(result.data,[]); }
+ }
+ assert.ok((await other.from('studio_schedule').insert({...post,workspace_id:second.data})).error);
+ assert.ok((await owner.from('studio_schedule').insert({...post,local_time:null})).error);
+ assert.ifError((await owner.from('studio_schedule').update({day:'2026-11-11'}).eq('id',scheduled.data.id)).error);
+ assert.ifError((await owner.from('studio_schedule').delete().eq('id',scheduled.data.id)).error);
+ console.log('PASS: portfolio names and planner entries stay private, with schedule and media ownership validation.');
  console.log('PASS: all six record types save privately; cross-studio isolation, concurrent invoice numbering, issued-invoice locks, payments, invalid-price rejection and idempotent proposal conversion.');
 }finally{for(const id of ids)assert.ifError((await admin.auth.admin.deleteUser(id)).error);console.log('Temporary test accounts and records removed.');}

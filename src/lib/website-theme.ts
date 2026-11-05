@@ -65,10 +65,10 @@ export type SiteTheme = {
 };
 
 export const PRESETS = {
-  classic: { label: "Classic", theme: { fonts: "classic", palette: "white", header: "left", hero: "full" } },
-  whitecube: { label: "White cube", theme: { fonts: "swiss", palette: "white", header: "centered", hero: "framed" } },
-  editorial: { label: "Editorial", theme: { fonts: "editorial", palette: "paper", header: "stacked", hero: "split" } },
-  darkroom: { label: "Dark room", theme: { fonts: "contemporary", palette: "dark", header: "left", hero: "full" } },
+  classic: { label: "Campaign", image: "/images/fashion.jpg", description: "Full-bleed fashion and commercial work", theme: { fonts: "classic", palette: "white", header: "left", hero: "full" } },
+  whitecube: { label: "Print Portfolio", image: "/images/lifestyle.jpg", description: "Quiet, framed lifestyle and portrait work", theme: { fonts: "swiss", palette: "white", header: "centered", hero: "framed" } },
+  editorial: { label: "Editorial", image: "/images/sailing.jpg", description: "Split introduction for fashion and sailing stories", theme: { fonts: "editorial", palette: "paper", header: "stacked", hero: "split" } },
+  darkroom: { label: "Motion", image: "/images/sports.jpg", description: "Dark, full-width opening for sport and action", theme: { fonts: "contemporary", palette: "dark", header: "left", hero: "full" } },
 } as const;
 
 export const DEFAULT_THEME: SiteTheme = { fonts: "classic", palette: "white", bg: "#ffffff", ink: "#1c1b19", header: "left", hero: "full", social: "footer" };

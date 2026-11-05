@@ -24,6 +24,7 @@ export function normaliseWebsite(input: unknown) {
     services: field('services', 1500),
     email: /^[^\s@<>?&#]+@[^\s@<>?&#]+\.[^\s@<>?&#]+$/.test(email) ? email : '',
     image: websiteImage(field('image', 2048)),
+    instagram: websiteImage(field('instagram', 2048)),
     imageAlt: field('imageAlt', 220),
     theme: normaliseTheme(data.theme ?? editorialTheme),
   };

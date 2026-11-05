@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
 import WebsiteBuilder from '@/components/WebsiteBuilder';
 import { requireStudio } from '@/lib/supabase';
@@ -11,7 +12,7 @@ export default async function WebsiteSettings() {
   ]);
   return (
     <StudioShell active="Website" email={user.email}>
-      <div className="studio-page-heading"><div><p className="eyebrow">Your portfolio</p><h1>Website builder</h1><p>Build your portfolio with the Editorial starting preset, then preview and publish it.</p></div></div>
+      <div className="studio-page-heading"><div><h1>Website design</h1><p>Choose a photographer template, then adjust typography, colours and layout. Preview changes before saving.</p></div><Link className="secondary-button" href="/studio/settings">Settings</Link></div>
       {site.error || projects.error
         ? <p role="alert">The website builder could not load. Please try again later.</p>
         : <WebsiteBuilder initial={normaliseWebsite(site.data?.draft)} projects={projects.data ?? []} publicId={site.data?.public_id} isPublished={!!site.data?.published} />}

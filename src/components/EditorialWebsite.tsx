@@ -5,12 +5,16 @@ import { websiteImage, type Website, type WebsiteProject } from '@/lib/website';
 export default function EditorialWebsite({ site, projects, preview = false }: {
   site: Website; projects: WebsiteProject[]; preview?: boolean;
 }) {
+  const social = site.instagram && (preview ? <span>Instagram</span> : <a href={site.instagram} rel="noreferrer">Instagram ↗</a>);
   const name = site.name || 'Your portfolio';
   return (
     <div className="editorial-site" style={themeVars(site.theme) as CSSProperties}>
       <header className={'editorial-header editorial-header-' + site.theme.header}>
         <strong>{name}</strong>
-        {!preview && <nav aria-label="Portfolio"><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></nav>}
+        <nav aria-label="Portfolio">
+          {preview ? <><span>Work</span><span>About + Services</span><span>Contact</span></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
+          {site.theme.social !== 'footer' && social}
+        </nav>
       </header>
       <section className={'editorial-intro editorial-intro-' + site.theme.hero}>
         <h1>{site.headline || name}</h1>
@@ -33,6 +37,7 @@ export default function EditorialWebsite({ site, projects, preview = false }: {
       </section>
       <footer className="editorial-about" id={preview ? undefined : 'contact'}>
         <h2>Contact</h2>
+        {site.theme.social !== 'header' && social}
         {site.email && (preview ? <p>{site.email}</p> : <a href={'mailto:' + site.email}>{site.email}</a>)}
       </footer>
     </div>

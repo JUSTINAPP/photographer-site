@@ -16,6 +16,8 @@ const contentFields = [
 export default function WebsiteBuilder({ initial, projects, publicId, isPublished }: {
   initial: Website; projects: WebsiteProject[]; publicId?: string; isPublished: boolean;
 }) {
+  const [sampleImage, setSampleImage] = useState<string>(PRESETS.editorial.image);
+  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [draft, setDraft] = useState(initial);
   const [live, setLive] = useState(isPublished);
   const [id, setId] = useState(publicId);
@@ -43,10 +45,63 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
     });
   }
 
+  const previewSite = normaliseWebsite(draft);
   return (
     <div className="website-builder">
       <section className="studio-panel website-controls">
-        <h2>Content</h2>
+        <h3>Start from a look</h3>
+        <div className="template-options">
+          {Object.entries(PRESETS).map(([key, preset]) => {
+            const theme = normaliseTheme(preset.theme);
+            const active = ['fonts', 'palette', 'header', 'hero'].every(field =>
+              theme[field as keyof SiteTheme] === draft.theme[field as keyof SiteTheme]);
+            return <button className="template-option" key={key} aria-pressed={active}
+              style={{ ...themeVars(theme), background: 'var(--color-site)', color: 'var(--color-ink)', fontFamily: 'var(--font-serif)' } as CSSProperties}
+              onClick={() => { setSampleImage(preset.image); setDraft(current => ({ ...current, theme })); }}>
+              {preset.label}
+              <img src={preset.image} alt="" />
+              <small>{preset.description}</small>
+            </button>;
+          })}
+        </div>
+        <fieldset className="design-options"><legend>Typography</legend>
+          <div className="template-options">{Object.entries(FONT_PAIRS).map(([key, font]) =>
+            <button key={key} aria-pressed={draft.theme.fonts === key} onClick={() => updateTheme({ fonts: key as SiteTheme['fonts'] })}>
+              <span style={{ fontFamily: font.display }}>{draft.name || 'Studio name'}</span><small>{font.label}</small>
+            </button>
+          )}</div>
+        </fieldset>
+        <fieldset className="design-options"><legend>Colours</legend>
+          <div className="design-swatches">{Object.entries(PALETTES).map(([key, palette]) =>
+            <button key={key} aria-pressed={draft.theme.palette === key} onClick={() => updateTheme({ palette: key as SiteTheme['palette'] })}>
+              <span style={{ background: palette.site, color: palette.ink }}>A</span>{palette.label}
+            </button>
+          )}<button aria-pressed={draft.theme.palette === 'custom'} onClick={() => updateTheme({ palette: 'custom' })}>Your own</button></div>
+        </fieldset>
+        {draft.theme.palette === 'custom' && <div className="website-colours">
+          <label>Background<input type="color" value={draft.theme.bg} onChange={e => updateTheme({ bg: e.target.value })} /></label>
+          <label>Text<input type="color" value={draft.theme.ink} onChange={e => updateTheme({ ink: e.target.value })} /></label>
+        </div>}
+        <fieldset className="design-options"><legend>Header</legend>
+          <div className="design-switch">{HEADERS.map(header =>
+            <button key={header} aria-pressed={draft.theme.header === header} onClick={() => updateTheme({ header })}>
+              {header === 'left' ? 'Logo left' : header === 'centered' ? 'Centred' : 'Stacked'}
+            </button>
+          )}</div>
+        </fieldset>
+        <fieldset className="design-options"><legend>Top of the homepage</legend>
+          <div className="design-switch">{([['full', 'Full image'], ['split', 'Split'], ['framed', 'Framed'], ['text', 'Text only']] as const).map(([hero, label]) =>
+            <button key={hero} aria-pressed={draft.theme.hero === hero} onClick={() => updateTheme({ hero })}>{label}</button>
+          )}</div>
+        </fieldset>
+        <fieldset className="design-options"><legend>Social links</legend>
+          <div className="design-switch">{(['footer', 'header', 'both'] as const).map(social =>
+            <button key={social} aria-pressed={draft.theme.social === social} onClick={() => updateTheme({ social })}>{social}</button>
+          )}</div>
+          <label>Instagram profile URL<input type="url" value={draft.instagram} onChange={e => setDraft({ ...draft, instagram: e.target.value })} /></label>
+        </fieldset>
+        <details className="design-content">
+        <summary>Portfolio content</summary>
         {contentFields.map(([key, label]) => (
           <label key={key}>
             {label}
@@ -55,51 +110,10 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
               : <input type={key === 'email' ? 'email' : key === 'image' ? 'url' : 'text'} value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} />}
           </label>
         ))}
-        <h2>Design</h2>
-        <h3>Choose a template</h3>
-        <div className="template-options">
-          {Object.entries(PRESETS).map(([key, preset]) => {
-            const theme = normaliseTheme(preset.theme);
-            const active = ['fonts', 'palette', 'header', 'hero'].every(field =>
-              theme[field as keyof SiteTheme] === draft.theme[field as keyof SiteTheme]);
-            return <button className="template-option" key={key} aria-pressed={active}
-              style={{ ...themeVars(theme), background: 'var(--color-site)', color: 'var(--color-ink)', fontFamily: 'var(--font-serif)' } as CSSProperties}
-              onClick={() => setDraft(current => ({ ...current, theme }))}>
-              {preset.label}
-              <img src={key === 'darkroom' ? '/images/sailing.jpg' : '/images/fashion.jpg'} alt="" />
-              <small>{key === 'editorial' ? 'Split introduction' : key === 'whitecube' ? 'Framed photography' : 'Full-width opening'}</small>
-            </button>;
-          })}
-        </div>
-        <label>Typography
-          <select value={draft.theme.fonts} onChange={e => updateTheme({ fonts: e.target.value as SiteTheme['fonts'] })}>
-            {Object.entries(FONT_PAIRS).map(([key, font]) => <option key={key} value={key}>{font.label}</option>)}
-          </select>
-        </label>
-        <label>Palette
-          <select value={draft.theme.palette} onChange={e => updateTheme({ palette: e.target.value as SiteTheme['palette'] })}>
-            {Object.entries(PALETTES).map(([key, palette]) => <option key={key} value={key}>{palette.label}</option>)}
-            <option value="custom">Custom</option>
-          </select>
-        </label>
-        {draft.theme.palette === 'custom' && <div className="website-colours">
-          <label>Background<input type="color" value={draft.theme.bg} onChange={e => updateTheme({ bg: e.target.value })} /></label>
-          <label>Text<input type="color" value={draft.theme.ink} onChange={e => updateTheme({ ink: e.target.value })} /></label>
-        </div>}
-        <label>Header
-          <select value={draft.theme.header} onChange={e => updateTheme({ header: e.target.value as SiteTheme['header'] })}>
-            {HEADERS.map(header => <option key={header}>{header}</option>)}
-          </select>
-        </label>
-        <label>Opening layout
-          <select value={draft.theme.hero} onChange={e => updateTheme({ hero: e.target.value as SiteTheme['hero'] })}>
-            <option value="full">Full-width image</option><option value="split">Split editorial</option>
-            <option value="framed">Framed image</option><option value="text">Text only</option>
-          </select>
-        </label>
+        </details>
         <h2>Publishing</h2>
         <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Only published projects appear on your site.</p>
-        <button className="secondary-button" disabled={pending} onClick={() => save('draft')}>Save draft</button>
+        <button className="secondary-button" disabled={pending} onClick={() => save('draft')}>Save design</button>
         <label className="rights-check"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I have permission to publish this content.</label>
         <button className="primary-button" disabled={pending || !confirmed} onClick={() => save('publish')}>{live ? 'Publish changes' : 'Publish website'}</button>
         {live && id && <p><Link href={'/sites/' + id}>Open published website ↗</Link></p>}
@@ -107,8 +121,17 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
         <p role="status">{pending ? 'Saving…' : notice}</p>
       </section>
       <section className="website-preview" aria-label="Website preview">
-        <p className="eyebrow">Live draft preview</p>
-        <EditorialWebsite site={normaliseWebsite(draft)} projects={projects} preview />
+        <div className="design-preview-toolbar">
+          <div className="design-switch" aria-label="Preview size">
+            <button aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>Desktop</button>
+            <button aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>Mobile</button>
+          </div>
+          {live && id && <Link href={'/sites/' + id}>Open website ↗</Link>}
+        </div>
+        {!draft.image && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
+        <div className={'design-preview-frame ' + device}>
+          <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={projects} preview />
+        </div>
       </section>
     </div>
   );

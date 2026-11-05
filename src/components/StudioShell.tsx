@@ -1,4 +1,56 @@
 import FresnelMark from '@/components/FresnelMark';
-import Link from 'next/link';import {LayoutGrid,CalendarDays,Images,Users,Camera,FileText,Globe,ArrowDownToLine,ArrowUpRight,PanelLeft,Mail,Palette} from 'lucide-react';
-const links=[['Overview','/studio',LayoutGrid],['Projects','/studio/projects',Images],['Import website','/studio/import',ArrowDownToLine],['Contacts','/studio/tools/contacts',Users],['Equipment','/studio/tools/equipment',Camera],['Proposals','/studio/tools/proposals',FileText],['Invoices','/studio/tools/invoices',FileText],['Moodboards','/studio/tools/moodboards',Palette],['Newsletters','/studio/tools/newsletters',Mail]] as const;
-export default function StudioShell({children,active='Overview',demo=false,email}:{children:React.ReactNode;active?:string;demo?:boolean;email?:string}){return <div className="studio-shell"><aside className="studio-sidebar"><Link href="/" className="studio-brand"><FresnelMark/>Fresnel Studios<span>THE STUDIO</span></Link><div className="workspace-name">{demo ? 'Rowan Vale' : 'Your studio'}<span>{demo?'Review preview · no account needed':email}</span></div><p className="nav-heading">WORKSPACE</p>{!demo&&<Link className={'studio-nav '+(active==='Website'?'is-active':'')} href="/studio/website"><Globe size={17}/>Website</Link>}{!demo&&<Link className={'studio-nav '+(active==='Media'?'is-active':'')} href="/studio/media"><Images size={17}/>Media</Link>}{links.map(([label,path,Icon])=><Link key={label} href={demo?'/demo?view='+label:path} className={'studio-nav '+(active===label?'is-active':'')}><Icon size={17}/>{label}</Link>)}<p className="nav-heading">PRODUCTION · NEXT RELEASE</p>{[['Production calendar',CalendarDays],['Social publishing',Mail]].map(([label,Icon])=>{const Component=Icon as typeof Camera;return <div className="studio-nav planned" key={label as string}><Component size={17}/>{label as string}</div>})}<div className="sidebar-bottom"><Link href={demo ? "/examples/rowan-vale" : "/studio/website"}><Globe size={17}/>{demo ? 'View website' : 'Website builder'} <ArrowUpRight size={15}/></Link>{demo?<Link href="/login">Private account sign-in ↗</Link>:<form action="/auth/signout" method="post"><button>Sign out</button></form>}</div></aside><div className="studio-body"><header className="studio-topbar"><span><PanelLeft size={17}/> STUDIO / {active.toUpperCase()}</span><Link href={demo ? "/examples/rowan-vale" : "/studio/website"}>{demo ? 'View website' : 'Website builder'} <ArrowUpRight size={14}/></Link></header>{demo&&<div className="demo-notice">Fictional studio preview · explore freely, no login needed · example content only</div>}<main className="studio-main">{children}</main></div></div>}
+import Link from 'next/link';
+import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal } from 'lucide-react';
+import { requireStudio } from '@/lib/supabase';
+
+const groups = [
+  ['', [['Overview', '/studio', LayoutGrid], ['Calendar', '/studio/calendar', CalendarDays]]],
+  ['Portfolio', [['Projects', '/studio/projects', Images], ['Media', '/studio/media', Images], ['Website design', '/studio/website', Globe]]],
+  ['Production', [['Contacts', '/studio/tools/contacts', Users], ['Equipment', '/studio/tools/equipment', Camera], ['Moodboards', '/studio/tools/moodboards', Palette]]],
+  ['Sales', [['Proposals', '/studio/tools/proposals', FileText], ['Invoices', '/studio/tools/invoices', FileText], ['Shop', '/studio/shop', ShoppingBag]]],
+  ['Outreach', [['Newsletters', '/studio/tools/newsletters', Mail], ['Social', '/studio/social', Instagram]]],
+  ['Studio', [['Import website', '/studio/import', ArrowDownToLine], ['Settings', '/studio/settings', SlidersHorizontal]]],
+] as const;
+
+export default async function StudioShell({ children, active = 'Overview', demo = false, email }: {
+  children: React.ReactNode; active?: string; demo?: boolean; email?: string;
+}) {
+  let name = demo ? 'Rowan Vale' : 'Your studio';
+  let publicPath = demo ? '/examples/rowan-vale' : '';
+  if (!demo) {
+    const { db, workspace } = await requireStudio();
+    const { data } = await db.from('studio_websites').select('draft, published, public_id').eq('workspace_id', workspace.id).maybeSingle();
+    name = data?.draft?.name || workspace.name || name;
+    if (data?.published) publicPath = '/sites/' + data.public_id;
+  }
+
+  return <div className="studio-shell">
+    <aside className="studio-sidebar">
+      <Link href={demo ? '/demo' : '/studio/settings'} className="studio-identity">{name}</Link>
+      <span className="studio-owner">{demo ? 'Demo studio' : 'Owner'}</span>
+      <nav aria-label="Studio navigation">
+        {groups.map(([heading, links]) => <div key={heading} className="studio-nav-group">
+          {heading && <p className="nav-heading">{heading}</p>}
+          {links.filter(([label]) => !demo || !['Calendar', 'Media', 'Website design', 'Shop', 'Social', 'Settings'].includes(label)).map(([label, path, Icon]) => {
+            const selected = active === label || (active === 'Website' && label === 'Website design');
+            return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
+              aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
+              <Icon size={17} />{label}
+            </Link>;
+          })}
+        </div>)}
+      </nav>
+      <div className="sidebar-bottom studio-sidebar-footer">
+        <Link href={publicPath || '/studio/website'}><Globe size={15} />{publicPath ? 'Website live' : 'Website draft'} <ArrowUpRight size={14} /></Link>
+        {!demo && <Link href="/studio/website">Open design editor</Link>}
+        {email && <span>{email}</span>}
+        {demo ? <Link href="/login">Private account sign-in ↗</Link> : <form action="/auth/signout" method="post"><button>Sign out</button></form>}
+        <Link href="/" className="studio-credit"><FresnelMark /> Fresnel Studios</Link>
+      </div>
+    </aside>
+    <div className="studio-body">
+      {demo && <div className="demo-notice">Fictional studio preview · explore freely, no login needed · example content only</div>}
+      <main className="studio-main">{children}</main>
+    </div>
+  </div>;
+}
