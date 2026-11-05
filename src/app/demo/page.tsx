@@ -1,0 +1,2 @@
+import StudioShell from '@/components/StudioShell';import Overview from '@/components/Overview';import ImportPanel from '@/components/ImportPanel';
+export default async function Demo({searchParams}:{searchParams:Promise<{view?:string}>}){const {view}=await searchParams;const active=view==='Import website'?'Import website':view==='Projects'?'Projects':'Overview';return <StudioShell demo active={active}>{active==='Import website'?<><p className="eyebrow">WEBSITE IMPORT</p><ImportPanel demo/></>:<Overview demo/>}</StudioShell>}

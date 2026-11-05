@@ -1,0 +1,2 @@
+import {NextResponse} from 'next/server';import {database} from '@/lib/supabase';
+export async function GET(request:Request){const url=new URL(request.url);const code=url.searchParams.get('code');if(code){const db=await database();const {error}=await db.auth.exchangeCodeForSession(code);if(!error){const {error:setup}=await db.rpc('initialize_studio');if(!setup)return NextResponse.redirect(new URL('/studio',url.origin));}}return NextResponse.redirect(new URL('/login?error=signin',url.origin));}

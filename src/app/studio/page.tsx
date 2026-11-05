@@ -1,0 +1,2 @@
+import StudioShell from '@/components/StudioShell';import Overview from '@/components/Overview';import {requireStudio} from '@/lib/supabase';
+export default async function Studio(){const {db,workspace,user}=await requireStudio();const {count}=await db.from('projects').select('*',{count:'exact',head:true}).eq('workspace_id',workspace.id);return <StudioShell email={user.email}><Overview count={count??0}/></StudioShell>}

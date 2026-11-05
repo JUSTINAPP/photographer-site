@@ -1,0 +1,16 @@
+{
+  "generator": "Built-in image_gen tool",
+  "created": "2026-11-05",
+  "notice": "Original AI-generated concept imagery. These are not photographs by David Mandelberg and must not be represented as his commissioned work.",
+  "assets": [
+    {
+      "file": "sports.jpg",
+      "prompt": "Premium sports photographer website hero. Original AI concept photograph. Wide landscape 16:9. Adult Black male sprinter accelerating on wet athletics track at night. Athlete on right half, low shooting angle, running lines recede into distance, dramatic stadium rim light and mist, dark left third for website typography. Rich black-and-white silver-gelatin tonality, realistic anatomy and texture. No text, logos, watermark, UI, collage, or borders."
+    },
+    {
+      "file": "fashion.jpg",
+      "prompt": "Premium fashion photographer website campaign image. Original AI concept photograph. Wide landscape 16:9. Adult female fashion model in sculptural black tailored coat, windswept dark hair, composed expression. Model on right half and dark negative space on left. Hard side lighting, architectural charcoal studio backdrop, film grain, monochrome tonal range, realistic skin and tailoring. No text, logos, watermark, UI, collage, or borders."
+    }
+  ],
+  "processing": "Converted PNG to RGB JPEG at quality 91 with optimisation; original image dimensions and composition retained."
+}
