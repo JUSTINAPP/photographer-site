@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, type CSSProperties } from 'react';
 import { saveWebsite } from '@/app/studio/website/actions';
-import { FONT_PAIRS, HEADERS, PALETTES, PRESETS, normaliseTheme, type SiteTheme } from '@/lib/website-theme';
+import { FONT_PAIRS, HEADERS, PALETTES, PRESETS, normaliseTheme, themeVars, type SiteTheme } from '@/lib/website-theme';
 import { normaliseWebsite, type Website, type WebsiteProject } from '@/lib/website';
 import EditorialWebsite from './EditorialWebsite';
 
@@ -56,15 +56,21 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
           </label>
         ))}
         <h2>Design</h2>
-        <label>Starting preset
-          <select defaultValue="" onChange={e => {
-            const preset = PRESETS[e.target.value as keyof typeof PRESETS];
-            if (preset) setDraft(current => ({ ...current, theme: normaliseTheme(preset.theme) }));
-          }}>
-            <option value="">Choose a preset</option>
-            {Object.entries(PRESETS).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}
-          </select>
-        </label>
+        <h3>Choose a template</h3>
+        <div className="template-options">
+          {Object.entries(PRESETS).map(([key, preset]) => {
+            const theme = normaliseTheme(preset.theme);
+            const active = ['fonts', 'palette', 'header', 'hero'].every(field =>
+              theme[field as keyof SiteTheme] === draft.theme[field as keyof SiteTheme]);
+            return <button className="template-option" key={key} aria-pressed={active}
+              style={{ ...themeVars(theme), background: 'var(--color-site)', color: 'var(--color-ink)', fontFamily: 'var(--font-serif)' } as CSSProperties}
+              onClick={() => setDraft(current => ({ ...current, theme }))}>
+              {preset.label}
+              <img src={key === 'darkroom' ? '/images/sailing.jpg' : '/images/fashion.jpg'} alt="" />
+              <small>{key === 'editorial' ? 'Split introduction' : key === 'whitecube' ? 'Framed photography' : 'Full-width opening'}</small>
+            </button>;
+          })}
+        </div>
         <label>Typography
           <select value={draft.theme.fonts} onChange={e => updateTheme({ fonts: e.target.value as SiteTheme['fonts'] })}>
             {Object.entries(FONT_PAIRS).map(([key, font]) => <option key={key} value={key}>{font.label}</option>)}

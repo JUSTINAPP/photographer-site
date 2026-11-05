@@ -39,5 +39,15 @@ try{
  assert.ifError(offline.error);
  assert.deepEqual((await readPublic()).data, []);
  console.log('PASS: website drafts stay private, published settings survive draft edits, and taking a site offline hides it.');
+ const second = await other.rpc('initialize_studio');
+ assert.ifError(second.error);
+ assert.notEqual(second.data, workspace);
+ assert.equal((await owner.rpc('initialize_studio')).data, workspace);
+ const media = await owner.from('studio_media').insert({workspace_id:workspace,kind:'photo',name:'Private photo',source_url:'https://example.com/photo.jpg'}).select('id').single();
+ assert.ifError(media.error);
+ const otherMedia = await other.from('studio_media').select('id').eq('id',media.data.id);
+ assert.ifError(otherMedia.error);
+ assert.deepEqual(otherMedia.data, []);
+ console.log('PASS: sign-ins reuse their own workspace and imported media stays private.');
  console.log('PASS: all six record types save privately; cross-studio isolation, concurrent invoice numbering, issued-invoice locks, payments, invalid-price rejection and idempotent proposal conversion.');
 }finally{for(const id of ids)assert.ifError((await admin.auth.admin.deleteUser(id)).error);console.log('Temporary test accounts and records removed.');}
