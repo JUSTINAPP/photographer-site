@@ -18,5 +18,12 @@
     "sailing.jpg": "Original AI concept: dramatic monochrome sailing yacht on dark sea, right-aligned composition, no logos or text.",
     "lifestyle.jpg": "Original AI concept: coastal resort lifestyle aboard a sailing yacht, linen clothing, muted cinematic colour, no logos or text.",
     "notice": "Not original photography by David Mandelberg."
+  },
+  "lifestyle_refinement": {
+    "reference": "https://www.seedheritage.com/",
+    "direction": "Summer Escape: fresh blue harbour water, navy and cream linen, relaxed natural daylight sailing lifestyle. Original AI concept, not a Seed campaign asset or a photograph by David Mandelberg.",
+    "generator": "Built-in image_gen",
+    "image": "lifestyle.jpg",
+    "headline": "Summer, unhurried."
   }
 }
