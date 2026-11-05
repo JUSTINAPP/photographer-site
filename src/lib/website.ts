@@ -12,6 +12,16 @@ export function websiteImage(value: string) {
   }
 }
 
+export type GalleryImage = { url: string; size: 'grid' | 'wide' | 'screen'; alt: string };
+export type WebsiteMedia = { id: string; name: string; source_url: string; kind: 'photo' | 'video'; website_selected: boolean };
+
+const projectId = /^[a-f0-9-]{36}$/i;
+
+export function orderWebsiteProjects(projects: WebsiteProject[], order: string[]) {
+  const positions = new Map(order.map((id, index) => [id, index]));
+  return [...projects].sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity));
+}
+
 export function normaliseWebsite(input: unknown) {
   const data = input && typeof input === 'object' ? input as Record<string, unknown> : {};
   const field = (key: string, length: number) =>
@@ -26,7 +36,31 @@ export function normaliseWebsite(input: unknown) {
       }
     }
   }
+  const placements: Record<string, GalleryImage[]> = {};
+  if (data.placements && typeof data.placements === 'object') {
+    for (const [id, items] of Object.entries(data.placements).slice(0, 150)) {
+      if (!projectId.test(id) || !Array.isArray(items)) continue;
+      placements[id] = items.slice(0, 24).flatMap(item => {
+        const url = typeof item?.url === 'string' ? websiteImage(item.url.slice(0, 2048)) : '';
+        const size: GalleryImage['size'] = item?.size === 'wide' || item?.size === 'screen' ? item.size : 'grid';
+        return url ? [{ url, size, alt: typeof item.alt === 'string' ? item.alt.slice(0, 220) : '' }] : [];
+      });
+    }
+  }
+  const covers: Record<string, string> = {};
+  if (data.covers && typeof data.covers === 'object') {
+    for (const [id, url] of Object.entries(data.covers).slice(0, 150)) {
+      if (projectId.test(id) && typeof url === 'string') {
+        const safe = websiteImage(url.slice(0, 2048));
+        if (safe) covers[id] = safe;
+      }
+    }
+  }
+  const projectOrder = Array.isArray(data.projectOrder)
+    ? [...new Set(data.projectOrder.filter((id): id is string => typeof id === 'string' && projectId.test(id)).slice(0, 150))]
+    : [];
   return {
+    placements, covers, projectOrder,
     name: field('name', 100),
     headline: field('headline', 220),
     about: field('about', 2500),
@@ -51,3 +85,8 @@ export type WebsiteProject = {
   description: string | null;
   image_url: string | null;
 };
+
+export function websiteGallery(site: Website, project: string): GalleryImage[] {
+  return site.placements[project] ?? (site.galleries[project] || '').split('\n').filter(Boolean)
+    .map((url, index) => ({ url, size: index % 3 === 0 ? 'wide' : 'grid', alt: '' }));
+}

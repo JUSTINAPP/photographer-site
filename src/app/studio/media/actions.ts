@@ -52,3 +52,12 @@ export async function keepMediaOriginal(id: string) {
   }
   return { error: 'The private copy could not be saved.' };
 }
+
+export async function selectWebsiteMedia(id: string, selected: boolean) {
+  const { db, workspace } = await requireStudio();
+  const { data, error } = await db.from('studio_media').update({ website_selected: selected === true })
+    .eq('workspace_id', workspace.id).eq('id', id).select('id').maybeSingle();
+  if (error || !data) throw new Error('Could not update website selection.');
+  revalidatePath('/studio/media');
+  revalidatePath('/studio/website');
+}

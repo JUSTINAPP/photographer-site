@@ -44,7 +44,7 @@
 .campaign-copy .campaign-text-link { display: inline-block; margin-top: 24px; text-decoration: underline; text-underline-offset: 4px; }
 .campaign-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .campaign-gallery > div { aspect-ratio: 4 / 5; overflow: hidden; }
-.campaign-gallery .campaign-wide { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+.campaign-gallery .campaign-frame-wide { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
 .campaign-squares { margin-top: 24px; display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .campaign-square { display: block; width: 100%; }
 .campaign-square .campaign-media { aspect-ratio: 1; height: auto; }
@@ -67,3 +67,5 @@
   .campaign-about, .campaign-squares { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .campaign-header { transition: none; } }
+
+.campaign-gallery .campaign-frame-screen { grid-column: 1 / -1; height: var(--campaign-screen); aspect-ratio: auto; }

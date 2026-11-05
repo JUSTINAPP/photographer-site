@@ -196,3 +196,22 @@
 .studio-website-dot.is-live { background: #008553; }
 
 .campaign-template-tile { aspect-ratio: 16/9; background: linear-gradient(#888 72%, #555 72%); }
+
+.website-pages { padding: 14px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 8px; scroll-margin-top: 20px; }
+.website-pages h2 { margin: 0 0 8px; }
+.website-pages h3 { margin: 16px 0 8px; }
+.website-media-links, .page-editor-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.website-controls .website-media-checkbox label { display: flex; align-items: center; gap: 8px; }
+.page-editor-cover { display: block; width: 100%; max-height: 140px; object-fit: contain; background: #f4f1ea; margin-bottom: 8px; }
+.page-media-picker { margin: 12px 0; padding: 10px; background: #f4f1ea; border-radius: 6px; }
+.page-media-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; max-height: 300px; overflow: auto; margin: 8px 0; }
+.page-media-options button { display: grid; align-content: start; gap: 3px; border: 1px solid var(--line); border-radius: 4px; padding: 3px; background: white; font: inherit; overflow-wrap: anywhere; cursor: pointer; }
+.page-media-options button:disabled { opacity: .55; cursor: default; }
+.page-media-options img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.page-gallery-order, .page-campaign-order { list-style: none; padding: 0; }
+.page-gallery-order li { display: grid; grid-template-columns: 60px minmax(0,1fr); gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.page-gallery-order img { width: 60px; height: 60px; object-fit: cover; cursor: grab; }
+.page-gallery-order label { margin-top: 0; }
+.page-campaign-order li { display: flex; align-items: center; gap: 5px; padding-block: 4px; }
+.page-edit-link { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; border: 0; background: transparent; text-decoration: underline; color: inherit; font: inherit; cursor: pointer; }
+.website-publish-progress { display: block; width: 100%; height: 8px; margin-block: 10px; accent-color: #14162b; }
