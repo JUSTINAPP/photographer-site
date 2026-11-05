@@ -167,3 +167,6 @@
 .account-spinner { animation: account-spin .8s linear infinite; }
 @keyframes account-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .account-spinner { animation: none; } }
+
+.studio-nav-loading { margin-inline-start: auto; display: inline-flex; flex: 0 0 16px; }
+.studio-nav-loading-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

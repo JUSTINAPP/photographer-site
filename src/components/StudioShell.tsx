@@ -1,5 +1,6 @@
 import FresnelMark from '@/components/FresnelMark';
 import Link from 'next/link';
+import StudioNavLoading from '@/components/StudioNavLoading';
 import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal } from 'lucide-react';
 import { requireStudio } from '@/lib/supabase';
 
@@ -35,7 +36,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
             const selected = active === label || (active === 'Website' && label === 'Website design');
             return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
               aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
-              <Icon size={17} />{label}
+              <Icon size={17} />{label}<StudioNavLoading />
             </Link>;
           })}
         </div>)}
