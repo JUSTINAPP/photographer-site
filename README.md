@@ -2,6 +2,10 @@
 
 Premium portfolio and private production workspace. Next.js 15, React 19, TypeScript and Supabase. Designed for GitHub → Vercel deployment.
 
+## Platform sales website
+
+The root `/` introduces the complete photographer/studio platform, with an interactive overview, shoot planning, social calendar and business workflow preview. `/pricing` presents proposed AUD plans, with no checkout. David’s portfolio example is at `/examples/david-mandelberg`; `/demo` remains the password-free studio tour. Concept workflow data is illustrative and does not publish to social accounts or process payments. Planned tools are labelled.
+
 ## First release
 
 - Dark responsive example portfolio for David Mandelberg, with original AI concept fashion/sailing/lifestyle imagery, project pages and optional muted hero video.
