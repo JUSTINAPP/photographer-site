@@ -19,5 +19,25 @@ try{
  const proposal=await insert('proposals',{...data,status:'accepted'});const converted=await Promise.all([owner.rpc('convert_studio_proposal',{proposal_id:proposal.id,studio_id:workspace}),owner.rpc('convert_studio_proposal',{proposal_id:proposal.id,studio_id:workspace})]);converted.forEach(r=>assert.ifError(r.error));assert.equal(converted[0].data.id,converted[1].data.id,'Conversion must be idempotent');assert.equal(converted[0].data.kind,'invoices');assert.equal(converted[0].data.data.status,'draft');
  for(const [kind,value] of [['equipment',{title:'Camera',status:'Available'}],['moodboards',{title:'Board',images:[]}],['newsletters',{title:'Draft',subject:'New work',status:'draft'}]])await insert(kind,value);
  const records=await owner.from('studio_records').select('*').eq('workspace_id',workspace);assert.ifError(records.error);assert.equal(records.data.length,8);
+ const websites = owner.from('studio_websites');
+ const initial = await websites.insert({workspace_id:workspace,draft:{name:'Private draft'}}).select('public_id').single();
+ assert.ifError(initial.error);
+ const siteId = initial.data.public_id;
+ const readPublic = () => guest.rpc('published_studio_website',{site_id:siteId});
+ assert.deepEqual((await readPublic()).data, []);
+ const crossStudio = await other.from('studio_websites').select('draft').eq('public_id',siteId);
+ assert.ifError(crossStudio.error);
+ assert.deepEqual(crossStudio.data, []);
+ const publish = await owner.from('studio_websites').upsert({workspace_id:workspace,draft:{name:'Published'},published:{name:'Published'}},{onConflict:'workspace_id',defaultToNull:false});
+ assert.ifError(publish.error);
+ const editDraft = await owner.from('studio_websites').upsert({workspace_id:workspace,draft:{name:'New private edit'}},{onConflict:'workspace_id',defaultToNull:false});
+ assert.ifError(editDraft.error);
+ const live = await readPublic();
+ assert.ifError(live.error);
+ assert.equal(live.data[0].settings.name,'Published');
+ const offline = await owner.from('studio_websites').update({published:null}).eq('workspace_id',workspace);
+ assert.ifError(offline.error);
+ assert.deepEqual((await readPublic()).data, []);
+ console.log('PASS: website drafts stay private, published settings survive draft edits, and taking a site offline hides it.');
  console.log('PASS: all six record types save privately; cross-studio isolation, concurrent invoice numbering, issued-invoice locks, payments, invalid-price rejection and idempotent proposal conversion.');
 }finally{for(const id of ids)assert.ifError((await admin.auth.admin.deleteUser(id)).error);console.log('Temporary test accounts and records removed.');}

@@ -24,3 +24,34 @@
   .mk-footer.mk-footer-directory { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mk-footer-directory > div:first-child { grid-column: 1 / -1; }
 }
+
+.website-builder { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+.website-controls h2 { margin-block: 24px 12px; }
+.website-controls label { display: grid; gap: 6px; margin-block: 12px; }
+.website-controls input:not([type="checkbox"]), .website-controls select, .website-controls textarea { width: 100%; padding: 9px; border: 1px solid #d9d7d1; border-radius: 4px; font: inherit; }
+.website-controls .rights-check { display: flex; align-items: flex-start; }
+.website-controls a { text-decoration: underline; }
+.website-colours { display: flex; gap: 16px; }
+.editorial-site { background: var(--color-site); color: var(--color-ink); font-family: var(--font-sans); }
+.editorial-site h1, .editorial-site h2, .editorial-site h3 { font-family: var(--font-serif); font-weight: 400; }
+.editorial-site h1 { font-size: clamp(2.4rem, 7vw, 7.5rem); line-height: .95; margin: 0; overflow-wrap: anywhere; }
+.website-preview .editorial-site h1 { font-size: clamp(2rem, 4vw, 4rem); }
+.editorial-site p { white-space: pre-line; overflow-wrap: anywhere; }
+.editorial-header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 24px 5%; border-bottom: 1px solid var(--color-line); }
+.editorial-header-centered, .editorial-header-stacked { justify-content: center; }
+.editorial-header-stacked { flex-direction: column; align-items: center; }
+.editorial-header nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.editorial-intro, .editorial-work, .editorial-about { padding: clamp(28px, 6vw, 100px) 5%; }
+.editorial-intro img, .editorial-work img { width: 100%; display: block; object-fit: cover; aspect-ratio: 3/2; }
+.editorial-intro-full img { margin-top: 32px; }
+.editorial-intro-framed img { margin: 32px auto 0; max-width: 72%; }
+.editorial-intro-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; align-items: center; }
+.editorial-work { border-top: 1px solid var(--color-line); }
+.editorial-work article { margin-block: 32px 56px; }
+.editorial-work article:nth-of-type(even) { width: 76%; margin-left: auto; }
+.editorial-about { border-top: 1px solid var(--color-line); }
+.editorial-about p { max-width: 60ch; }
+@media (max-width: 800px) {
+  .website-builder, .editorial-intro-split { grid-template-columns: 1fr; }
+  .editorial-work article:nth-of-type(even) { width: 100%; }
+}

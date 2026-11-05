@@ -4,18 +4,18 @@ Premium portfolio and private production workspace. Next.js 15, React 19, TypeSc
 
 ## Platform sales website
 
-The root `/` introduces the complete photographer/studio platform, with an interactive overview, shoot planning, social calendar and business workflow preview. `/pricing` presents proposed AUD plans, with no checkout. David’s portfolio example is at `/examples/david-mandelberg`; `/demo` remains the password-free studio tour. Concept workflow data is illustrative and does not publish to social accounts or process payments. Planned tools are labelled.
+The root `/` introduces the complete photographer/studio platform, with an interactive overview, shoot planning, social calendar and business workflow preview. `/pricing` presents proposed AUD plans, with no checkout. The fictional Rowan Vale portfolio is at `/examples/rowan-vale`; `/demo` remains the password-free studio tour. Concept workflow data is illustrative and does not publish to social accounts or process payments. Planned tools are labelled.
 
 ## First release
 
-- Dark responsive example portfolio for David Mandelberg, with original AI concept fashion/sailing/lifestyle imagery, project pages and optional muted hero video.
+- Dark responsive example portfolio for fictional photographer Rowan Vale, with original AI concept fashion/sailing/lifestyle imagery, project pages and optional muted hero video.
 - Read-only studio tour at `/demo` and authenticated studio at `/studio`.
 - Email-link sign-in, owner-isolated studios and private draft projects.
 - Website import preview: public HTTPS HTML, homepage discovery and up to five linked project pages. Tested against davidmandelberg.com (Squarespace).
 - Review/select/import, then separate publication with a permission confirmation.
 - Private original-media storage foundation. Upload interface, full image copying, RAW handling and video import are not implemented yet.
 
-No generated imagery is represented as David Mandelberg's original photography. The example is a design study; do not imply endorsement. All production tools marked “next release” are roadmap items.
+Demo imagery is labelled as AI concept photography. The example is a design study; do not imply endorsement. All production tools marked “next release” are roadmap items.
 
 ## Run locally
 
@@ -42,7 +42,6 @@ Set Supabase Authentication → URL Configuration to the deployment origin and a
 
 Sign in through `/login` on the same browser/device that requests the link (PKCE). First successful callback creates the studio through an authenticated RPC. Each studio is owned by its signed-in user. The current release does not yet support team membership.
 
-Set server-only `PUBLIC_STUDIO_ID` to the intended workspace UUID to show its published projects on the example homepage. Without it, only AI demo projects show. Other studios can never automatically appear on this example portfolio.
 
 ## Vercel
 
@@ -51,7 +50,6 @@ Import the GitHub repo as a Next.js project. Configure:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SITE_URL` (the canonical production origin)
-- `PUBLIC_STUDIO_ID` (after first sign-in)
 - Optional `NEXT_PUBLIC_HERO_VIDEO_URL` (HTTPS MP4; generated footage must be supplied later)
 
 The Supabase project URL and public anon key may be sourced through Vercel's Supabase integration. `.env.local` is never pushed. Rebuild after changing `NEXT_PUBLIC_*` values.

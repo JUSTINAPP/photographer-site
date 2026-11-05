@@ -2,7 +2,7 @@ import { company, informationPages, legalLinks } from '@/content/site-informatio
 import FresnelMark from './FresnelMark';
 import Link from 'next/link';
 import {ArrowUpRight} from 'lucide-react';
-export function MarketingHeader(){return <header className="mk-header"><Link className="mk-logo" href="/"><FresnelMark/>Fresnel Studios<span>FOR IMAGE MAKERS</span></Link><nav aria-label="Main navigation"><Link href="/#platform">The platform</Link><Link href="/examples/david-mandelberg">Example site ↗</Link><Link href="/pricing">Pricing</Link><Link href="/demo" className="mk-nav-cta">Explore the studio <ArrowUpRight size={14}/></Link></nav></header>}
+export function MarketingHeader(){return <header className="mk-header"><Link className="mk-logo" href="/"><FresnelMark/>Fresnel Studios<span>FOR IMAGE MAKERS</span></Link><nav aria-label="Main navigation"><Link href="/#platform">The platform</Link><Link href="/examples/rowan-vale">Example site ↗</Link><Link href="/pricing">Pricing</Link><Link href="/demo" className="mk-nav-cta">Explore the studio <ArrowUpRight size={14}/></Link></nav></header>}
 export function MarketingFooter() {
   return (
     <footer className="mk-footer mk-footer-directory">
@@ -19,7 +19,7 @@ export function MarketingFooter() {
         <Link href="/pricing">Proposed plans</Link>
         <Link href="/trust">Trust centre</Link>
         <Link href="/demo">Studio demo</Link>
-        <Link href="/examples/david-mandelberg">Example portfolio</Link>
+        <Link href="/examples/rowan-vale">Example portfolio</Link>
       </div>
       <div className="mk-footer-links">
         <span>COMPANY</span>
