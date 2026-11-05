@@ -1,3 +1,6 @@
-import FresnelMark from '@/components/FresnelMark';
-import Link from 'next/link';import LoginForm from '@/components/LoginForm';
-export default async function Login({searchParams}:{searchParams:Promise<{error?:string}>}){const {error}=await searchParams;return <main className="login-page"><div className="login-photo"><img src="/images/fashion.jpg" alt="AI-generated editorial concept"/><Link href="/" className="wordmark"><FresnelMark/>Fresnel Studios<span>THE CREATIVE WORKSPACE</span></Link><h1>Make room<br/>for your vision.</h1><span className="micro">AI CONCEPT IMAGERY</span></div><div className="login-content"><p className="eyebrow">WELCOME TO THE STUDIO</p><h2>Back to the work.</h2><p>Your portfolio, your projects, your next frame.</p>{error&&<p role="alert">Your sign-in link could not be completed. Please request a new link.</p>}<Link className="primary-button" href="/demo" style={{marginTop:25}}>Open studio preview ↗</Link><p>No password or email link needed to review the studio.</p><details className="account-signin"><summary>Sign in to a private account</summary><LoginForm/></details><Link className="tour-link" href="/">← Back to the portfolio</Link></div></main>}
+import AccountPage from '@/components/AccountPage';
+
+export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
+  return <AccountPage error={!!error} />;
+}
