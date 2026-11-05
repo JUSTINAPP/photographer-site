@@ -4,7 +4,7 @@ Premium portfolio and private production workspace. Next.js 15, React 19, TypeSc
 
 ## First release
 
-- Dark responsive example portfolio for David Mandelberg, with original AI concept sports/fashion imagery, project pages and optional muted hero video.
+- Dark responsive example portfolio for David Mandelberg, with original AI concept fashion/sailing/lifestyle imagery, project pages and optional muted hero video.
 - Read-only studio tour at `/demo` and authenticated studio at `/studio`.
 - Email-link sign-in, owner-isolated studios and private draft projects.
 - Website import preview: public HTTPS HTML, homepage discovery and up to five linked project pages. Tested against davidmandelberg.com (Squarespace).

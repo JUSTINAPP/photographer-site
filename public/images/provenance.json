@@ -12,5 +12,11 @@
       "prompt": "Premium fashion photographer website campaign image. Original AI concept photograph. Wide landscape 16:9. Adult female fashion model in sculptural black tailored coat, windswept dark hair, composed expression. Model on right half and dark negative space on left. Hard side lighting, architectural charcoal studio backdrop, film grain, monochrome tonal range, realistic skin and tailoring. No text, logos, watermark, UI, collage, or borders."
     }
   ],
-  "processing": "Converted PNG to RGB JPEG at quality 91 with optimisation; original image dimensions and composition retained."
+  "processing": "Converted PNG to RGB JPEG at quality 91 with optimisation; original image dimensions and composition retained.",
+  "nautical_update": {
+    "tool": "Built-in image generation",
+    "sailing.jpg": "Original AI concept: dramatic monochrome sailing yacht on dark sea, right-aligned composition, no logos or text.",
+    "lifestyle.jpg": "Original AI concept: coastal resort lifestyle aboard a sailing yacht, linen clothing, muted cinematic colour, no logos or text.",
+    "notice": "Not original photography by David Mandelberg."
+  }
 }
