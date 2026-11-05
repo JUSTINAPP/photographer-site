@@ -74,4 +74,4 @@ Generated-image prompts and provenance are in `public/images/provenance.json`. I
 
 ## Next stages
 
-Choose AI video provider; configure Resend sender; connect production origin and first owner studio; add full asset migration/uploads, project editing, portfolio configuration, production briefs/moodboards, crew/kit reservations, proposals/invoices and social publishing.
+Choose AI video provider; configure Resend sender; connect production origin and first owner studio; add full asset migration/uploads, project editing, portfolio configuration, production briefs/moodboards, crew/kit reservations, payment/email integrations and social publishing.
