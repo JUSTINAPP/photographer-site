@@ -42,8 +42,18 @@ export default async function StudioShell({ children, active = 'Overview', demo 
         </div>)}
       </nav>
       <div className="sidebar-bottom studio-sidebar-footer">
-        <Link href={publicPath || '/studio/website'}><Globe size={15} />{publicPath ? 'Website live' : 'Website draft'} <ArrowUpRight size={14} /></Link>
-        {!demo && <Link href="/studio/website">Open design editor</Link>}
+        <div className="studio-website-shortcuts" role="group" aria-label="Portfolio website">
+          {publicPath ? (
+            <Link href={publicPath} target="_blank" rel="noopener noreferrer" aria-label={demo ? 'Open example website in a new tab' : 'Open live website in a new tab'}>
+              <span className="studio-website-dot is-live" aria-hidden="true" />{demo ? 'Example website' : 'Website live'}<ArrowUpRight size={14} />
+            </Link>
+          ) : (
+            <Link href="/studio/website#website-preview" aria-label="Preview your unpublished website">
+              <span className="studio-website-dot" aria-hidden="true" />Preview draft<StudioNavLoading />
+            </Link>
+          )}
+          {!demo && <Link href="/studio/website" className="studio-website-design">Design<StudioNavLoading /></Link>}
+        </div>
         {email && <span>{email}</span>}
         {demo ? <Link href="/login">Private account sign-in ↗</Link> : <form action="/auth/signout" method="post"><button>Sign out</button></form>}
         <Link href="/" className="studio-credit"><FresnelMark /> Fresnel Studios</Link>

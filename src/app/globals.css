@@ -170,3 +170,27 @@
 
 .studio-nav-loading { margin-inline-start: auto; display: inline-flex; flex: 0 0 16px; }
 .studio-nav-loading-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.studio-website-shortcuts {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  margin-bottom: 7px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.studio-sidebar-footer .studio-website-shortcuts a {
+  gap: 5px;
+  min-height: 42px;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.studio-website-shortcuts a:first-child { flex: 1; }
+.studio-website-shortcuts a:hover { background: #f8f7f4; }
+.studio-website-shortcuts a:focus-visible { outline-offset: -3px; }
+.studio-website-shortcuts .studio-website-design { border-inline-start: 1px solid var(--line); }
+.studio-website-shortcuts .studio-nav-loading:empty { display: none; }
+.studio-website-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #986d25; }
+.studio-website-dot.is-live { background: #008553; }

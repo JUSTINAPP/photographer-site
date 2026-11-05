@@ -120,7 +120,7 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
         {live && <button className="secondary-button" disabled={pending} onClick={() => save('unpublish')}>Take website offline</button>}
         <p role="status">{pending ? 'Saving…' : notice}</p>
       </section>
-      <section className="website-preview" aria-label="Website preview">
+      <section id="website-preview" className="website-preview" aria-label="Website preview" tabIndex={-1}>
         <div className="design-preview-toolbar">
           <div className="design-switch" aria-label="Preview size">
             <button aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>Desktop</button>
