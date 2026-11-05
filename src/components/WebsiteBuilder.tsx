@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition, type CSSProperties } from 'react';
+import { useEffect, useState, useTransition, type CSSProperties } from 'react';
 import { saveWebsite } from '@/app/studio/website/actions';
 import { FONT_PAIRS, HEADERS, PALETTES, PRESETS, normaliseTheme, themeVars, type SiteTheme } from '@/lib/website-theme';
 import { normaliseWebsite, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
@@ -20,6 +20,15 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
 }) {
   const [sampleImage, setSampleImage] = useState<string>(PRESETS.editorial.image);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [panel, setPanel] = useState<'design' | 'pages' | 'publish'>('design');
+  useEffect(() => {
+    const openLinkedPanel = () => {
+      if (window.location.hash === '#page-editor') setPanel('pages');
+    };
+    openLinkedPanel();
+    window.addEventListener('hashchange', openLinkedPanel);
+    return () => window.removeEventListener('hashchange', openLinkedPanel);
+  }, []);
   const [page, setPage] = useState('home');
   const [operation, setOperation] = useState<'draft' | 'publish' | 'unpublish'>('draft');
   const [draft, setDraft] = useState(initial);
@@ -55,8 +64,15 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
   return (
     <div className="website-builder">
       <section className="studio-panel website-controls">
-        {campaign ? <WebsitePages draft={draft} setDraft={setDraft} projects={projects} media={media} page={page} onPage={setPage} /> :
-          <div id="page-editor" className="website-pages"><h2>Pages &amp; media</h2><p>Select Campaign Stories below to place library images and arrange campaign pages.</p></div>}
+        <div className="website-editor-tabs design-switch" aria-label="Editor section">
+          {(['design', 'pages', 'publish'] as const).map(section =>
+            <button key={section} type="button" aria-pressed={panel === section} onClick={() => {
+              setPanel(section);
+              if (section === 'design') setPage('home');
+            }}>{section}</button>
+          )}
+        </div>
+        <div hidden={panel !== 'design'} className="website-design-options">
         <h3>Start from a look</h3>
         <div className="template-options">
           {Object.entries(PRESETS).map(([key, preset]) => {
@@ -93,15 +109,16 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
           <label>Text<input type="color" value={draft.theme.ink} onChange={e => updateTheme({ ink: e.target.value })} /></label>
         </div>}
         <fieldset className="design-options"><legend>Header</legend>
-          <div className="design-switch">{HEADERS.map(header =>
+          <div className="design-switch design-layout-choices">{HEADERS.map(header =>
             <button key={header} aria-pressed={draft.theme.header === header} onClick={() => updateTheme({ header })}>
+              <span className={'design-layout-icon header-' + header} aria-hidden="true"><i /><i /></span>
               {header === 'left' ? 'Logo left' : header === 'centered' ? 'Centred' : 'Stacked'}
             </button>
           )}</div>
         </fieldset>
         <fieldset className="design-options"><legend>Top of the homepage</legend>
-          <div className="design-switch">{([['full', 'Full image'], ['split', 'Split'], ['framed', 'Framed'], ['text', 'Text only']] as const).map(([hero, label]) =>
-            <button key={hero} aria-pressed={draft.theme.hero === hero} onClick={() => updateTheme({ hero })}>{label}</button>
+          <div className="design-switch design-layout-choices">{([['full', 'Full image'], ['split', 'Split'], ['framed', 'Framed'], ['text', 'Text only']] as const).map(([hero, label]) =>
+            <button key={hero} aria-pressed={draft.theme.hero === hero} onClick={() => updateTheme({ hero })}><span className={'design-layout-icon hero-' + hero} aria-hidden="true"><i /><i /></span>{label}</button>
           )}</div>
         </fieldset>
         </>}
@@ -111,6 +128,10 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
           )}</div>
           <label>Instagram profile URL<input type="url" value={draft.instagram} onChange={e => setDraft({ ...draft, instagram: e.target.value })} /></label>
         </fieldset>
+        </div>
+        <div hidden={panel !== 'pages'}>
+        {campaign ? <WebsitePages draft={draft} setDraft={setDraft} projects={projects} media={media} page={page} onPage={setPage} /> :
+          <div id="page-editor" className="website-pages"><h2>Pages &amp; media</h2><p>Select Campaign Stories below to place library images and arrange campaign pages.</p></div>}
         <details className="design-content">
         <summary>Portfolio content</summary>
         {contentFields.map(([key, label]) => (
@@ -126,14 +147,20 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
 
         </>}
         </details>
+        </div>
+        <div hidden={panel !== 'publish'}>
         <h2>Publishing</h2>
         <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Only published projects appear on your site.</p>
-        <button className="secondary-button" disabled={pending} onClick={() => save('draft')}>Save design</button>
         <label className="rights-check"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I have permission to publish this content.</label>
         <button className="primary-button" disabled={pending || !confirmed} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</button>
         {pending && operation === 'publish' && <progress className="website-publish-progress" aria-label="Publishing website" />}
         {live && id && <p><Link href={'/sites/' + id}>Open published website ↗</Link></p>}
         {live && <button className="secondary-button" disabled={pending} onClick={() => save('unpublish')}>Take website offline</button>}
+        </div>
+        <div className="website-save-strip">
+          <button className="secondary-button" disabled={pending} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save design'}</button>
+          {panel !== 'publish' && <button className="primary-button" onClick={() => setPanel('publish')}>Publishing options</button>}
+        </div>
         <p role="status">{pending ? operation === 'publish' ? 'Publishing your website…' : 'Saving…' : notice}</p>
       </section>
       <section id="website-preview" className="website-preview" aria-label="Website preview" tabIndex={-1}>
@@ -148,7 +175,7 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
         <div className={'design-preview-frame ' + device}>
           {campaign ? <CampaignWebsite site={previewSite} projects={projects} preview
             view={projects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
-            onPreviewPage={setPage} /> :
+            onPreviewPage={next => { setPage(next); if (panel === 'design') setPanel('pages'); }} /> :
             <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={projects} preview />}
         </div>
       </section>

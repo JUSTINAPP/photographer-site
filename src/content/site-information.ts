@@ -95,15 +95,7 @@ export const informationPages = {
     summary: 'Open Fresnel Studios from your phone or tablet.',
     sections: [['Use your browser', 'Open the Fresnel Studios website in your mobile browser. You can browse the example portfolio, explore the studio demo or sign in to your workspace.']],
   },
-  help: {
-    title: 'Help centre',
-    summary: 'Get started with the portfolio and studio tools.',
-    sections: [
-      ['Explore first', 'Open the studio demo to try sample contacts, equipment, invoices, proposals, moodboards and newsletters.'],
-      ['Import a portfolio', 'In your signed-in studio, open Import website and enter a public URL. Review the resulting project details and save the entries you want as drafts.'],
-      ['Prepare documents', 'Create a proposal or invoice and check the line items and totals. Use Print or Save PDF to export a copy. Newsletter drafts can be exported as HTML for review.'],
-    ],
-  },
+
   support: {
     title: 'Support',
     summary: 'Contact Allen Australian Enterprises about Fresnel Studios.',

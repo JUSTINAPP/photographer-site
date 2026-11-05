@@ -215,3 +215,22 @@
 .page-campaign-order li { display: flex; align-items: center; gap: 5px; padding-block: 4px; }
 .page-edit-link { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; border: 0; background: transparent; text-decoration: underline; color: inherit; font: inherit; cursor: pointer; }
 .website-publish-progress { display: block; width: 100%; height: 8px; margin-block: 10px; accent-color: #14162b; }
+
+.website-editor-tabs { margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.website-save-strip { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; margin-top: 20px; background: #f4f1ea; z-index: 2; border-radius: 6px; }
+.studio-sidebar-footer .studio-help-link { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+.help-guide-list { display: grid; gap: 10px; list-style: none; padding: 0; margin: 24px 0; }
+.help-guide-list a { display: grid; gap: 4px; padding: 16px; border: 1px solid currentColor; border-radius: 6px; }
+.help-steps li { margin-block: 20px; padding-inline-start: 6px; }
+.design-layout-choices button { display: grid; place-items: center; gap: 6px; flex: 1; }
+.design-layout-icon { width: 42px; height: 25px; display: flex; justify-content: space-between; align-items: flex-start; padding: 4px; border: 1px solid currentColor; border-radius: 3px; }
+.design-layout-icon i { background: currentColor; width: 11px; height: 3px; opacity: .7; }
+.design-layout-icon i + i { width: 15px; opacity: .4; }
+.design-layout-icon.header-centered { flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.design-layout-icon.header-stacked, .design-layout-icon.hero-framed, .design-layout-icon.hero-text { flex-direction: column; }
+.design-layout-icon.hero-full { align-items: flex-end; background: color-mix(in srgb, currentColor 16%, transparent); }
+.design-layout-icon.hero-full i + i, .design-layout-icon.hero-text i + i { display: none; }
+.design-layout-icon.hero-split i + i { height: 100%; }
+.design-layout-icon.hero-framed i { width: 100%; height: 8px; }
+.design-layout-icon.hero-framed i + i { width: 13px; height: 3px; }
+.design-layout-icon.hero-text { justify-content: center; }

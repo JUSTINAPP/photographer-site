@@ -1,7 +1,7 @@
 import FresnelMark from '@/components/FresnelMark';
 import Link from 'next/link';
 import StudioNavLoading from '@/components/StudioNavLoading';
-import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal } from 'lucide-react';
+import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal, CircleHelp } from 'lucide-react';
 import { requireStudio } from '@/lib/supabase';
 
 const groups = [
@@ -12,6 +12,12 @@ const groups = [
   ['Outreach', [['Newsletters', '/studio/tools/newsletters', Mail], ['Social', '/studio/social', Instagram]]],
   ['Studio', [['Import website', '/studio/import', ArrowDownToLine], ['Settings', '/studio/settings', SlidersHorizontal]]],
 ] as const;
+
+const helpTopics: Record<string, string> = {
+  Website: 'website-design', 'Website design': 'website-design', Settings: 'website-design',
+  Media: 'media-library', 'Import website': 'import-portfolio', Projects: 'edit-campaign-pages',
+  Calendar: 'calendar-and-social', Social: 'calendar-and-social',
+};
 
 export default async function StudioShell({ children, active = 'Overview', demo = false, email }: {
   children: React.ReactNode; active?: string; demo?: boolean; email?: string;
@@ -54,6 +60,9 @@ export default async function StudioShell({ children, active = 'Overview', demo 
           )}
           {!demo && <Link href="/studio/website" className="studio-website-design">Design<StudioNavLoading /></Link>}
         </div>
+        <Link className="studio-help-link" href={helpTopics[active] ? '/help/' + helpTopics[active] : '/help'} target="_blank" rel="noopener noreferrer">
+          <CircleHelp size={16} />{helpTopics[active] ? 'Help with this page' : 'Help centre'}
+        </Link>
         {email && <span>{email}</span>}
         {demo ? <Link href="/login">Private account sign-in ↗</Link> : <form action="/auth/signout" method="post"><button>Sign out</button></form>}
         <Link href="/" className="studio-credit"><FresnelMark /> Fresnel Studios</Link>
