@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { studioCookie, workspaceIdPattern, type StudioRole } from './studio-access';
 import { redirect } from 'next/navigation';
 export const configured = () => !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 export async function database() {
@@ -20,7 +21,21 @@ export async function requireStudio(redirectOnMissingAuth = true) {
     if (redirectOnMissingAuth) redirect('/login');
     throw new Error('Please sign in to your studio.');
   }
-  const {data:workspace,error} = await db.from('workspaces').select('*').eq('owner_id',user.id).single();
-  if(error || !workspace) throw new Error('Your studio is not ready. Sign out and sign in again.');
-  return {db,user,workspace};
+  const preference = (await cookies()).get(studioCookie)?.value;
+  const studios = await db.from('workspaces').select('*').order('created_at');
+  if (studios.error || !studios.data.length) throw new Error('Your studio is not ready. Sign out and sign in again.');
+  const workspace = studios.data.find(item => item.id === preference)
+    ?? studios.data.find(item => item.owner_id === user.id)
+    ?? studios.data[0];
+  const access = workspace.owner_id === user.id ? 'owner' : (await db.rpc('studio_role', { studio: workspace.id })).data;
+  if (access !== 'owner' && access !== 'editor' && access !== 'viewer') throw new Error('You do not have access to this studio.');
+  return { db, user, workspace, studios: studios.data, role: access as StudioRole };
 }
+
+export async function requireStudioAccess(level: 'owner' | 'edit') {
+  const studio = await requireStudio();
+  if (studio.role === 'owner' || (level === 'edit' && studio.role === 'editor')) return studio;
+  redirect('/studio/website');
+}
+
+export const validStudioId = (id: string) => workspaceIdPattern.test(id);

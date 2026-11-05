@@ -1,11 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireStudio } from '@/lib/supabase';
+import { requireStudioAccess } from '@/lib/supabase';
 import { normaliseWebsite, websiteImage } from '@/lib/website';
 
-export async function saveWebsite(input: unknown, mode: 'draft' | 'publish' | 'unpublish') {
-  const { db, workspace } = await requireStudio();
+export async function saveWebsite(studioId: string, input: unknown, mode: 'draft' | 'publish' | 'unpublish') {
+  const { db, workspace } = await requireStudioAccess('edit');
+  if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen Website design before saving.' };
   const draft = normaliseWebsite(input);
   if (mode === 'publish' && !draft.name) return { error: 'Add a portfolio name before publishing.' };
   const values: { workspace_id: string; draft: typeof draft; published?: typeof draft | null } = {
@@ -23,7 +24,7 @@ export async function saveWebsite(input: unknown, mode: 'draft' | 'publish' | 'u
 }
 
 export async function addWebsiteProject(form: FormData) {
-  const { db, workspace } = await requireStudio();
+  const { db, workspace } = await requireStudioAccess('edit');
   const title = String(form.get('title') ?? '').trim().slice(0, 180);
   const image = websiteImage(String(form.get('image') ?? ''));
   if (!title || !image) throw new Error('Enter a title and an HTTPS image URL.');

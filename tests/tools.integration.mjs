@@ -66,5 +66,25 @@ try{
  assert.ifError((await owner.from('studio_schedule').update({day:'2026-11-11'}).eq('id',scheduled.data.id)).error);
  assert.ifError((await owner.from('studio_schedule').delete().eq('id',scheduled.data.id)).error);
  console.log('PASS: portfolio names and planner entries stay private, with schedule and media ownership validation.');
+ const memberEmail = (await other.auth.getUser()).data.user.email;
+ const membership = owner.from('studio_team');
+ assert.ok((await membership.insert({workspace_id:workspace,email:memberEmail,role:'editor',user_id:ids[1]})).error,'Owner must invite by email');
+ assert.ifError((await membership.insert({workspace_id:workspace,email:memberEmail,role:'editor'})).error);
+ const accepted = await other.rpc('accept_studio_invitations');
+ assert.ifError(accepted.error);
+ assert.equal(accepted.data,workspace);
+ assert.equal((await other.rpc('studio_role',{studio:workspace})).data,'editor');
+ assert.equal((await other.from('studio_media').select('id').eq('id',media.data.id).single()).data.id,media.data.id);
+ assert.ifError((await other.from('studio_media').update({name:'Edited by teammate'}).eq('id',media.data.id).select('id').single()).error);
+ assert.deepEqual((await other.from('studio_records').select('id').eq('id',contact.id)).data,[]);
+ assert.ok((await other.from('studio_team').insert({workspace_id:workspace,email:'forbidden@example.com',role:'viewer'})).error);
+ assert.ifError((await membership.update({role:'viewer'}).eq('workspace_id',workspace).eq('email',memberEmail)).error);
+ assert.equal((await other.rpc('studio_role',{studio:workspace})).data,'viewer');
+ const viewerWrite = await other.from('studio_media').update({name:'Forbidden'}).eq('id',media.data.id).select('id');
+ assert.ifError(viewerWrite.error);
+ assert.deepEqual(viewerWrite.data,[]);
+ assert.ifError((await membership.delete().eq('workspace_id',workspace).eq('email',memberEmail)).error);
+ assert.deepEqual((await other.from('studio_media').select('id').eq('id',media.data.id)).data,[]);
+ console.log('PASS: invitations are email-bound, editors can collaborate, viewers cannot edit, and removal revokes access.');
  console.log('PASS: all six record types save privately; cross-studio isolation, concurrent invoice numbering, issued-invoice locks, payments, invalid-price rejection and idempotent proposal conversion.');
 }finally{for(const id of ids)assert.ifError((await admin.auth.admin.deleteUser(id)).error);console.log('Temporary test accounts and records removed.');}

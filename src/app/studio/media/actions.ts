@@ -1,12 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireStudio } from '@/lib/supabase';
+import { requireStudioAccess } from '@/lib/supabase';
 import { readPublicFile, websiteUrl } from '@/lib/importer';
 import type { FoundMedia } from '@/lib/import-media';
 
 export async function saveImportedMedia(input: FoundMedia[]) {
-  const { db, workspace } = await requireStudio();
+  const { db, workspace } = await requireStudioAccess('edit');
   if (!Array.isArray(input) || input.length < 1 || input.length > 150) throw new Error('Select up to 150 media items.');
   const rows = new Map(input.map(item => {
     const url = websiteUrl(item.url).href;
@@ -21,7 +21,7 @@ export async function saveImportedMedia(input: FoundMedia[]) {
 }
 
 export async function renameMedia(form: FormData) {
-  const { db, workspace } = await requireStudio();
+  const { db, workspace } = await requireStudioAccess('edit');
   const name = String(form.get('name') ?? '').trim().slice(0, 150);
   if (!name) throw new Error('Enter a name for this file.');
   const { error } = await db.from('studio_media').update({ name }).eq('id', String(form.get('id'))).eq('workspace_id', workspace.id);
@@ -30,7 +30,7 @@ export async function renameMedia(form: FormData) {
 }
 
 export async function keepMediaOriginal(id: string) {
-  const { db, workspace } = await requireStudio();
+  const { db, workspace } = await requireStudioAccess('edit');
   const { data } = await db.from('studio_media').select('id,kind,source_url').eq('id', id).eq('workspace_id', workspace.id).single();
   if (!data) return { error: 'Media not found.' };
   const path = `${workspace.id}/media/${data.id}`;
@@ -54,7 +54,7 @@ export async function keepMediaOriginal(id: string) {
 }
 
 export async function selectWebsiteMedia(id: string, selected: boolean) {
-  const { db, workspace } = await requireStudio();
+  const { db, workspace } = await requireStudioAccess('edit');
   const { data, error } = await db.from('studio_media').update({ website_selected: selected === true })
     .eq('workspace_id', workspace.id).eq('id', id).select('id').maybeSingle();
   if (error || !data) throw new Error('Could not update website selection.');

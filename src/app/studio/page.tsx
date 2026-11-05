@@ -4,7 +4,11 @@ import { requireStudio } from '@/lib/supabase';
 import { addDays, dayKey } from '@/lib/studio-planner';
 
 export default async function Studio() {
-  const { db, workspace, user } = await requireStudio();
+  const { db, workspace, user, role } = await requireStudio();
+  if (role !== 'owner') return <StudioShell email={user.email}>
+    <div className="studio-page-heading"><div><h1>Shared portfolio</h1><p>Review the site, projects and media in this studio.</p></div></div>
+    <Link className="primary-button" href="/studio/website">Open website {role === 'viewer' ? 'preview' : 'editor'} ↗</Link>
+  </StudioShell>;
   const today = dayKey(new Date());
   const [projects, photos, videos, scheduled, upcoming] = await Promise.all([
     db.from('projects').select('id', { count: 'exact', head: true }).eq('workspace_id', workspace.id),

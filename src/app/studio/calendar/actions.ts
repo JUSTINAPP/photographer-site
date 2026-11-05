@@ -1,12 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireStudio } from '@/lib/supabase';
+import { requireStudioAccess } from '@/lib/supabase';
 import { eventTypes, socialChannels, validDay } from '@/lib/studio-planner';
 
 export async function changeSchedule(kind: 'event' | 'social', form: FormData) {
   if (kind !== 'event' && kind !== 'social') throw new Error('Invalid schedule type.');
-  const { db, workspace } = await requireStudio();
+  const { db, workspace } = await requireStudioAccess('owner');
   const field = (name: string) => String(form.get(name) ?? '').trim();
   const id = field('id');
   if (id && !/^[a-f0-9-]{36}$/i.test(id)) throw new Error('Invalid item.');

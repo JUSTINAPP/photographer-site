@@ -234,3 +234,9 @@
 .design-layout-icon.hero-framed i { width: 100%; height: 8px; }
 .design-layout-icon.hero-framed i + i { width: 13px; height: 3px; }
 .design-layout-icon.hero-text { justify-content: center; }
+
+.studio-switcher { display: flex; gap: 5px; align-items: flex-end; padding: 8px; }
+.studio-switcher label { flex: 1; min-width: 0; font-size: 11px; }
+.studio-switcher select { width: 100%; display: block; padding: 5px; border: 1px solid var(--line); background: white; }
+.studio-switcher button { padding: 5px 8px; }
+.studio-team-member { padding-block: 14px; border-top: 1px solid var(--line); }

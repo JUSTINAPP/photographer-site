@@ -15,8 +15,8 @@ const contentFields = [
   ['email', 'Public enquiry email'], ['about', 'About'], ['services', 'Services'],
 ] as const;
 
-export default function WebsiteBuilder({ initial, projects, media, publicId, isPublished }: {
-  initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean;
+export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false }: {
+  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean;
 }) {
   const [sampleImage, setSampleImage] = useState<string>(PRESETS.editorial.image);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
@@ -47,7 +47,7 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
     setOperation(mode);
     startTransition(async () => {
       try {
-        const result = await saveWebsite(draft, mode);
+        const result = await saveWebsite(studioId, draft, mode);
         if (result.error) { setNotice(result.error); return; }
         setLive(!!result.published);
         setId(result.id);
@@ -63,6 +63,8 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
   const campaign = draft.theme.layout === 'campaign';
   return (
     <div className="website-builder">
+      {readOnly && <p className="studio-panel">You have view-only access to this portfolio. Use the preview to review the draft.</p>}
+      {!readOnly &&
       <section className="studio-panel website-controls">
         <div className="website-editor-tabs design-switch" aria-label="Editor section">
           {(['design', 'pages', 'publish'] as const).map(section =>
@@ -162,7 +164,7 @@ export default function WebsiteBuilder({ initial, projects, media, publicId, isP
           {panel !== 'publish' && <button className="primary-button" onClick={() => setPanel('publish')}>Publishing options</button>}
         </div>
         <p role="status">{pending ? operation === 'publish' ? 'Publishing your website…' : 'Saving…' : notice}</p>
-      </section>
+      </section>}
       <section id="website-preview" className="website-preview" aria-label="Website preview" tabIndex={-1}>
         <div className="design-preview-toolbar">
           <div className="design-switch" aria-label="Preview size">

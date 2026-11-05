@@ -2,6 +2,8 @@ import FresnelMark from '@/components/FresnelMark';
 import Link from 'next/link';
 import StudioNavLoading from '@/components/StudioNavLoading';
 import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal, CircleHelp } from 'lucide-react';
+import { switchStudio } from '@/app/studio/settings/team/actions';
+import { type StudioRole } from '@/lib/studio-access';
 import { requireStudio } from '@/lib/supabase';
 
 const groups = [
@@ -22,10 +24,17 @@ const helpTopics: Record<string, string> = {
 export default async function StudioShell({ children, active = 'Overview', demo = false, email }: {
   children: React.ReactNode; active?: string; demo?: boolean; email?: string;
 }) {
+  let role: StudioRole = 'owner';
+  let studios: { id: string; name: string }[] = [];
+  let studioId = '';
   let name = demo ? 'Rowan Vale' : 'Your studio';
   let publicPath = demo ? '/examples/rowan-vale' : '';
   if (!demo) {
-    const { db, workspace } = await requireStudio();
+    const session = await requireStudio();
+    const { db, workspace } = session;
+    role = session.role;
+    studioId = workspace.id;
+    studios = session.studios;
     const { data } = await db.from('studio_websites').select('draft, published, public_id').eq('workspace_id', workspace.id).maybeSingle();
     name = data?.draft?.name || workspace.name || name;
     if (data?.published) publicPath = '/sites/' + data.public_id;
@@ -33,12 +42,18 @@ export default async function StudioShell({ children, active = 'Overview', demo 
 
   return <div className="studio-shell">
     <aside className="studio-sidebar">
-      <Link href={demo ? '/demo' : '/studio/settings'} className="studio-identity">{name}</Link>
-      <span className="studio-owner">{demo ? 'Demo studio' : 'Owner'}</span>
+      <Link href={demo ? '/demo' : role === 'owner' ? '/studio/settings' : '/studio'} className="studio-identity">{name}</Link>
+      <span className="studio-owner">{demo ? 'Demo studio' : role === 'owner' ? 'Owner' : 'Website ' + role}</span>
+      {studios.length > 1 && <form action={switchStudio} className="studio-switcher">
+        <label>Switch studio<select name="studio" defaultValue={studioId}>{studios.map(studio =>
+          <option key={studio.id} value={studio.id}>{studio.id === studioId ? name : studio.name}</option>
+        )}</select></label><button className="secondary-button">Open</button>
+      </form>}
       <nav aria-label="Studio navigation">
         {groups.map(([heading, links]) => <div key={heading} className="studio-nav-group">
           {heading && <p className="nav-heading">{heading}</p>}
-          {links.filter(([label]) => !demo || !['Calendar', 'Media', 'Website design', 'Shop', 'Social', 'Settings'].includes(label)).map(([label, path, Icon]) => {
+          {links.filter(([label]) => demo ? !['Calendar', 'Media', 'Website design', 'Shop', 'Social', 'Settings'].includes(label)
+            : role === 'owner' || ['Overview', 'Projects', 'Media', 'Website design', ...(role === 'editor' ? ['Import website'] : [])].includes(label)).map(([label, path, Icon]) => {
             const selected = active === label || (active === 'Website' && label === 'Website design');
             return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
               aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
@@ -58,7 +73,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
               <span className="studio-website-dot" aria-hidden="true" />Preview draft<StudioNavLoading />
             </Link>
           )}
-          {!demo && <Link href="/studio/website" className="studio-website-design">Design<StudioNavLoading /></Link>}
+          {!demo && <Link href="/studio/website" className="studio-website-design">{role === 'viewer' ? 'Preview' : 'Design'}<StudioNavLoading /></Link>}
         </div>
         <Link className="studio-help-link" href={helpTopics[active] ? '/help/' + helpTopics[active] : '/help'} target="_blank" rel="noopener noreferrer">
           <CircleHelp size={16} />{helpTopics[active] ? 'Help with this page' : 'Help centre'}

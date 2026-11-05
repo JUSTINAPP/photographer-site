@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
-import { requireStudio } from '@/lib/supabase';
+import { requireStudioAccess } from '@/lib/supabase';
 import { normaliseWebsite } from '@/lib/website';
 import { savePortfolioName } from './actions';
 
 export default async function Settings() {
-  const { db, workspace, user } = await requireStudio();
+  const { db, workspace, user } = await requireStudioAccess('owner');
   const { data, error } = await db.from('studio_websites').select('draft,published,public_id').eq('workspace_id', workspace.id).maybeSingle();
   if (error) throw new Error('Settings could not be loaded.');
   const draft = normaliseWebsite(data?.draft);
@@ -14,6 +14,10 @@ export default async function Settings() {
     <section className="studio-panel studio-setting-row">
       <div><h2>{data?.published ? 'Your website is live' : 'Your website is a draft'}</h2><p>Save your design as a draft or publish it from the editor.</p></div>
       {data?.published && <Link className="secondary-button" href={'/sites/' + data.public_id}>View website ↗</Link>}
+    </section>
+    <section className="studio-panel studio-setting-row">
+      <div><h2>Team</h2><p>Invite people to work on this studio’s portfolio and manage their access.</p></div>
+      <Link className="secondary-button" href="/studio/settings/team">Manage team ↗</Link>
     </section>
     <form action={savePortfolioName} className="studio-panel studio-setting-form">
       <h2>Studio name</h2>

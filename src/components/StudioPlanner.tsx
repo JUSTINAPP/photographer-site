@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import StudioShell from './StudioShell';
-import { requireStudio } from '@/lib/supabase';
+import { requireStudioAccess } from '@/lib/supabase';
 import { addDays, dayKey, eventTypes, mondayOf, socialChannels, validDay } from '@/lib/studio-planner';
 import { changeSchedule } from '@/app/studio/calendar/actions';
 
@@ -11,7 +11,7 @@ type Entry = {
 export type PlannerParams = { d?: string; view?: string; edit?: string; day?: string };
 
 export default async function StudioPlanner({ social = false, params }: { social?: boolean; params: PlannerParams }) {
-  const { db, user, workspace } = await requireStudio();
+  const { db, user, workspace } = await requireStudioAccess('owner');
   const path = social ? '/studio/social' : '/studio/calendar';
   const kind = social ? 'social' : 'event';
   const today = dayKey(new Date());
