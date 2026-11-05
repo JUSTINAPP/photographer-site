@@ -1,5 +1,5 @@
 export const company = 'Allen Australian Enterprises Pty Ltd';
-export const contactEmail = 'hello@fresnelstudios.com';
+export const contactEmail = 'hello@fresnelstudio.com';
 
 type InformationPage = {
   title: string;
