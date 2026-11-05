@@ -240,3 +240,40 @@
 .studio-switcher select { width: 100%; display: block; padding: 5px; border: 1px solid var(--line); background: white; }
 .studio-switcher button { padding: 5px 8px; }
 .studio-team-member { padding-block: 14px; border-top: 1px solid var(--line); }
+
+.settings-wide, .settings-team { max-width: none; }
+.settings-status { padding: 0; margin-bottom: 22px; overflow: hidden; border-radius: 8px; }
+.settings-status > div { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; padding: 22px; }
+.settings-live { background: #effaf5; }
+.settings-draft { background: #f6f3ec; }
+.settings-status p { color: var(--muted); overflow-wrap: anywhere; }
+.settings-status form { border-top: 1px solid var(--line); padding: 12px 22px; text-align: right; }
+.settings-text-button, .settings-remove { border: 0; background: transparent; color: var(--muted); text-decoration: underline; cursor: pointer; }
+.settings-remove { color: #a12727; }
+.settings-design { margin-bottom: 22px; border-radius: 8px; }
+.settings-design > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; cursor: pointer; list-style: none; }
+.settings-design > summary::-webkit-details-marker { display: none; }
+.settings-design > summary .primary-button { pointer-events: none; }
+.settings-design[open] > summary { margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 18px; }
+.settings-logo-preview, .settings-team-row, .settings-team-invite, .settings-links { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.settings-logo-preview { justify-content: space-between; min-height: 80px; border: 1px solid var(--line); border-radius: 6px; padding: 14px; margin: 14px 0; }
+.settings-logo-preview span, .settings-logo-upload small { color: var(--muted); }
+.portfolio-logo { display: inline-block; object-fit: contain; max-width: min(160px, 100%); vertical-align: middle; }
+.studio-setting-form .settings-logo-upload { width: min(100%, 420px); justify-items: center; border: 1px dashed var(--line); border-radius: 6px; padding: 14px; background: #f9f8f5; text-align: center; }
+.settings-columns { display: grid; gap: 22px; align-items: start; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.settings-domain-record { margin-top: 18px; padding: 12px; background: #f6f3ec; overflow-wrap: anywhere; }
+.settings-domain-record dd { margin-inline-start: 0; }
+.settings-team { max-width: 860px; }
+.settings-team h3 { margin-top: 18px; }
+.settings-team-row strong { flex: 1 1 170px; overflow-wrap: anywhere; }
+.settings-team-row select { width: auto; max-width: 100%; }
+.settings-team-invite { align-items: flex-end; margin: 12px 0; }
+.settings-team-invite label { margin: 0; }
+.settings-team-invite label:first-child { flex: 1 1 200px; }
+.settings-team details { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; }
+.settings-team summary { cursor: pointer; }
+@media (max-width: 700px) { .settings-columns { grid-template-columns: 1fr; } }
+.settings-section-links { margin-bottom: 20px; }
+.settings-section-links a { text-decoration: underline; text-underline-offset: 3px; }
+
+.settings-domain-recheck { display: inline; }

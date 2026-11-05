@@ -11,7 +11,7 @@ type Entry = {
 export type PlannerParams = { d?: string; view?: string; edit?: string; day?: string };
 
 export default async function StudioPlanner({ social = false, params }: { social?: boolean; params: PlannerParams }) {
-  const { db, user, workspace } = await requireStudioAccess('owner');
+  const { db, user, workspace } = await requireStudioAccess(social ? 'social' : 'calendar');
   const path = social ? '/studio/social' : '/studio/calendar';
   const kind = social ? 'social' : 'event';
   const today = dayKey(new Date());

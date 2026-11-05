@@ -1,3 +1,4 @@
+import PortfolioLogo from './PortfolioLogo';
 import type { CSSProperties } from 'react';
 import { themeVars } from '@/lib/website-theme';
 import { websiteImage, type Website, type WebsiteProject } from '@/lib/website';
@@ -10,7 +11,7 @@ export default function EditorialWebsite({ site, projects, preview = false }: {
   return (
     <div className="editorial-site" style={themeVars(site.theme) as CSSProperties}>
       <header className={'editorial-header editorial-header-' + site.theme.header}>
-        <strong>{name}</strong>
+        <strong><PortfolioLogo site={site} /></strong>
         <nav aria-label="Portfolio">
           {preview ? <><span>Work</span><span>About + Services</span><span>Contact</span></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
           {site.theme.social !== 'footer' && social}
@@ -36,6 +37,7 @@ export default function EditorialWebsite({ site, projects, preview = false }: {
         <h2>About + Services</h2><p>{site.about}</p><p>{site.services}</p>
       </section>
       <footer className="editorial-about" id={preview ? undefined : 'contact'}>
+        {site.logo && <PortfolioLogo site={site} />}
         <h2>Contact</h2>
         {site.theme.social !== 'header' && social}
         {site.email && (preview ? <p>{site.email}</p> : <a href={'mailto:' + site.email}>{site.email}</a>)}

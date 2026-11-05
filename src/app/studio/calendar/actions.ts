@@ -6,7 +6,7 @@ import { eventTypes, socialChannels, validDay } from '@/lib/studio-planner';
 
 export async function changeSchedule(kind: 'event' | 'social', form: FormData) {
   if (kind !== 'event' && kind !== 'social') throw new Error('Invalid schedule type.');
-  const { db, workspace } = await requireStudioAccess('owner');
+  const { db, workspace } = await requireStudioAccess(kind === 'social' ? 'social' : 'calendar');
   const field = (name: string) => String(form.get(name) ?? '').trim();
   const id = field('id');
   if (id && !/^[a-f0-9-]{36}$/i.test(id)) throw new Error('Invalid item.');

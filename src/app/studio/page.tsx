@@ -1,3 +1,4 @@
+import { isStudioAdmin } from '@/lib/studio-access';
 import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
 import { requireStudio } from '@/lib/supabase';
@@ -5,9 +6,9 @@ import { addDays, dayKey } from '@/lib/studio-planner';
 
 export default async function Studio() {
   const { db, workspace, user, role } = await requireStudio();
-  if (role !== 'owner') return <StudioShell email={user.email}>
+  if (!isStudioAdmin(role)) return <StudioShell email={user.email}>
     <div className="studio-page-heading"><div><h1>Shared portfolio</h1><p>Review the site, projects and media in this studio.</p></div></div>
-    <Link className="primary-button" href="/studio/website">Open website {role === 'viewer' ? 'preview' : 'editor'} ↗</Link>
+    <Link className="primary-button" href={role === 'social' ? '/studio/social' : '/studio/website'}>{role === 'social' ? 'Open social scheduler' : role === 'editor' ? 'Open website editor' : 'Open website preview'} ↗</Link>
   </StudioShell>;
   const today = dayKey(new Date());
   const [projects, photos, videos, scheduled, upcoming] = await Promise.all([

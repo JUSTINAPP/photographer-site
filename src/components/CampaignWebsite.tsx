@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import PortfolioLogo from './PortfolioLogo';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteProject } from '@/lib/website';
 import { FONT_PAIRS } from '@/lib/website-theme';
@@ -94,7 +95,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   return <div className={'campaign-site' + (preview ? ' campaign-preview' : '')} ref={root}
     style={{ '--campaign-font': colours.text, '--campaign-display': colours.display } as CSSProperties}>
     <header className={'campaign-header' + (scrolled || current.about ? ' is-solid' : '')}>
-      {navigation({}, name, 'campaign-wordmark')}
+      {navigation({}, <PortfolioLogo site={site} />, 'campaign-wordmark')}
       <nav aria-label="Portfolio">
         {navigation({}, 'Work', undefined, 'work')}
         {navigation({ about: '1' }, 'About + Services')}
@@ -151,7 +152,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     </>}
 
     <footer className="campaign-copy campaign-footer" id={preview ? undefined : 'contact'} data-anchor="contact">
-      <div><p className="campaign-kicker">Contact</p><h2>Let’s make something.</h2>
+      <div>{site.logo && <PortfolioLogo site={site} />}<p className="campaign-kicker">Contact</p><h2>Let’s make something.</h2>
         {site.email && <a href={'mailto:' + site.email}>{site.email}</a>}
       </div>
       {site.theme.social !== 'header' && social}

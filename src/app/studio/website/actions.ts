@@ -7,7 +7,10 @@ import { normaliseWebsite, websiteImage } from '@/lib/website';
 export async function saveWebsite(studioId: string, input: unknown, mode: 'draft' | 'publish' | 'unpublish') {
   const { db, workspace } = await requireStudioAccess('edit');
   if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen Website design before saving.' };
-  const draft = normaliseWebsite(input);
+  const current = await db.from('studio_websites').select('draft').eq('workspace_id', workspace.id).maybeSingle();
+  if (current.error) return { error: 'The website settings could not be loaded.' };
+  const { logo, logoSize, currentWebsite } = normaliseWebsite(current.data?.draft);
+  const draft = { ...normaliseWebsite(input), logo, logoSize, currentWebsite };
   if (mode === 'publish' && !draft.name) return { error: 'Add a portfolio name before publishing.' };
   const values: { workspace_id: string; draft: typeof draft; published?: typeof draft | null } = {
     workspace_id: workspace.id, draft,
@@ -19,6 +22,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
     .select('public_id, published').single();
   if (error) return { error: 'The website could not be saved. Please try again.' };
   revalidatePath('/studio/website');
+  revalidatePath('/studio/settings');
   revalidatePath('/sites/' + data.public_id);
   return { id: data.public_id as string, published: !!data.published };
 }

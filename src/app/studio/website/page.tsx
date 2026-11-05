@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation';
+import { canEditWebsite, isStudioAdmin } from '@/lib/studio-access';
 import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
 import WebsiteBuilder from '@/components/WebsiteBuilder';
@@ -6,6 +8,7 @@ import { normaliseWebsite } from '@/lib/website';
 
 export default async function WebsiteSettings() {
   const { db, user, workspace, role } = await requireStudio();
+  if (role === 'social') redirect('/studio/social');
   const [site, projects, media] = await Promise.all([
     db.from('studio_websites').select('draft, published, public_id').eq('workspace_id', workspace.id).maybeSingle(),
     db.from('projects').select('id,title,category,description,image_url').eq('workspace_id', workspace.id).eq('published', true).order('created_at', { ascending: false }),
@@ -13,10 +16,10 @@ export default async function WebsiteSettings() {
   ]);
   return (
     <StudioShell active="Website" email={user.email}>
-      <div className="studio-page-heading"><div><h1>Website design</h1><p>Choose a photographer template, then adjust typography, colours and layout. Preview changes before saving.</p></div>{role === 'owner' && <Link className="secondary-button" href="/studio/settings">Settings</Link>}</div>
+      <div className="studio-page-heading"><div><h1>Website design</h1><p>Choose a photographer template, then adjust typography, colours and layout. Preview changes before saving.</p></div>{isStudioAdmin(role) && <Link className="secondary-button" href="/studio/settings">Settings</Link>}</div>
       {site.error || projects.error || media.error
         ? <p role="alert">The website builder could not load. Please try again later.</p>
-        : <WebsiteBuilder studioId={workspace.id} readOnly={role === 'viewer'} initial={normaliseWebsite(site.data?.draft)} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={!!site.data?.published} />}
+        : <WebsiteBuilder studioId={workspace.id} readOnly={!canEditWebsite(role)} initial={normaliseWebsite(site.data?.draft)} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={!!site.data?.published} />}
     </StudioShell>
   );
 }

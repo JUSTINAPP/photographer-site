@@ -3,7 +3,7 @@ import Link from 'next/link';
 import StudioNavLoading from '@/components/StudioNavLoading';
 import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal, CircleHelp } from 'lucide-react';
 import { switchStudio } from '@/app/studio/settings/team/actions';
-import { type StudioRole } from '@/lib/studio-access';
+import { canEditWebsite, isStudioAdmin, teamRoles, type StudioRole } from '@/lib/studio-access';
 import { requireStudio } from '@/lib/supabase';
 
 const groups = [
@@ -42,8 +42,8 @@ export default async function StudioShell({ children, active = 'Overview', demo 
 
   return <div className="studio-shell">
     <aside className="studio-sidebar">
-      <Link href={demo ? '/demo' : role === 'owner' ? '/studio/settings' : '/studio'} className="studio-identity">{name}</Link>
-      <span className="studio-owner">{demo ? 'Demo studio' : role === 'owner' ? 'Owner' : 'Website ' + role}</span>
+      <Link href={demo ? '/demo' : isStudioAdmin(role) ? '/studio/settings' : '/studio'} className="studio-identity">{name}</Link>
+      <span className="studio-owner">{demo ? 'Demo studio' : role === 'owner' ? 'Owner' : teamRoles[role]}</span>
       {studios.length > 1 && <form action={switchStudio} className="studio-switcher">
         <label>Switch studio<select name="studio" defaultValue={studioId}>{studios.map(studio =>
           <option key={studio.id} value={studio.id}>{studio.id === studioId ? name : studio.name}</option>
@@ -53,7 +53,10 @@ export default async function StudioShell({ children, active = 'Overview', demo 
         {groups.map(([heading, links]) => <div key={heading} className="studio-nav-group">
           {heading && <p className="nav-heading">{heading}</p>}
           {links.filter(([label]) => demo ? !['Calendar', 'Media', 'Website design', 'Shop', 'Social', 'Settings'].includes(label)
-            : role === 'owner' || ['Overview', 'Projects', 'Media', 'Website design', ...(role === 'editor' ? ['Import website'] : [])].includes(label)).map(([label, path, Icon]) => {
+            : isStudioAdmin(role) || ['Overview', 'Projects', 'Media',
+              ...(role === 'social' ? ['Social'] : ['Website design']),
+              ...(role === 'assistant' ? ['Calendar'] : []),
+              ...(role === 'editor' ? ['Import website'] : [])].includes(label)).map(([label, path, Icon]) => {
             const selected = active === label || (active === 'Website' && label === 'Website design');
             return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
               aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
@@ -63,7 +66,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
         </div>)}
       </nav>
       <div className="sidebar-bottom studio-sidebar-footer">
-        <div className="studio-website-shortcuts" role="group" aria-label="Portfolio website">
+        {role !== 'social' && <div className="studio-website-shortcuts" role="group" aria-label="Portfolio website">
           {publicPath ? (
             <Link href={publicPath} target="_blank" rel="noopener noreferrer" aria-label={demo ? 'Open example website in a new tab' : 'Open live website in a new tab'}>
               <span className="studio-website-dot is-live" aria-hidden="true" />{demo ? 'Example website' : 'Website live'}<ArrowUpRight size={14} />
@@ -73,8 +76,8 @@ export default async function StudioShell({ children, active = 'Overview', demo 
               <span className="studio-website-dot" aria-hidden="true" />Preview draft<StudioNavLoading />
             </Link>
           )}
-          {!demo && <Link href="/studio/website" className="studio-website-design">{role === 'viewer' ? 'Preview' : 'Design'}<StudioNavLoading /></Link>}
-        </div>
+          {!demo && <Link href={isStudioAdmin(role) ? '/studio/settings#design' : '/studio/website'} className="studio-website-design">{canEditWebsite(role) ? 'Design' : 'Preview'}<StudioNavLoading /></Link>}
+        </div>}
         <Link className="studio-help-link" href={helpTopics[active] ? '/help/' + helpTopics[active] : '/help'} target="_blank" rel="noopener noreferrer">
           <CircleHelp size={16} />{helpTopics[active] ? 'Help with this page' : 'Help centre'}
         </Link>

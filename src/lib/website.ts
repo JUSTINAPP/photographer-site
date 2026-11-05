@@ -27,6 +27,8 @@ export function normaliseWebsite(input: unknown) {
   const field = (key: string, length: number) =>
     typeof data[key] === 'string' ? data[key].trim().slice(0, length) : '';
   const email = field('email', 254);
+  const logo = field('logo', 350000);
+  const logoSize = typeof data.logoSize === 'number' && Number.isFinite(data.logoSize) ? Math.round(Math.max(24, Math.min(120, data.logoSize))) : 44;
   const galleries: Record<string, string> = {};
   if (data.galleries && typeof data.galleries === 'object') {
     for (const [id, images] of Object.entries(data.galleries).slice(0, 150)) {
@@ -61,6 +63,9 @@ export function normaliseWebsite(input: unknown) {
     : [];
   return {
     placements, covers, projectOrder,
+    logo: /^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/]+={0,2}$/i.test(logo) ? logo : '',
+    logoSize,
+    currentWebsite: websiteImage(field('currentWebsite', 2048)),
     name: field('name', 100),
     headline: field('headline', 220),
     about: field('about', 2500),

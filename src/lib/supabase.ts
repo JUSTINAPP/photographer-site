@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { studioCookie, workspaceIdPattern, type StudioRole } from './studio-access';
+import { canEditWebsite, isStudioAdmin, teamRoles, studioCookie, workspaceIdPattern, type StudioRole } from './studio-access';
 import { redirect } from 'next/navigation';
 export const configured = () => !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 export async function database() {
@@ -28,14 +28,18 @@ export async function requireStudio(redirectOnMissingAuth = true) {
     ?? studios.data.find(item => item.owner_id === user.id)
     ?? studios.data[0];
   const access = workspace.owner_id === user.id ? 'owner' : (await db.rpc('studio_role', { studio: workspace.id })).data;
-  if (access !== 'owner' && access !== 'editor' && access !== 'viewer') throw new Error('You do not have access to this studio.');
+  if (access !== 'owner' && (typeof access !== 'string' || !Object.hasOwn(teamRoles, access))) throw new Error('You do not have access to this studio.');
   return { db, user, workspace, studios: studios.data, role: access as StudioRole };
 }
 
-export async function requireStudioAccess(level: 'owner' | 'edit') {
+export async function requireStudioAccess(level: 'owner' | 'admin' | 'edit' | 'social' | 'calendar') {
   const studio = await requireStudio();
-  if (studio.role === 'owner' || (level === 'edit' && studio.role === 'editor')) return studio;
-  redirect('/studio/website');
+  const { role } = studio;
+  if (role === 'owner' || (level !== 'owner' && isStudioAdmin(role))
+    || (level === 'edit' && canEditWebsite(role))
+    || (level === 'social' && role === 'social')
+    || (level === 'calendar' && role === 'assistant')) return studio;
+  redirect('/studio');
 }
 
 export const validStudioId = (id: string) => workspaceIdPattern.test(id);
