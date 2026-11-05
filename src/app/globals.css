@@ -10,3 +10,17 @@
 .fresnel-mark { flex: none; vertical-align: middle; }
 .mk-logo .fresnel-mark { color: var(--mk-lime); }
 .studio-brand .fresnel-mark, .login-photo .fresnel-mark { margin-right: 8px; width: 21px; height: 21px; }
+
+.mk-footer.mk-footer-directory { grid-template-columns: 1.4fr repeat(3, 1fr); }
+.mk-footer-links { display: grid; align-content: start; gap: 13px; font-size: 12px; }
+.mk-footer-links > span { color: var(--mk-muted); letter-spacing: 1px; font-size: 10px; }
+.mk-footer-links a:hover { text-decoration: underline; }
+.mk-information { max-width: 940px; margin-inline: auto; }
+.mk-information section { margin-top: 32px; }
+.mk-information section h2 { font-size: 24px; letter-spacing: normal; }
+.mk-information p, .mk-information li { line-height: 1.8; color: var(--mk-muted); }
+.mk-information a { text-decoration: underline; }
+@media (max-width: 750px) {
+  .mk-footer.mk-footer-directory { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mk-footer-directory > div:first-child { grid-column: 1 / -1; }
+}
