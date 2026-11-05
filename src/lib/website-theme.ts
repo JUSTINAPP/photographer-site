@@ -55,6 +55,7 @@ export type HeaderStyle = (typeof HEADERS)[number];
 export type HeroStyle = (typeof HEROES)[number];
 
 export type SiteTheme = {
+  layout?: "campaign";
   fonts: FontPair;
   palette: PaletteKey;
   bg: string; // used when palette is "custom"
@@ -65,6 +66,7 @@ export type SiteTheme = {
 };
 
 export const PRESETS = {
+  campaign: { label: "Campaign Stories", image: "", description: "Full-screen film and campaign stories", theme: { layout: "campaign", fonts: "swiss", palette: "white", header: "left", hero: "full" } },
   classic: { label: "Campaign", image: "/images/fashion.jpg", description: "Full-bleed fashion and commercial work", theme: { fonts: "classic", palette: "white", header: "left", hero: "full" } },
   whitecube: { label: "Print Portfolio", image: "/images/lifestyle.jpg", description: "Quiet, framed lifestyle and portrait work", theme: { fonts: "swiss", palette: "white", header: "centered", hero: "framed" } },
   editorial: { label: "Editorial", image: "/images/sailing.jpg", description: "Split introduction for fashion and sailing stories", theme: { fonts: "editorial", palette: "paper", header: "stacked", hero: "split" } },
@@ -84,6 +86,7 @@ export function normaliseTheme(input: unknown): SiteTheme {
   let palette = oneOf<PaletteKey>(x.palette, [...(Object.keys(PALETTES) as (keyof typeof PALETTES)[]), "custom"], "white");
   if (palette === "custom" && contrast(bg, ink) < 4.5) palette = "white";
   return {
+    ...(x.layout === "campaign" ? { layout: "campaign" as const } : {}),
     fonts: oneOf<FontPair>(x.fonts, Object.keys(FONT_PAIRS) as FontPair[], "classic"),
     palette,
     bg,

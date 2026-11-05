@@ -5,6 +5,7 @@ import { useState, useTransition, type CSSProperties } from 'react';
 import { saveWebsite } from '@/app/studio/website/actions';
 import { FONT_PAIRS, HEADERS, PALETTES, PRESETS, normaliseTheme, themeVars, type SiteTheme } from '@/lib/website-theme';
 import { normaliseWebsite, type Website, type WebsiteProject } from '@/lib/website';
+import CampaignWebsite from './CampaignWebsite';
 import EditorialWebsite from './EditorialWebsite';
 
 const contentFields = [
@@ -46,6 +47,7 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
   }
 
   const previewSite = normaliseWebsite(draft);
+  const campaign = draft.theme.layout === 'campaign';
   return (
     <div className="website-builder">
       <section className="studio-panel website-controls">
@@ -53,17 +55,18 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
         <div className="template-options">
           {Object.entries(PRESETS).map(([key, preset]) => {
             const theme = normaliseTheme(preset.theme);
-            const active = ['fonts', 'palette', 'header', 'hero'].every(field =>
+            const active = ['layout', 'fonts', 'palette', 'header', 'hero'].every(field =>
               theme[field as keyof SiteTheme] === draft.theme[field as keyof SiteTheme]);
             return <button className="template-option" key={key} aria-pressed={active}
               style={{ ...themeVars(theme), background: 'var(--color-site)', color: 'var(--color-ink)', fontFamily: 'var(--font-serif)' } as CSSProperties}
               onClick={() => { setSampleImage(preset.image); setDraft(current => ({ ...current, theme })); }}>
               {preset.label}
-              <img src={preset.image} alt="" />
+              {preset.image ? <img src={preset.image} alt="" /> : <div className="campaign-template-tile" aria-hidden="true" />}
               <small>{preset.description}</small>
             </button>;
           })}
         </div>
+        {campaign && <p><Link href="/examples/campaign-stories" target="_blank" rel="noopener noreferrer">Explore the full-screen template ↗</Link></p>}
         <fieldset className="design-options"><legend>Typography</legend>
           <div className="template-options">{Object.entries(FONT_PAIRS).map(([key, font]) =>
             <button key={key} aria-pressed={draft.theme.fonts === key} onClick={() => updateTheme({ fonts: key as SiteTheme['fonts'] })}>
@@ -71,6 +74,7 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
             </button>
           )}</div>
         </fieldset>
+        {!campaign && <>
         <fieldset className="design-options"><legend>Colours</legend>
           <div className="design-swatches">{Object.entries(PALETTES).map(([key, palette]) =>
             <button key={key} aria-pressed={draft.theme.palette === key} onClick={() => updateTheme({ palette: key as SiteTheme['palette'] })}>
@@ -94,6 +98,7 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
             <button key={hero} aria-pressed={draft.theme.hero === hero} onClick={() => updateTheme({ hero })}>{label}</button>
           )}</div>
         </fieldset>
+        </>}
         <fieldset className="design-options"><legend>Social links</legend>
           <div className="design-switch">{(['footer', 'header', 'both'] as const).map(social =>
             <button key={social} aria-pressed={draft.theme.social === social} onClick={() => updateTheme({ social })}>{social}</button>
@@ -110,6 +115,13 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
               : <input type={key === 'email' ? 'email' : key === 'image' ? 'url' : 'text'} value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} />}
           </label>
         ))}
+        {campaign && <>
+          <label>Showreel video URL<input type="url" placeholder="https://…/showreel.mp4" value={draft.video} onChange={e => setDraft({ ...draft, video: e.target.value })} /></label>
+          <label>Selected clients (one per line)<textarea rows={4} value={draft.clients} onChange={e => setDraft({ ...draft, clients: e.target.value })} /></label>
+          {projects.map(project => <label key={project.id}>{project.title} gallery (one image URL per line)
+            <textarea rows={4} value={draft.galleries[project.id] || ''} onChange={e => setDraft({ ...draft, galleries: { ...draft.galleries, [project.id]: e.target.value } })} />
+          </label>)}
+        </>}
         </details>
         <h2>Publishing</h2>
         <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Only published projects appear on your site.</p>
@@ -128,9 +140,10 @@ export default function WebsiteBuilder({ initial, projects, publicId, isPublishe
           </div>
           {live && id && <Link href={'/sites/' + id}>Open website ↗</Link>}
         </div>
-        {!draft.image && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
+        {!campaign && !draft.image && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <div className={'design-preview-frame ' + device}>
-          <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={projects} preview />
+          {campaign ? <CampaignWebsite site={previewSite} projects={projects} preview /> :
+            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={projects} preview />}
         </div>
       </section>
     </div>

@@ -194,3 +194,5 @@
 .studio-website-shortcuts .studio-nav-loading:empty { display: none; }
 .studio-website-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #986d25; }
 .studio-website-dot.is-live { background: #008553; }
+
+.campaign-template-tile { aspect-ratio: 16/9; background: linear-gradient(#888 72%, #555 72%); }
