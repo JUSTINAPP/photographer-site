@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import WebsiteSections from './WebsiteSections';
 import WebsiteGallery from './WebsiteGallery';
 import './campaign-website.css';
 import PortfolioLogo from './PortfolioLogo';
@@ -6,8 +7,8 @@ import type { CSSProperties } from 'react';
 import { themeVars } from '@/lib/website-theme';
 import { websiteImage, type Website, type WebsiteProject } from '@/lib/website';
 
-export default function EditorialWebsite({ site, projects, preview = false, base, onProject }: {
-  site: Website; projects: WebsiteProject[]; preview?: boolean; base?: string; onProject?: (id: string) => void;
+export default function EditorialWebsite({ site, projects, preview = false, base, onProject, allProjects = projects }: {
+  site: Website; projects: WebsiteProject[]; preview?: boolean; base?: string; onProject?: (id: string) => void; allProjects?: WebsiteProject[];
 }) {
   const social = site.instagram && (preview ? <span>Instagram</span> : <a href={site.instagram} rel="noreferrer">Instagram ↗</a>);
   const name = site.name || 'Your portfolio';
@@ -24,7 +25,8 @@ export default function EditorialWebsite({ site, projects, preview = false, base
         <h1>{site.headline || name}</h1>
         {site.image && site.theme.hero !== 'text' && <img src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
       </section>
-      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" />
+      <WebsiteSections sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
+      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={allProjects} base={base} onProject={onProject} />
       <section className={'editorial-work' + (site.homepageLayout === 'grid' ? ' editorial-work-grid' : '')} id={preview ? undefined : 'work'}>
         <h2>Selected work</h2>
         {projects.length === 0 && !site.homeGallery?.length && <p>{preview ? 'Publish a project to include it here.' : 'New work coming soon.'}</p>}
@@ -41,6 +43,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
       <section className="editorial-about" id={preview ? undefined : 'about'}>
         <h2>About + Services</h2><p>{site.about}</p><p>{site.services}</p>
       </section>
+      <WebsiteSections sections={site.sections.about} projects={allProjects} base={base} onProject={onProject} />
       <footer className="editorial-about" id={preview ? undefined : 'contact'}>
         {site.logo && <PortfolioLogo site={site} />}
         <h2>Contact</h2>

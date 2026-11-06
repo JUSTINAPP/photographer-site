@@ -176,10 +176,10 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </div>
         {!campaign && !draft.image && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <div className={'design-preview-frame ' + device}>
-          {campaign || editingProject || page === 'about' ? <CampaignWebsite site={previewSite} projects={work} preview previewProject={editingProject}
+          {campaign || editingProject || page === 'about' ? <CampaignWebsite site={previewSite} projects={work} allProjects={editableProjects} preview previewProject={editingProject}
             view={editableProjects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
             onPreviewPage={next => { setPage(next); if (panel === 'design') setPanel('pages'); }} /> :
-            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
+            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} allProjects={editableProjects} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
         </div>
       </section>
     </div>

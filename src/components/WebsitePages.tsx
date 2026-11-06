@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useRef, useState, useTransition, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
+import { createCampaignPage } from '@/app/studio/website/actions';
+import WebsiteSectionEditor from './WebsiteSectionEditor';
 import RestoreWebsitePages from './RestoreWebsitePages';
 import { homepageWork, orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
 
@@ -18,6 +20,9 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   draft: Website; setDraft: Dispatch<SetStateAction<Website>>; projects: WebsiteProject[];
   media: WebsiteMedia[]; page: string; onPage: (page: string) => void;
 }) {
+  const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState('');
+  const [pending, startTransition] = useTransition();
   const [picker, setPicker] = useState<'cover' | 'video' | 'gallery' | null>(null);
   const [allMedia, setAllMedia] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -82,6 +87,30 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   return <section className="website-pages" id="page-editor">
     <h2>Edit website pages</h2>
     <p>Choose a page to edit and see the changes in the preview. Save a draft to keep your edits, then publish when ready.</p>
+    <button type="button" className="primary-button" aria-expanded={creating} onClick={() => { setCreating(!creating); setMessage(''); }}>+ Add campaign page</button>
+    {creating && <form className="website-section-card" onSubmit={event => {
+      event.preventDefault();
+      const fields = new FormData(event.currentTarget);
+      setMessage('');
+      startTransition(async () => {
+        try {
+          const result = await createCampaignPage(studioId, {
+            title: String(fields.get('title')), category: String(fields.get('category')), description: String(fields.get('description')),
+          });
+          if (!result.project) { setMessage(result.error || 'Could not create the campaign.'); return; }
+          onProjects([...projects, result.project]);
+          onPage(result.project.id);
+          setPicker(null);
+          setCreating(false);
+        } catch { setMessage('Could not create the campaign. Please try again.'); }
+      });
+    }}>
+      <label>Campaign name<input name="title" required maxLength={180} /></label>
+      <label>Category<input name="category" placeholder="Fashion, nautical or lifestyle" maxLength={80} /></label>
+      <label>Campaign introduction<textarea name="description" rows={3} maxLength={2000} /></label>
+      <button className="secondary-button" disabled={pending}>{pending ? 'Creating…' : 'Create campaign'}</button>
+      {message && <p role="status">{message}</p>}
+    </form>}
     <nav className="website-page-list" aria-label="Pages">
       {[{ id: 'home', title: 'Homepage' }, { id: 'about', title: 'About + Services' }, ...ordered].map(item =>
         <button type="button" key={item.id} aria-current={page === item.id ? 'page' : undefined}
@@ -90,6 +119,8 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
     <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} />
     <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
 
+    <WebsiteSectionEditor key={page} page={page} sections={draft.sections[page] ?? []} media={media} projects={projects}
+      onChange={sections => setDraft(current => ({ ...current, sections: { ...current.sections, [page]: sections } }))} />
     {page === 'about' ? <>
       <label>About<textarea rows={4} value={draft.about} onChange={event => setDraft({ ...draft, about: event.target.value })} /></label>
       {campaign && <label>Selected clients (one per line)<textarea rows={3} value={draft.clients} onChange={event => setDraft({ ...draft, clients: event.target.value })} /></label>}
@@ -136,6 +167,10 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
             )}
           </div>
           <label>Alt text<input value={image.alt} maxLength={220} onChange={event => updateGallery(gallery.map((item, i) => i === index ? { ...item, alt: event.target.value } : item))} /></label>
+          <label>Link photo to a campaign<select value={image.link ?? ''} onChange={event => updateGallery(gallery.map((item, i) =>
+            i === index ? { ...item, link: event.target.value || undefined } : item))}>
+            <option value="">No link</option>{projects.filter(item => item.id !== page).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+          </select></label>
           <div className="page-editor-actions">
             <button className="secondary-button" aria-label={'Move frame ' + (index + 1) + ' up'} disabled={index === 0} onClick={() => updateGallery(moveItem(gallery, index, index - 1))}>↑</button>
             <button className="secondary-button" aria-label={'Move frame ' + (index + 1) + ' down'} disabled={index === gallery.length - 1} onClick={() => updateGallery(moveItem(gallery, index, index + 1))}>↓</button>
@@ -143,6 +178,18 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
           </div></div>
         </li>)}</ol>
       </>
+      {project && <section className="website-section-editor">
+        <h3>More work</h3>
+        <p>Choose which campaign squares appear at the bottom. Tick them in the order you want visitors to see them.</p>
+        {ordered.filter(item => item.id !== project.id).map(item => {
+          const selection = draft.related[project.id] ?? [...included].filter(id => id !== project.id);
+          return <label className="rights-check" key={item.id}><input type="checkbox" checked={selection.includes(item.id)} onChange={event => {
+            const next = event.target.checked ? [...selection, item.id] : selection.filter(id => id !== item.id);
+            setDraft({ ...draft, related: { ...draft.related, [project.id]: next } });
+          }} />{selection.includes(item.id) ? (selection.indexOf(item.id) + 1) + '. ' : ''}{item.title}</label>;
+        })}
+        {!ordered.some(item => item.id !== project.id) && <p>Add another campaign page to link to it here.</p>}
+      </section>}
       {!project && <>
         <h3>What appears on the homepage</h3>
         {campaign && <label className="rights-check"><input type="checkbox" checked={draft.showIntro} onChange={event => setDraft({ ...draft, showIntro: event.target.checked })} /> Show introduction below the cover</label>}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import WebsiteSections from './WebsiteSections';
 import WebsiteGallery from './WebsiteGallery';
 import PortfolioLogo from './PortfolioLogo';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
@@ -22,8 +23,8 @@ function Media({ url, label, eager = false }: { url?: string | null; label: stri
     : <div className="campaign-media campaign-placeholder"><span>{label}</span></div>;
 }
 
-export default function CampaignWebsite({ site, projects, base, view, preview = false, sample = false, onPreviewPage, previewProject }: {
-  site: Website; projects: WebsiteProject[]; base?: string; view?: View; preview?: boolean; sample?: boolean; onPreviewPage?: (page: string) => void; previewProject?: WebsiteProject;
+export default function CampaignWebsite({ site, projects, base, view, preview = false, sample = false, onPreviewPage, previewProject, allProjects }: {
+  site: Website; projects: WebsiteProject[]; base?: string; view?: View; preview?: boolean; sample?: boolean; onPreviewPage?: (page: string) => void; previewProject?: WebsiteProject; allProjects?: WebsiteProject[];
 }) {
   const [localView, setLocalView] = useState<View>({});
   const [scrolled, setScrolled] = useState(false);
@@ -33,7 +34,8 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   const [paused, setPaused] = useState(false);
   const current = view ?? localView;
   const work = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject) ? campaignSamples : orderWebsiteProjects(projects, site.projectOrder);
-  const selected = work.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
+  const targets = allProjects?.length ? allProjects : work;
+  const selected = targets.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
   const illustrative = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject);
   const name = site.name || 'Your studio';
   const social = site.instagram && <a href={site.instagram} rel="noreferrer">Instagram ↗</a>;
@@ -71,7 +73,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
 
   function go(next: View, anchor?: string) {
     setLocalView(next);
-    if (onPreviewPage && (!next.campaign || projects.some(project => project.id === next.campaign))) {
+    if (onPreviewPage && (!next.campaign || targets.some(project => project.id === next.campaign))) {
       onPreviewPage(next.about ? 'about' : next.campaign || 'home');
     }
     requestAnimationFrame(() => {
@@ -91,6 +93,9 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
 
   const images = selected ? websiteGallery(site, selected.id) : [];
   const gallery: GalleryImage[] = images.length || !illustrative ? images : ['wide', 'grid', 'grid', 'wide'].map(size => ({ url: '', alt: '', size: size as GalleryImage['size'] }));
+  const related = selected ? (site.related[selected.id] ?? work.filter(project => project.id !== selected.id).map(project => project.id))
+    .flatMap(id => targets.filter(project => project.id === id && project.id !== selected.id)) : [];
+  const openProject = preview ? (id: string) => go({ campaign: id }) : undefined;
   const colours = FONT_PAIRS[site.theme.fonts];
 
   return <div className={'campaign-site' + (preview ? ' campaign-preview' : '')} ref={root}
@@ -116,20 +121,23 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
       <section className="campaign-services campaign-copy"><p className="campaign-kicker">Capabilities</p><h2>Services</h2>
         <p>{site.services || (illustrative ? 'Campaign photography\nEditorial photography\nMotion and short-form film\nCreative direction' : '')}</p>
       </section>
+      <WebsiteSections sections={site.sections.about} projects={targets} base={base} onProject={openProject} />
     </> : selected ? <>
       <section className="campaign-screen">
         <Media url={site.covers[selected.id] || selected.image_url} label="Campaign cover image" eager />
         <div className="campaign-caption"><p>{selected.category}</p><h1>{selected.title}</h1></div>
       </section>
       <section className="campaign-copy"><p className="campaign-kicker">{selected.category}</p><h2>{selected.title}</h2><p>{selected.description}</p></section>
-      {gallery.length > 0 && <section className="campaign-gallery" aria-label="Campaign gallery">
+      <WebsiteSections sections={site.sections[selected.id]} projects={targets} base={base} onProject={openProject} />
+      {illustrative && gallery.length > 0 && <section className="campaign-gallery" aria-label="Campaign gallery">
         {gallery.map(({ url, size, alt }, i) => <div key={i} className={'campaign-frame-' + size}><Media url={url} label={alt || (size === 'grid' ? 'Campaign grid image' : 'Full-size campaign image')} /></div>)}
       </section>}
-      <section className="campaign-more campaign-copy"><h2>More work</h2><div className="campaign-squares">
-        {work.filter(project => project.id !== selected.id).map(project => <div key={project.id}>
+      {!illustrative && <WebsiteGallery images={gallery} label="Campaign gallery" projects={targets} base={base} onProject={openProject} />}
+      {related.length > 0 && <section className="campaign-more campaign-copy"><h2>More work</h2><div className="campaign-squares">
+        {related.map(project => <div key={project.id}>
           {navigation({ campaign: project.id }, <><Media url={site.covers[project.id] || project.image_url} label="Campaign image" /><strong>{project.title}</strong></>, 'campaign-square')}
         </div>)}
-      </div></section>
+      </div></section>}
     </> : <>
       <section className="campaign-screen">
         {site.video && playVideo
@@ -144,7 +152,8 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
         <p className="campaign-kicker">Selected work</p><h2>{site.about || (illustrative ? 'Photographs and films for stories worth spending time with.' : name)}</h2>
         {navigation({ about: '1' }, 'About the studio ↗', 'campaign-text-link')}
       </section> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
-      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" />
+      <WebsiteSections sections={site.sections.home} projects={targets} base={base} onProject={openProject} />
+      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={targets} base={base} onProject={openProject} />
       <div className={site.homepageLayout === 'grid' ? 'campaign-home-grid' : undefined}>
       {work.map(project => <div key={project.id}>
         {navigation({ campaign: project.id }, <>

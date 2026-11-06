@@ -1,3 +1,4 @@
+import type { WebsiteSection } from './website-sections';
 import { normaliseTheme, PRESETS } from './website-theme';
 
 export const editorialTheme = normaliseTheme(PRESETS.editorial.theme);
@@ -12,7 +13,7 @@ export function websiteImage(value: string) {
   }
 }
 
-export type GalleryImage = { url: string; size: 'grid' | 'wide' | 'screen'; alt: string };
+export type GalleryImage = { url: string; size: 'grid' | 'wide' | 'screen'; alt: string; link?: string };
 export type WebsiteMedia = { id: string; name: string; source_url: string; kind: 'photo' | 'video'; website_selected: boolean };
 
 const projectId = /^[a-f0-9-]{36}$/i;
@@ -43,7 +44,7 @@ export function normaliseWebsite(input: unknown) {
     return items.slice(0, limit).flatMap(item => {
       const url = typeof item?.url === 'string' ? websiteImage(item.url.slice(0, 2048)) : '';
       const size: GalleryImage['size'] = item?.size === 'wide' || item?.size === 'screen' ? item.size : 'grid';
-      return url ? [{ url, size, alt: typeof item.alt === 'string' ? item.alt.slice(0, 220) : '' }] : [];
+      return url ? [{ url, size, alt: typeof item.alt === 'string' ? item.alt.slice(0, 220) : '', ...(typeof item.link === 'string' && projectId.test(item.link) ? { link: item.link } : {}) }] : [];
     });
   }
   const placements: Record<string, GalleryImage[]> = {};
@@ -65,8 +66,31 @@ export function normaliseWebsite(input: unknown) {
   const projectOrder = Array.isArray(data.projectOrder)
     ? [...new Set(data.projectOrder.filter((id): id is string => typeof id === 'string' && projectId.test(id)).slice(0, 150))]
     : [];
+  const sections: Record<string, WebsiteSection[]> = {};
+  if (data.sections && typeof data.sections === 'object') {
+    for (const [page, blocks] of Object.entries(data.sections).slice(0, 152)) {
+      if ((page !== 'home' && page !== 'about' && !projectId.test(page)) || !Array.isArray(blocks)) continue;
+      const seen = new Set<string>();
+      sections[page] = blocks.slice(0, 24).flatMap(block => {
+        if (!block || typeof block.id !== 'string' || !projectId.test(block.id) || seen.has(block.id)) return [];
+        seen.add(block.id);
+        const get = (key: string, max: number) => typeof block[key] === 'string' ? block[key].trim().slice(0, max) : '';
+        const layout: WebsiteSection['layout'] = block.layout === 'split' || block.layout === 'text' ? block.layout : 'full';
+        const link = get('link', 36);
+        return [{ id: block.id, layout, heading: get('heading', 140), text: get('text', 1800),
+          image: websiteImage(get('image', 2048)), alt: get('alt', 220), link: projectId.test(link) ? link : '' }];
+      });
+    }
+  }
+  const related: Record<string, string[]> = {};
+  if (data.related && typeof data.related === 'object') {
+    for (const [page, items] of Object.entries(data.related).slice(0, 150)) {
+      if (!projectId.test(page) || !Array.isArray(items)) continue;
+      related[page] = [...new Set(items.filter(id => typeof id === 'string' && projectId.test(id) && id !== page))].slice(0, 12);
+    }
+  }
   return {
-    placements, covers, projectOrder,
+    placements, covers, projectOrder, sections, related,
     homeGallery: cleanFrames(data.homeGallery, 150),
     homepageProjects: Array.isArray(data.homepageProjects)
       ? [...new Set(data.homepageProjects.filter((id): id is string => typeof id === 'string' && projectId.test(id)).slice(0, 150))]
@@ -122,6 +146,7 @@ export function publishedWebsiteWork(settings: unknown, fallback: WebsiteProject
       title: project.title.slice(0, 180),
       category: typeof project.category === 'string' ? project.category.slice(0, 80) : '',
       description: typeof project.description === 'string' ? project.description.slice(0, 2000) : null,
+      published: project.published !== false,
       image_url: typeof project.image_url === 'string' ? websiteImage(project.image_url.slice(0, 2048)) || null : null,
     }];
   });
@@ -138,4 +163,36 @@ export function preloadWebsiteDraft(draft: Website, media: WebsiteMedia[]): Webs
   const gallery = libraryGallery(media);
   if (!gallery.length) return draft;
   return { ...draft, image: draft.image || gallery[0].url, homeGallery: gallery };
+}
+
+/** Publish only projects reachable from the homepage, About, or a published campaign. */
+export function reachableWebsiteWork(site: Website, projects: WebsiteProject[]) {
+  const byId = new Map(projects.map(project => [project.id, project]));
+  const selected = new Set<string>();
+  const pending = ['home', 'about', ...homepageWork(site, projects).map(project => project.id)];
+  for (let index = 0; index < pending.length; index++) {
+    const page = pending[index];
+    if (selected.has(page) || (page !== 'home' && page !== 'about' && !byId.has(page))) continue;
+    selected.add(page);
+    const frames = page === 'home' ? site.homeGallery ?? [] : websiteGallery(site, page);
+    pending.push(...frames.flatMap(image => image.link ? [image.link] : []));
+    pending.push(...(site.sections[page] ?? []).map(section => section.link).filter(Boolean), ...(site.related[page] ?? []));
+  }
+  return orderWebsiteProjects(projects.filter(project => selected.has(project.id)), site.projectOrder);
+}
+
+export function publishWebsiteSnapshot(site: Website, projects: WebsiteProject[]) {
+  const projectSnapshot = reachableWebsiteWork(site, projects);
+  const publicPages = new Set(['home', 'about', ...projectSnapshot.map(project => project.id)]);
+  const keepPages = <T,>(entries: Record<string, T>) =>
+    Object.fromEntries(Object.entries(entries).filter(([page]) => publicPages.has(page)));
+  return {
+    ...site,
+    sections: keepPages(site.sections),
+    related: keepPages(site.related),
+    placements: keepPages(site.placements),
+    galleries: keepPages(site.galleries),
+    covers: keepPages(site.covers),
+    projectSnapshot,
+  };
 }

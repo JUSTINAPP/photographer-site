@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { homepageWork, normaliseWebsite, publishedWebsiteWork, type WebsiteProject } from '../src/lib/website';
+import { homepageWork, normaliseWebsite, publishedWebsiteWork, publishWebsiteSnapshot, reachableWebsiteWork, type WebsiteProject } from '../src/lib/website';
 
 const first = { id: '11111111-1111-1111-1111-111111111111', title: 'First', category: '', description: null, image_url: null, published: true };
 const second = { ...first, id: '22222222-2222-2222-2222-222222222222', title: 'Second', published: false };
@@ -32,4 +32,20 @@ test('a new draft starts with library photos in supplied order while an explicit
   assert.equal(draft.image, media[0].source_url);
   assert.deepEqual(draft.homeGallery?.map(image => image.url), [media[0].source_url, media[1].source_url]);
   assert.deepEqual(preloadWebsiteDraft(normaliseWebsite({ homeGallery: [] }), [...media]).homeGallery, []);
+});
+
+test('linked campaigns publish without appearing as homepage tiles and unrelated drafts stay private', () => {
+  const third = { ...second, id: '33333333-3333-3333-3333-333333333333' };
+  const hidden = { ...second, id: '44444444-4444-4444-4444-444444444444' };
+  const site = normaliseWebsite({
+    homepageProjects: [first.id],
+    homeGallery: [{ url: 'https://example.com/cover.jpg', size: 'wide', link: second.id }],
+    related: { [second.id]: [third.id], [third.id]: [second.id] },
+    sections: { [hidden.id]: [{ id: hidden.id, layout: 'text', heading: 'Private draft', link: hidden.id }] },
+  });
+  const work = reachableWebsiteWork(site, [first, second, third, hidden]);
+  assert.deepEqual(work.map(item => item.id), [first.id, second.id, third.id]);
+  const snapshot = publishWebsiteSnapshot(site, [first, second, third, hidden]);
+  assert.equal(snapshot.sections[hidden.id], undefined);
+  assert.deepEqual(homepageWork(site, publishedWebsiteWork(snapshot, [])).map(item => item.id), [first.id]);
 });

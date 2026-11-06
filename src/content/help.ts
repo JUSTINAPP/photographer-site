@@ -8,10 +8,11 @@ export const helpArticles = [
     ], related: ['edit-campaign-pages', 'media-library'],
   },
   {
-    slug: 'edit-campaign-pages', title: 'Edit homepage and campaign pages', summary: 'Place images, change frame sizes and set the order of your work.',
+    slug: 'edit-campaign-pages', title: 'Edit homepage and campaign pages', summary: 'Build linked campaign pages with photos, text and related work.',
     steps: [
-      ['Choose a page', 'Open Edit website → Pages. Select Homepage, About + Services or an imported project. On the homepage, tick the projects you want to show and choose a grid or full-width layout.'],
+      ['Create or choose a page', 'Open Edit website → Pages. Select Homepage, About + Services or an imported project. Use Add campaign page to start a new campaign directly in the editor. On the homepage, tick the projects you want to show and choose a grid or full-width layout.'],
       ['Place your media', 'Choose a homepage cover or showreel, or select a project cover. Add photos to the homepage or any project gallery and enter descriptive alt text. Use Restore pages and photo order to scan the source and match photos already saved to Media.'],
+      ['Link pages and add sections', 'Add a Full screen, Split image + text or Text only section. Use Link to a campaign on a section or photo, then choose More work squares at the bottom of each campaign. Linked pages appear when you publish the website.'],
       ['Arrange and review', 'Drag gallery thumbnails or use the arrow buttons. Choose Full screen, Full width or Small grid for each frame. On the Homepage, use the campaign arrows to set the order of the campaign tiles.'],
     ], related: ['website-design', 'media-library'],
   },

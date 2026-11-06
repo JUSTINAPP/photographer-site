@@ -24,7 +24,7 @@ export default async function DraftPreview({ searchParams }: { searchParams: Pro
   const previewProject = projects.data?.find(project => project.id === view.campaign);
   return <main>
     <div className="private-preview-bar"><span>Private preview · Last saved draft</span><Link href={'/studio/website?panel=pages' + (view.campaign ? '&page=' + encodeURIComponent(view.campaign) : view.about ? '&page=about' : '')}><CornerUpLeft size={16} aria-hidden="true" /> Back to editor <StudioNavLoading /></Link></div>
-    {site.theme.layout === 'campaign' || previewProject || view.about ? <CampaignWebsite site={site} projects={work} base="/studio/website/preview" view={view} previewProject={previewProject} />
-      : <EditorialWebsite site={site} projects={work} base="/studio/website/preview" />}
+    {site.theme.layout === 'campaign' || previewProject || view.about ? <CampaignWebsite site={site} projects={work} allProjects={projects.data ?? []} base="/studio/website/preview" view={view} previewProject={previewProject} />
+      : <EditorialWebsite site={site} projects={work} allProjects={projects.data ?? []} base="/studio/website/preview" />}
   </main>;
 }

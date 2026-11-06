@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireStudioAccess } from '@/lib/supabase';
-import { homepageWork, normaliseWebsite, websiteImage, type WebsiteProject } from '@/lib/website';
+import { normaliseWebsite, publishWebsiteSnapshot, websiteImage, type WebsiteProject } from '@/lib/website';
 
 export async function saveWebsite(studioId: string, input: unknown, mode: 'draft' | 'publish' | 'unpublish') {
   const { db, workspace } = await requireStudioAccess('edit');
@@ -17,12 +17,11 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   };
   if (mode === 'publish') {
     values.published = draft;
-    if (draft.homepageProjects !== null) {
-      const projects = draft.homepageProjects.length
-        ? await db.from('projects').select('id,title,category,description,image_url').eq('workspace_id', workspace.id).in('id', draft.homepageProjects)
-        : null;
-      if (projects?.error) return { error: 'The selected projects could not be loaded. Please try again.' };
-      values.published = { ...draft, projectSnapshot: homepageWork(draft, projects?.data ?? []) };
+    if (draft.homepageProjects !== null || Object.keys(draft.sections).length || Object.keys(draft.related).length || draft.homeGallery?.some(image => image.link) || Object.values(draft.placements).some(frames => frames.some(image => image.link))) {
+      const projects = await db.from('projects').select('id,title,category,description,image_url,published')
+        .eq('workspace_id', workspace.id).order('created_at', { ascending: false });
+      if (projects.error) return { error: 'The linked pages could not be loaded. Please try again.' };
+      values.published = publishWebsiteSnapshot(draft, projects.data ?? []);
     }
   }
   if (mode === 'unpublish') values.published = null;
@@ -91,4 +90,22 @@ export async function importPageStructure(studioId: string, input: string) {
   } catch {
     return { error: 'The source site could not be scanned. Check the address and try again.' };
   }
+}
+
+export async function createCampaignPage(studioId: string, input: { title: string; category: string; description: string }) {
+  const { db, workspace } = await requireStudioAccess('edit');
+  if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen the editor.' };
+  const title = String(input.title ?? '').trim().slice(0, 180);
+  if (!title) return { error: 'Enter a campaign name.' };
+  const { data, error } = await db.from('projects').insert({
+    workspace_id: studioId,
+    title,
+    category: String(input.category ?? '').trim().slice(0, 80) || 'Campaign',
+    description: String(input.description ?? '').trim().slice(0, 2000),
+    source_url: 'urn:uuid:' + crypto.randomUUID(),
+    published: false,
+  }).select('id,title,category,description,image_url,published').single();
+  if (error) return { error: 'The campaign page could not be created.' };
+  revalidatePath('/studio/projects');
+  return { project: data as WebsiteProject };
 }
