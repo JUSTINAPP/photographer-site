@@ -5,7 +5,7 @@ import StudioTeamSettings from '@/components/StudioTeamSettings';
 import SettingsDesignPanel from '@/components/SettingsDesignPanel';
 import WebsiteBuilder from '@/components/WebsiteBuilder';
 import { requireStudioAccess } from '@/lib/supabase';
-import { normaliseWebsite } from '@/lib/website';
+import { normaliseWebsite, preloadWebsiteDraft } from '@/lib/website';
 import { portfolioDomainTokens } from '@/lib/studio-domain';
 import { saveStudioSettings, takeWebsiteOffline } from './actions';
 
@@ -27,7 +27,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     db.from('studio_team').select('email,role,user_id').eq('workspace_id', id).order('created_at'),
     db.from('studio_domains').select('hostname,verification_token').eq('workspace_id', id).maybeSingle(),
     db.from('projects').select('id,title,category,description,image_url,published').eq('workspace_id', id).order('created_at', { ascending: false }),
-    db.from('studio_media').select('id,name,source_url,kind,website_selected').eq('workspace_id', id).order('website_selected', { ascending: false }).order('created_at', { ascending: false }),
+    db.from('studio_media').select('id,name,source_url,kind,website_selected').eq('workspace_id', id).order('created_at').order('id'),
   ]);
   if (site.error) throw new Error('Settings could not be loaded.');
   const { settings, team: teamStatus } = await searchParams;
@@ -64,7 +64,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
 
     <SettingsDesignPanel>
       {projects.error || media.error ? <p role="alert">The editor could not load.</p> :
-        <WebsiteBuilder key={id} studioId={id} initial={draft} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={live} />}
+        <WebsiteBuilder key={id} studioId={id} initial={preloadWebsiteDraft(draft, media.data ?? [])} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={live} />}
     </SettingsDesignPanel>
 
     <StudioLogoSettings key={draft.logoSize + ':' + (draft.logo ? 'logo' : 'none')} id={id} name={name} logo={draft.logo} size={draft.logoSize} />

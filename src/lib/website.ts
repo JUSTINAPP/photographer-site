@@ -38,15 +38,19 @@ export function normaliseWebsite(input: unknown) {
       }
     }
   }
+  function cleanFrames(items: unknown, limit: number): GalleryImage[] | null {
+    if (!Array.isArray(items)) return null;
+    return items.slice(0, limit).flatMap(item => {
+      const url = typeof item?.url === 'string' ? websiteImage(item.url.slice(0, 2048)) : '';
+      const size: GalleryImage['size'] = item?.size === 'wide' || item?.size === 'screen' ? item.size : 'grid';
+      return url ? [{ url, size, alt: typeof item.alt === 'string' ? item.alt.slice(0, 220) : '' }] : [];
+    });
+  }
   const placements: Record<string, GalleryImage[]> = {};
   if (data.placements && typeof data.placements === 'object') {
     for (const [id, items] of Object.entries(data.placements).slice(0, 150)) {
-      if (!projectId.test(id) || !Array.isArray(items)) continue;
-      placements[id] = items.slice(0, 24).flatMap(item => {
-        const url = typeof item?.url === 'string' ? websiteImage(item.url.slice(0, 2048)) : '';
-        const size: GalleryImage['size'] = item?.size === 'wide' || item?.size === 'screen' ? item.size : 'grid';
-        return url ? [{ url, size, alt: typeof item.alt === 'string' ? item.alt.slice(0, 220) : '' }] : [];
-      });
+      const frames = projectId.test(id) ? cleanFrames(items, 100) : null;
+      if (frames) placements[id] = frames;
     }
   }
   const covers: Record<string, string> = {};
@@ -63,6 +67,7 @@ export function normaliseWebsite(input: unknown) {
     : [];
   return {
     placements, covers, projectOrder,
+    homeGallery: cleanFrames(data.homeGallery, 150),
     homepageProjects: Array.isArray(data.homepageProjects)
       ? [...new Set(data.homepageProjects.filter((id): id is string => typeof id === 'string' && projectId.test(id)).slice(0, 150))]
       : null,
@@ -120,4 +125,17 @@ export function publishedWebsiteWork(settings: unknown, fallback: WebsiteProject
       image_url: typeof project.image_url === 'string' ? websiteImage(project.image_url.slice(0, 2048)) || null : null,
     }];
   });
+}
+
+
+export function libraryGallery(media: WebsiteMedia[]): GalleryImage[] {
+  return media.filter(asset => asset.kind === 'photo' && websiteImage(asset.source_url)).slice(0, 150)
+    .map(asset => ({ url: asset.source_url, size: 'grid', alt: '' }));
+}
+
+export function preloadWebsiteDraft(draft: Website, media: WebsiteMedia[]): Website {
+  if (draft.homeGallery !== null) return draft;
+  const gallery = libraryGallery(media);
+  if (!gallery.length) return draft;
+  return { ...draft, image: draft.image || gallery[0].url, homeGallery: gallery };
 }

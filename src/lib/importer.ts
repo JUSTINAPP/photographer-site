@@ -66,7 +66,9 @@ export async function previewWebsite(input: string) {
   const first = await readPublicPage(input);
   const root = extractPage(first.html, first.url);
   const candidates: ImportCandidate[] = [];
-  const media = new Map<string, FoundMedia>(discoverMedia(first.html, first.url).map(item => [item.url, item]));
+  const homepageMedia = discoverMedia(first.html, first.url);
+  const pages: { source: string; media: FoundMedia[] }[] = [];
+  const media = new Map<string, FoundMedia>(homepageMedia.map(item => [item.url, item]));
   const warnings: string[] = [];
   const links = root.links.filter(link => !/(\/contact|\/clients|\/about|\/privacy)\/?$/i.test(link)).slice(0, 10);
   const results = await Promise.allSettled(links.map(link => readPublicPage(link)));
@@ -77,11 +79,13 @@ export async function previewWebsite(input: string) {
     }
     const page = result.value;
     candidates.push(extractPage(page.html, page.url).candidate);
-    for (const item of discoverMedia(page.html, page.url)) {
+    const assets = discoverMedia(page.html, page.url);
+    pages.push({ source: page.url, media: assets });
+    for (const item of assets) {
       if (media.size >= 150) break;
       if (!media.has(item.url)) media.set(item.url, item);
     }
   });
   if (!candidates.length) candidates.push(root.candidate);
-  return { source: first.url, candidates, media: [...media.values()], warnings, limited: true };
+  return { source: first.url, candidates, homepageMedia, pages, media: [...media.values()], warnings, limited: true };
 }

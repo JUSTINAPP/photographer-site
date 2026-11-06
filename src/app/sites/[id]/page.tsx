@@ -13,10 +13,10 @@ export default async function PublishedWebsite({ params, searchParams }: { param
   if (!result) notFound();
   const site = normaliseWebsite(result.settings);
   const projects = publishedWebsiteWork(result.settings, result.projects);
-  if (site.theme.layout === 'campaign') {
-    const view = await searchParams;
+  const view = await searchParams;
+  if (site.theme.layout === 'campaign' || view.campaign || view.about) {
     if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
     return <main><CampaignWebsite site={site} projects={projects} base={'/sites/' + id} view={view} /></main>;
   }
-  return <main><EditorialWebsite site={site} projects={projects} /></main>;
+  return <main><EditorialWebsite site={site} projects={projects} base={'/sites/' + id} /></main>;
 }

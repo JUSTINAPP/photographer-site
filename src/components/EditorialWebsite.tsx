@@ -1,10 +1,13 @@
+import Link from 'next/link';
+import WebsiteGallery from './WebsiteGallery';
+import './campaign-website.css';
 import PortfolioLogo from './PortfolioLogo';
 import type { CSSProperties } from 'react';
 import { themeVars } from '@/lib/website-theme';
 import { websiteImage, type Website, type WebsiteProject } from '@/lib/website';
 
-export default function EditorialWebsite({ site, projects, preview = false }: {
-  site: Website; projects: WebsiteProject[]; preview?: boolean;
+export default function EditorialWebsite({ site, projects, preview = false, base, onProject }: {
+  site: Website; projects: WebsiteProject[]; preview?: boolean; base?: string; onProject?: (id: string) => void;
 }) {
   const social = site.instagram && (preview ? <span>Instagram</span> : <a href={site.instagram} rel="noreferrer">Instagram ↗</a>);
   const name = site.name || 'Your portfolio';
@@ -21,14 +24,16 @@ export default function EditorialWebsite({ site, projects, preview = false }: {
         <h1>{site.headline || name}</h1>
         {site.image && site.theme.hero !== 'text' && <img src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
       </section>
+      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" />
       <section className={'editorial-work' + (site.homepageLayout === 'grid' ? ' editorial-work-grid' : '')} id={preview ? undefined : 'work'}>
         <h2>Selected work</h2>
-        {projects.length === 0 && <p>{preview ? 'Publish a project to include it here.' : 'New work coming soon.'}</p>}
+        {projects.length === 0 && !site.homeGallery?.length && <p>{preview ? 'Publish a project to include it here.' : 'New work coming soon.'}</p>}
         {projects.map(project => (
           <article key={project.id}>
             {websiteImage(site.covers[project.id] || project.image_url || '') && <img src={site.covers[project.id] || project.image_url!} alt={project.title} loading="lazy" referrerPolicy="no-referrer" />}
             <p className="eyebrow">{project.category}</p>
-            <h3>{project.title}</h3>
+            <h3>{onProject ? <button type="button" className="editorial-project-link" onClick={() => onProject(project.id)}>{project.title} ↗</button>
+              : base ? <Link href={base + '?campaign=' + encodeURIComponent(project.id)}>{project.title} ↗</Link> : project.title}</h3>
             {project.description && <p>{project.description}</p>}
           </article>
         ))}

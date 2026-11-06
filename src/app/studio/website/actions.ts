@@ -55,3 +55,40 @@ export async function addWebsiteProject(form: FormData) {
   revalidatePath('/studio/projects');
   revalidatePath('/studio/website');
 }
+
+export async function importPageStructure(studioId: string, input: string) {
+  const { db, workspace } = await requireStudioAccess('edit');
+  if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen the editor.' };
+  const { data: allowed } = await db.rpc('claim_import_preview', { workspace: studioId });
+  if (!allowed) return { error: 'Please wait one minute before scanning again.' };
+
+  try {
+    const { previewWebsite } = await import('@/lib/importer');
+    const scan = await previewWebsite(input);
+    const { data: media, error: mediaError } = await db.from('studio_media').select('source_url,kind').eq('workspace_id', studioId);
+    if (mediaError) return { error: 'Could not read the media library.' };
+    const urls = new Set((media ?? []).filter(item => item.kind === 'photo').map(item => item.source_url));
+    if (!urls.size) return { error: 'Import and save photos in Media before restoring page order.' };
+    const orderedPhotos = (items: { url: string }[]) => [...new Set(items.map(item => item.url))].filter(url => urls.has(url));
+    const home = orderedPhotos(scan.homepageMedia);
+    const sourcePages = scan.pages.filter(page => orderedPhotos(page.media).length);
+    const candidates = scan.candidates.filter(candidate => sourcePages.some(page => page.source === candidate.source_url));
+    const rows = candidates.map(candidate => ({ ...candidate, workspace_id: studioId, published: false }));
+    if (rows.length) {
+      const result = await db.from('projects').upsert(rows, { onConflict: 'workspace_id,source_url', ignoreDuplicates: true });
+      if (result.error) return { error: 'Could not create imported pages.' };
+    }
+    const { data: projects, error } = await db.from('projects').select('id,title,category,description,image_url,published,source_url')
+      .eq('workspace_id', studioId).order('created_at', { ascending: false });
+    if (error) return { error: 'Could not load imported pages.' };
+    const pages = sourcePages.flatMap(page => {
+      const project = projects?.find(item => item.source_url === page.source);
+      return project ? [{ id: project.id, photos: orderedPhotos(page.media) }] : [];
+    });
+    if (!home.length && !pages.length) return { error: 'No saved photos matched this scan. The source may have changed or may load photos through scripts.' };
+    revalidatePath('/studio/projects');
+    return { home, pages, projects: projects ?? [], warningCount: scan.warnings.length };
+  } catch {
+    return { error: 'The source site could not be scanned. Check the address and try again.' };
+  }
+}

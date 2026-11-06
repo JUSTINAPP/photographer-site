@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import WebsiteGallery from './WebsiteGallery';
 import PortfolioLogo from './PortfolioLogo';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteProject } from '@/lib/website';
@@ -143,6 +144,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
         <p className="campaign-kicker">Selected work</p><h2>{site.about || (illustrative ? 'Photographs and films for stories worth spending time with.' : name)}</h2>
         {navigation({ about: '1' }, 'About the studio ↗', 'campaign-text-link')}
       </section> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
+      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" />
       <div className={site.homepageLayout === 'grid' ? 'campaign-home-grid' : undefined}>
       {work.map(project => <div key={project.id}>
         {navigation({ campaign: project.id }, <>

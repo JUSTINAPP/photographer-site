@@ -10,13 +10,13 @@ import CampaignWebsite from './CampaignWebsite';
 import EditorialWebsite from './EditorialWebsite';
 
 const contentFields = [
-  ['name', 'Portfolio name'], ['headline', 'Opening headline'],
+  ['name', 'Portfolio name'],
   ['image', 'Cover image URL'], ['imageAlt', 'Cover image description'],
-  ['email', 'Public enquiry email'], ['about', 'About'], ['services', 'Services'],
+  ['email', 'Public enquiry email'],
 ] as const;
 
-export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design' }: {
-  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages';
+export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design', initialPage }: {
+  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;
 }) {
   const [sampleImage, setSampleImage] = useState<string>(PRESETS.editorial.image);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
@@ -29,7 +29,8 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
     window.addEventListener('hashchange', openLinkedPanel);
     return () => window.removeEventListener('hashchange', openLinkedPanel);
   }, []);
-  const [page, setPage] = useState('home');
+  const [page, setPage] = useState(initialPage === 'about' || projects.some(project => project.id === initialPage) ? initialPage! : 'home');
+  const [editableProjects, setEditableProjects] = useState(projects);
   const [operation, setOperation] = useState<'draft' | 'publish' | 'unpublish'>('draft');
   const [draft, setDraft] = useState(initial);
   const [live, setLive] = useState(isPublished);
@@ -61,8 +62,8 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
 
   const previewSite = normaliseWebsite(draft);
   const campaign = draft.theme.layout === 'campaign';
-  const work = homepageWork(previewSite, projects);
-  const editingProject = projects.find(project => project.id === page);
+  const work = homepageWork(previewSite, editableProjects);
+  const editingProject = editableProjects.find(project => project.id === page);
   return (
     <div className="website-builder">
       {readOnly && <p className="studio-panel">You have view-only access to this portfolio. Use the preview to review the draft.</p>}
@@ -134,15 +135,13 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </fieldset>
         </div>
         <div hidden={panel !== 'pages'}>
-        <WebsitePages draft={draft} setDraft={setDraft} projects={projects} media={media} page={page} onPage={setPage} />
+        <WebsitePages studioId={studioId} draft={draft} setDraft={setDraft} projects={editableProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
         <summary>Portfolio content</summary>
         {contentFields.map(([key, label]) => (
           <label key={key}>
             {label}
-            {key === 'about' || key === 'services'
-              ? <textarea value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} rows={4} />
-              : <input type={key === 'email' ? 'email' : key === 'image' ? 'url' : 'text'} value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} />}
+            <input type={key === 'email' ? 'email' : key === 'image' ? 'url' : 'text'} value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} />
           </label>
         ))}
         {campaign && <>
@@ -177,10 +176,10 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </div>
         {!campaign && !draft.image && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <div className={'design-preview-frame ' + device}>
-          {campaign ? <CampaignWebsite site={previewSite} projects={work} preview previewProject={editingProject}
-            view={projects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
+          {campaign || editingProject || page === 'about' ? <CampaignWebsite site={previewSite} projects={work} preview previewProject={editingProject}
+            view={editableProjects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
             onPreviewPage={next => { setPage(next); if (panel === 'design') setPanel('pages'); }} /> :
-            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} preview />}
+            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
         </div>
       </section>
     </div>

@@ -20,3 +20,16 @@ test('published work uses the saved selection snapshot and preserves legacy fall
   assert.equal(snapshot[0].id, second.id);
   assert.equal(snapshot[0].image_url, null);
 });
+
+test('a new draft starts with library photos in supplied order while an explicitly empty gallery stays empty', async () => {
+  const { preloadWebsiteDraft } = await import('../src/lib/website');
+  const media = [
+    { id: 'a', name: 'First', source_url: 'https://example.com/a.jpg', kind: 'photo', website_selected: false },
+    { id: 'b', name: 'Second', source_url: 'https://example.com/b.jpg', kind: 'photo', website_selected: false },
+    { id: 'c', name: 'Video', source_url: 'https://example.com/c.mp4', kind: 'video', website_selected: false },
+  ] as const;
+  const draft = preloadWebsiteDraft(normaliseWebsite({}), [...media]);
+  assert.equal(draft.image, media[0].source_url);
+  assert.deepEqual(draft.homeGallery?.map(image => image.url), [media[0].source_url, media[1].source_url]);
+  assert.deepEqual(preloadWebsiteDraft(normaliseWebsite({ homeGallery: [] }), [...media]).homeGallery, []);
+});

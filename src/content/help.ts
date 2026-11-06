@@ -11,7 +11,7 @@ export const helpArticles = [
     slug: 'edit-campaign-pages', title: 'Edit homepage and campaign pages', summary: 'Place images, change frame sizes and set the order of your work.',
     steps: [
       ['Choose a page', 'Open Edit website → Pages. Select Homepage, About + Services or an imported project. On the homepage, tick the projects you want to show and choose a grid or full-width layout.'],
-      ['Place your media', 'Choose a homepage cover or showreel, or select a project cover. With Campaign Stories, you can also add gallery photos and enter descriptive alt text.'],
+      ['Place your media', 'Choose a homepage cover or showreel, or select a project cover. Add photos to the homepage or any project gallery and enter descriptive alt text. Use Restore pages and photo order to scan the source and match photos already saved to Media.'],
       ['Arrange and review', 'Drag gallery thumbnails or use the arrow buttons. Choose Full screen, Full width or Small grid for each frame. On the Homepage, use the campaign arrows to set the order of the campaign tiles.'],
     ], related: ['website-design', 'media-library'],
   },

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
+import RestoreWebsitePages from './RestoreWebsitePages';
 import { homepageWork, orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
 
 function moveItem<T>(items: T[], from: number, to: number) {
@@ -12,7 +13,8 @@ function moveItem<T>(items: T[], from: number, to: number) {
   return next;
 }
 
-export default function WebsitePages({ draft, setDraft, projects, media, page, onPage }: {
+export default function WebsitePages({ studioId, draft, setDraft, projects, onProjects, media, page, onPage }: {
+  studioId: string; onProjects: (projects: WebsiteProject[]) => void;
   draft: Website; setDraft: Dispatch<SetStateAction<Website>>; projects: WebsiteProject[];
   media: WebsiteMedia[]; page: string; onPage: (page: string) => void;
 }) {
@@ -28,14 +30,45 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
   const campaign = draft.theme.layout === 'campaign';
   const included = new Set(homepageWork(draft, projects).map(item => item.id));
   const project = projects.find(item => item.id === page);
-  const gallery = project ? websiteGallery(draft, project.id) : [];
+  const gallery = project ? websiteGallery(draft, project.id) : draft.homeGallery ?? [];
+  const galleryLimit = project ? 100 : 150;
   const cover = project ? draft.covers[project.id] || project.image_url : draft.image;
   const candidates = media.filter(item => item.kind === (picker === 'video' ? 'video' : 'photo'));
   const selectedOnly = !allMedia && candidates.some(item => item.website_selected);
   const visible = candidates.filter(item => (!selectedOnly || item.website_selected) && item.name.toLowerCase().includes(query.toLowerCase()));
 
   function updateGallery(images: GalleryImage[]) {
-    if (project) setDraft(current => ({ ...current, placements: { ...current.placements, [project.id]: images } }));
+    setDraft(current => project
+      ? { ...current, placements: { ...current.placements, [project.id]: images } }
+      : { ...current, homeGallery: images });
+  }
+
+  function restore(home: string[], pages: { id: string; photos: string[] }[], restored: WebsiteProject[]) {
+    onProjects(restored);
+    setDraft(current => {
+      const frames = (urls: string[], previous: GalleryImage[]) => urls.map(url =>
+        previous.find(image => image.url === url) ?? { url, size: 'grid' as const, alt: '' });
+      const onSourcePages = new Set(pages.flatMap(entry => entry.photos));
+      const remaining = (current.homeGallery ?? []).filter(image => !home.includes(image.url) && (!home.length || !onSourcePages.has(image.url)));
+      const homeGallery = [...frames(home, current.homeGallery ?? []), ...remaining].slice(0, 150);
+      const placements = { ...current.placements };
+      for (const entry of pages) {
+        if (!Object.hasOwn(placements, entry.id) && !Object.hasOwn(current.galleries, entry.id)) {
+          placements[entry.id] = frames(entry.photos.slice(0, 100), []);
+        }
+      }
+      const ids = pages.map(entry => entry.id);
+      const included = homepageWork(current, restored).map(item => item.id);
+      return {
+        ...current,
+        image: current.image || homeGallery[0]?.url || '',
+        homeGallery, placements,
+        homepageProjects: [...new Set([...included, ...ids])],
+        projectOrder: [...new Set([...current.projectOrder, ...ids])],
+      };
+    });
+    onPage('home');
+    setPicker(null);
   }
 
   function choose(asset: WebsiteMedia) {
@@ -43,16 +76,19 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
     else if (picker === 'video') setDraft(current => ({ ...current, video: asset.source_url }));
     else if (project) setDraft(current => ({ ...current, covers: { ...current.covers, [project.id]: asset.source_url } }));
     else setDraft(current => ({ ...current, image: asset.source_url, imageAlt: '' }));
-    if (picker !== 'gallery' || gallery.length >= 23) setPicker(null);
+    if (picker !== 'gallery' || gallery.length >= galleryLimit - 1) setPicker(null);
   }
 
   return <section className="website-pages" id="page-editor">
     <h2>Edit website pages</h2>
     <p>Choose a page to edit and see the changes in the preview. Save a draft to keep your edits, then publish when ready.</p>
-    <label>Editing<select value={page} onChange={event => { onPage(event.target.value); setPicker(null); }}>
-      <option value="home">Homepage</option><option value="about">About + Services</option>
-      {ordered.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
-    </select></label>
+    <nav className="website-page-list" aria-label="Pages">
+      {[{ id: 'home', title: 'Homepage' }, { id: 'about', title: 'About + Services' }, ...ordered].map(item =>
+        <button type="button" key={item.id} aria-current={page === item.id ? 'page' : undefined}
+          onClick={() => { onPage(item.id); setPicker(null); }}>{item.title}</button>)}
+    </nav>
+    <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} />
+    <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
 
     {page === 'about' ? <>
       <label>About<textarea rows={4} value={draft.about} onChange={event => setDraft({ ...draft, about: event.target.value })} /></label>
@@ -74,7 +110,7 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
         <label>Search media<input value={query} onChange={event => setQuery(event.target.value)} /></label>
         <label className="rights-check"><input type="checkbox" checked={allMedia} onChange={event => setAllMedia(event.target.checked)} /> Show all library items</label>
         <div className="page-media-options">
-          {visible.map(asset => <button type="button" key={asset.id} disabled={picker === 'gallery' && (gallery.length >= 24 || gallery.some(item => item.url === asset.source_url))} onClick={() => choose(asset)}>
+          {visible.map(asset => <button type="button" key={asset.id} disabled={picker === 'gallery' && (gallery.length >= galleryLimit || gallery.some(item => item.url === asset.source_url))} onClick={() => choose(asset)}>
             {asset.kind === 'photo' && <img src={asset.source_url} alt="" loading="lazy" referrerPolicy="no-referrer" />}
             <span>{asset.name}</span>
           </button>)}
@@ -83,16 +119,22 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
         <button className="secondary-button" onClick={() => setPicker(null)}>Done</button>
       </div>}
 
-      {project ? campaign ? <>
-        <h3>Gallery sequence</h3>
-        <p>Drag images to reorder them, or use the arrow buttons. Choose a size for each frame.</p>
+      <>
+        <h3>{project ? 'Project gallery' : 'Homepage photo gallery'}</h3>
+        <p>{gallery.length} photos. Drag photos or use the arrows to reorder them. Change the size of any frame.</p>
+        <button className="secondary-button" disabled={gallery.length >= galleryLimit} onClick={() => setPicker('gallery')}>Add photos from Media</button>
+        {!gallery.length && <p>No photos on this page yet.</p>}
         <ol className="page-gallery-order">{gallery.map((image, index) => <li key={image.url + index}
           onDragOver={event => { if (dragging !== null) event.preventDefault(); }}
           onDrop={event => { event.preventDefault(); if (dragging !== null) updateGallery(moveItem(gallery, dragging, index)); setDragging(null); }}>
           <img src={image.url} alt="" draggable onDragStart={event => { event.dataTransfer.setData('text/plain', String(index)); setDragging(index); }} onDragEnd={() => setDragging(null)} referrerPolicy="no-referrer" />
-          <div><label>Frame {index + 1}<select value={image.size} onChange={event => updateGallery(gallery.map((item, i) => i === index ? { ...item, size: event.target.value as GalleryImage['size'] } : item))}>
-            <option value="screen">Full screen</option><option value="wide">Full width</option><option value="grid">Small grid</option>
-          </select></label>
+          <div><strong>Frame {index + 1}</strong>
+          <div className="design-switch frame-size-options" aria-label={'Size of frame ' + (index + 1)}>
+            {([['grid', 'Grid'], ['wide', 'Full width'], ['screen', 'Full screen']] as const).map(([size, label]) =>
+              <button type="button" key={size} aria-pressed={image.size === size}
+                onClick={() => updateGallery(gallery.map((item, i) => i === index ? { ...item, size } : item))}>{label}</button>
+            )}
+          </div>
           <label>Alt text<input value={image.alt} maxLength={220} onChange={event => updateGallery(gallery.map((item, i) => i === index ? { ...item, alt: event.target.value } : item))} /></label>
           <div className="page-editor-actions">
             <button className="secondary-button" aria-label={'Move frame ' + (index + 1) + ' up'} disabled={index === 0} onClick={() => updateGallery(moveItem(gallery, index, index - 1))}>↑</button>
@@ -100,15 +142,16 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
             <button className="secondary-button" aria-label={'Remove frame ' + (index + 1)} onClick={() => updateGallery(gallery.filter((_, i) => i !== index))}>Remove</button>
           </div></div>
         </li>)}</ol>
-        <button className="secondary-button" disabled={gallery.length >= 24} onClick={() => setPicker('gallery')}>Add gallery photos</button>
-      </> : <p>Choose Campaign Stories in Design to create separate campaign galleries.</p> : <>
+      </>
+      {!project && <>
         <h3>What appears on the homepage</h3>
         {campaign && <label className="rights-check"><input type="checkbox" checked={draft.showIntro} onChange={event => setDraft({ ...draft, showIntro: event.target.checked })} /> Show introduction below the cover</label>}
-        <label>Selected work layout<select value={draft.homepageLayout} onChange={event => setDraft({ ...draft, homepageLayout: event.target.value === 'grid' ? 'grid' : 'full' })}>
-          <option value="full">{campaign ? 'Full-screen campaign tiles' : 'Full-width projects'}</option><option value="grid">Grid</option>
-        </select></label>
+        <div className="design-switch" aria-label="Selected work layout">
+          <button type="button" aria-pressed={draft.homepageLayout === 'full'} onClick={() => setDraft({ ...draft, homepageLayout: 'full' })}>{campaign ? 'Full-screen tiles' : 'Full width'}</button>
+          <button type="button" aria-pressed={draft.homepageLayout === 'grid'} onClick={() => setDraft({ ...draft, homepageLayout: 'grid' })}>Grid</button>
+        </div>
         <h3>Projects on the homepage</h3>
-        <p>Tick the projects you want to include. Use the arrows to set their order and click a title to change its cover{campaign ? ' or gallery' : ''}.</p>
+        <p>Tick the projects you want to include. Use the arrows to set their order and click a title to change its cover or gallery.</p>
         {!ordered.length && <p>Add or import work from <Link href="/studio/projects">Projects</Link>.</p>}
         <ol className="page-campaign-order">{ordered.map((item, index) => <li key={item.id}>
           <input type="checkbox" aria-label={'Include ' + item.title + ' on homepage'} checked={included.has(item.id)} onChange={event => {
