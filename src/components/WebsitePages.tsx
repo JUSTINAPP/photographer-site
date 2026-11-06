@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
-import { orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
+import { homepageWork, orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
 
 function moveItem<T>(items: T[], from: number, to: number) {
   if (from === to || to < 0 || to >= items.length || from < 0 || from >= items.length) return items;
@@ -25,6 +25,8 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
   const [query, setQuery] = useState('');
   const [dragging, setDragging] = useState<number | null>(null);
   const ordered = orderWebsiteProjects(projects, draft.projectOrder);
+  const campaign = draft.theme.layout === 'campaign';
+  const included = new Set(homepageWork(draft, projects).map(item => item.id));
   const project = projects.find(item => item.id === page);
   const gallery = project ? websiteGallery(draft, project.id) : [];
   const cover = project ? draft.covers[project.id] || project.image_url : draft.image;
@@ -45,26 +47,27 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
   }
 
   return <section className="website-pages" id="page-editor">
-    <h2>Pages &amp; media</h2>
+    <h2>Edit website pages</h2>
     <p>Choose a page to edit and see the changes in the preview. Save a draft to keep your edits, then publish when ready.</p>
-    <label>Page<select value={page} onChange={event => { onPage(event.target.value); setPicker(null); }}>
+    <label>Editing<select value={page} onChange={event => { onPage(event.target.value); setPicker(null); }}>
       <option value="home">Homepage</option><option value="about">About + Services</option>
       {ordered.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
     </select></label>
 
     {page === 'about' ? <>
       <label>About<textarea rows={4} value={draft.about} onChange={event => setDraft({ ...draft, about: event.target.value })} /></label>
-      <label>Selected clients (one per line)<textarea rows={3} value={draft.clients} onChange={event => setDraft({ ...draft, clients: event.target.value })} /></label>
+      {campaign && <label>Selected clients (one per line)<textarea rows={3} value={draft.clients} onChange={event => setDraft({ ...draft, clients: event.target.value })} /></label>}
       <label>Services<textarea rows={4} value={draft.services} onChange={event => setDraft({ ...draft, services: event.target.value })} /></label>
     </> : <>
-      <h3>{project ? 'Campaign cover' : 'Homepage cover'}</h3>
+      {!project && <label>Homepage headline<input maxLength={220} value={draft.headline} onChange={event => setDraft({ ...draft, headline: event.target.value })} /></label>}
+      <h3>{project ? 'Project cover' : 'Homepage cover'}</h3>
       {cover && <img className="page-editor-cover" src={cover} alt="" referrerPolicy="no-referrer" />}
       <div className="page-editor-actions">
         <button className="secondary-button" onClick={() => setPicker('cover')}>Choose photo</button>
         {project && draft.covers[project.id] && <button className="secondary-button" onClick={() => setDraft({ ...draft, covers: { ...draft.covers, [project.id]: '' } })}>Use project cover</button>}
         {!project && cover && <button className="secondary-button" onClick={() => setDraft({ ...draft, image: '', imageAlt: '' })}>Clear photo</button>}
-        {!project && <button className="secondary-button" onClick={() => setPicker('video')}>Choose showreel</button>}
-        {!project && draft.video && <button className="secondary-button" onClick={() => setDraft({ ...draft, video: '' })}>Clear showreel</button>}
+        {campaign && !project && <button className="secondary-button" onClick={() => setPicker('video')}>Choose showreel</button>}
+        {campaign && !project && draft.video && <button className="secondary-button" onClick={() => setDraft({ ...draft, video: '' })}>Clear showreel</button>}
       </div>
       {picker && <div ref={pickerRef} className="page-media-picker">
         <h3>{picker === 'video' ? 'Choose a video' : 'Choose photos'}</h3>
@@ -80,7 +83,7 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
         <button className="secondary-button" onClick={() => setPicker(null)}>Done</button>
       </div>}
 
-      {project ? <>
+      {project ? campaign ? <>
         <h3>Gallery sequence</h3>
         <p>Drag images to reorder them, or use the arrow buttons. Choose a size for each frame.</p>
         <ol className="page-gallery-order">{gallery.map((image, index) => <li key={image.url + index}
@@ -98,10 +101,22 @@ export default function WebsitePages({ draft, setDraft, projects, media, page, o
           </div></div>
         </li>)}</ol>
         <button className="secondary-button" disabled={gallery.length >= 24} onClick={() => setPicker('gallery')}>Add gallery photos</button>
-      </> : <>
-        <h3>Campaign order</h3>
-        {!ordered.length && <p>Choose which campaigns appear in <Link href="/studio/projects">Projects</Link>.</p>}
+      </> : <p>Choose Campaign Stories in Design to create separate campaign galleries.</p> : <>
+        <h3>What appears on the homepage</h3>
+        {campaign && <label className="rights-check"><input type="checkbox" checked={draft.showIntro} onChange={event => setDraft({ ...draft, showIntro: event.target.checked })} /> Show introduction below the cover</label>}
+        <label>Selected work layout<select value={draft.homepageLayout} onChange={event => setDraft({ ...draft, homepageLayout: event.target.value === 'grid' ? 'grid' : 'full' })}>
+          <option value="full">{campaign ? 'Full-screen campaign tiles' : 'Full-width projects'}</option><option value="grid">Grid</option>
+        </select></label>
+        <h3>Projects on the homepage</h3>
+        <p>Tick the projects you want to include. Use the arrows to set their order and click a title to change its cover{campaign ? ' or gallery' : ''}.</p>
+        {!ordered.length && <p>Add or import work from <Link href="/studio/projects">Projects</Link>.</p>}
         <ol className="page-campaign-order">{ordered.map((item, index) => <li key={item.id}>
+          <input type="checkbox" aria-label={'Include ' + item.title + ' on homepage'} checked={included.has(item.id)} onChange={event => {
+            const next = new Set(included);
+            if (event.target.checked) next.add(item.id); else next.delete(item.id);
+            setDraft({ ...draft, homepageProjects: [...next] });
+          }} />
+          {(draft.covers[item.id] || item.image_url) && <img className="homepage-project-thumb" src={draft.covers[item.id] || item.image_url!} alt="" loading="lazy" referrerPolicy="no-referrer" />}
           <button className="page-edit-link" onClick={() => { onPage(item.id); setPicker(null); }}>{item.title}</button>
           <button className="secondary-button" aria-label={'Move ' + item.title + ' up'} disabled={index === 0} onClick={() => setDraft({ ...draft, projectOrder: moveItem(ordered, index, index - 1).map(entry => entry.id) })}>↑</button>
           <button className="secondary-button" aria-label={'Move ' + item.title + ' down'} disabled={index === ordered.length - 1} onClick={() => setDraft({ ...draft, projectOrder: moveItem(ordered, index, index + 1).map(entry => entry.id) })}>↓</button>

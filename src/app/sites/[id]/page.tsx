@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import CampaignWebsite from '@/components/CampaignWebsite';
 import EditorialWebsite from '@/components/EditorialWebsite';
 import { configured, database } from '@/lib/supabase';
-import { normaliseWebsite, type WebsiteProject } from '@/lib/website';
+import { normaliseWebsite, publishedWebsiteWork, type WebsiteProject } from '@/lib/website';
 
 export default async function PublishedWebsite({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ about?: string; campaign?: string }> }) {
   const { id } = await params;
@@ -12,10 +12,11 @@ export default async function PublishedWebsite({ params, searchParams }: { param
   const result = data as { settings: unknown; projects: WebsiteProject[] } | null;
   if (!result) notFound();
   const site = normaliseWebsite(result.settings);
+  const projects = publishedWebsiteWork(result.settings, result.projects);
   if (site.theme.layout === 'campaign') {
     const view = await searchParams;
-    if (view.campaign && !result.projects.some(project => project.id === view.campaign)) notFound();
-    return <main><CampaignWebsite site={site} projects={result.projects} base={'/sites/' + id} view={view} /></main>;
+    if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
+    return <main><CampaignWebsite site={site} projects={projects} base={'/sites/' + id} view={view} /></main>;
   }
-  return <main><EditorialWebsite site={site} projects={result.projects} /></main>;
+  return <main><EditorialWebsite site={site} projects={projects} /></main>;
 }

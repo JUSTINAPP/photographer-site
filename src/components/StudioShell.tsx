@@ -8,7 +8,7 @@ import { requireStudio } from '@/lib/supabase';
 
 const groups = [
   ['', [['Overview', '/studio', LayoutGrid], ['Calendar', '/studio/calendar', CalendarDays]]],
-  ['Portfolio', [['Projects', '/studio/projects', Images], ['Media', '/studio/media', Images], ['Website design', '/studio/website', Globe]]],
+  ['Portfolio', [['Projects', '/studio/projects', Images], ['Media', '/studio/media', Images], ['Edit website', '/studio/website', Globe]]],
   ['Production', [['Contacts', '/studio/tools/contacts', Users], ['Equipment', '/studio/tools/equipment', Camera], ['Moodboards', '/studio/tools/moodboards', Palette]]],
   ['Sales', [['Proposals', '/studio/tools/proposals', FileText], ['Invoices', '/studio/tools/invoices', FileText], ['Shop', '/studio/shop', ShoppingBag]]],
   ['Outreach', [['Newsletters', '/studio/tools/newsletters', Mail], ['Social', '/studio/social', Instagram]]],
@@ -52,12 +52,12 @@ export default async function StudioShell({ children, active = 'Overview', demo 
       <nav aria-label="Studio navigation">
         {groups.map(([heading, links]) => <div key={heading} className="studio-nav-group">
           {heading && <p className="nav-heading">{heading}</p>}
-          {links.filter(([label]) => demo ? !['Calendar', 'Media', 'Website design', 'Shop', 'Social', 'Settings'].includes(label)
+          {links.filter(([label]) => demo ? !['Calendar', 'Media', 'Edit website', 'Shop', 'Social', 'Settings'].includes(label)
             : isStudioAdmin(role) || ['Overview', 'Projects', 'Media',
-              ...(role === 'social' ? ['Social'] : ['Website design']),
+              ...(role === 'social' ? ['Social'] : ['Edit website']),
               ...(role === 'assistant' ? ['Calendar'] : []),
               ...(role === 'editor' ? ['Import website'] : [])].includes(label)).map(([label, path, Icon]) => {
-            const selected = active === label || (active === 'Website' && label === 'Website design');
+            const selected = active === label || (active === 'Website' && label === 'Edit website');
             return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
               aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
               <Icon size={17} />{label}<StudioNavLoading />
@@ -72,8 +72,8 @@ export default async function StudioShell({ children, active = 'Overview', demo 
               <span className="studio-website-dot is-live" aria-hidden="true" />{demo ? 'Example website' : 'Website live'}<ArrowUpRight size={14} />
             </Link>
           ) : (
-            <Link href="/studio/website#website-preview" aria-label="Preview your unpublished website">
-              <span className="studio-website-dot" aria-hidden="true" />Preview draft<StudioNavLoading />
+            <Link href="/studio/website/preview" target="_blank" rel="noopener noreferrer" aria-label="Open your saved draft in a new tab">
+              <span className="studio-website-dot" aria-hidden="true" />Preview draft<ArrowUpRight size={14} />
             </Link>
           )}
           {!demo && <Link href={isStudioAdmin(role) ? '/studio/settings#design' : '/studio/website'} className="studio-website-design">{canEditWebsite(role) ? 'Design' : 'Preview'}<StudioNavLoading /></Link>}

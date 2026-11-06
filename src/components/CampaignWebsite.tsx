@@ -21,8 +21,8 @@ function Media({ url, label, eager = false }: { url?: string | null; label: stri
     : <div className="campaign-media campaign-placeholder"><span>{label}</span></div>;
 }
 
-export default function CampaignWebsite({ site, projects, base, view, preview = false, sample = false, onPreviewPage }: {
-  site: Website; projects: WebsiteProject[]; base?: string; view?: View; preview?: boolean; sample?: boolean; onPreviewPage?: (page: string) => void;
+export default function CampaignWebsite({ site, projects, base, view, preview = false, sample = false, onPreviewPage, previewProject }: {
+  site: Website; projects: WebsiteProject[]; base?: string; view?: View; preview?: boolean; sample?: boolean; onPreviewPage?: (page: string) => void; previewProject?: WebsiteProject;
 }) {
   const [localView, setLocalView] = useState<View>({});
   const [scrolled, setScrolled] = useState(false);
@@ -31,9 +31,9 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   const video = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const current = view ?? localView;
-  const work = sample || (preview && !projects.length) ? campaignSamples : orderWebsiteProjects(projects, site.projectOrder);
-  const selected = work.find(project => project.id === current.campaign);
-  const illustrative = sample || (preview && !projects.length);
+  const work = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject) ? campaignSamples : orderWebsiteProjects(projects, site.projectOrder);
+  const selected = work.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
+  const illustrative = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject);
   const name = site.name || 'Your studio';
   const social = site.instagram && <a href={site.instagram} rel="noreferrer">Instagram ↗</a>;
 
@@ -139,16 +139,18 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
           {site.video && playVideo && <button className="campaign-video-toggle" type="button" onClick={toggleVideo}>{paused ? 'Play film' : 'Pause film'}</button>}
         </div>
       </section>
-      <section className="campaign-copy" id={preview ? undefined : 'work'} data-anchor="work">
+      {site.showIntro ? <section className="campaign-copy" id={preview ? undefined : 'work'} data-anchor="work">
         <p className="campaign-kicker">Selected work</p><h2>{site.about || (illustrative ? 'Photographs and films for stories worth spending time with.' : name)}</h2>
         {navigation({ about: '1' }, 'About the studio ↗', 'campaign-text-link')}
-      </section>
+      </section> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
+      <div className={site.homepageLayout === 'grid' ? 'campaign-home-grid' : undefined}>
       {work.map(project => <div key={project.id}>
         {navigation({ campaign: project.id }, <>
           <Media url={site.covers[project.id] || project.image_url} label="Full-screen campaign image" />
           <div className="campaign-caption"><p>{project.category}</p><h2>{project.title}</h2><span>View campaign ↗</span></div>
         </>, 'campaign-screen campaign-feature')}
       </div>)}
+      </div>
     </>}
 
     <footer className="campaign-copy campaign-footer" id={preview ? undefined : 'contact'} data-anchor="contact">

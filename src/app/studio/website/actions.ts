@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireStudioAccess } from '@/lib/supabase';
-import { normaliseWebsite, websiteImage } from '@/lib/website';
+import { homepageWork, normaliseWebsite, websiteImage, type WebsiteProject } from '@/lib/website';
 
 export async function saveWebsite(studioId: string, input: unknown, mode: 'draft' | 'publish' | 'unpublish') {
   const { db, workspace } = await requireStudioAccess('edit');
@@ -12,10 +12,19 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   const { logo, logoSize, currentWebsite } = normaliseWebsite(current.data?.draft);
   const draft = { ...normaliseWebsite(input), logo, logoSize, currentWebsite };
   if (mode === 'publish' && !draft.name) return { error: 'Add a portfolio name before publishing.' };
-  const values: { workspace_id: string; draft: typeof draft; published?: typeof draft | null } = {
+  const values: { workspace_id: string; draft: typeof draft; published?: (typeof draft & { projectSnapshot?: WebsiteProject[] }) | null } = {
     workspace_id: workspace.id, draft,
   };
-  if (mode === 'publish') values.published = draft;
+  if (mode === 'publish') {
+    values.published = draft;
+    if (draft.homepageProjects !== null) {
+      const projects = draft.homepageProjects.length
+        ? await db.from('projects').select('id,title,category,description,image_url').eq('workspace_id', workspace.id).in('id', draft.homepageProjects)
+        : null;
+      if (projects?.error) return { error: 'The selected projects could not be loaded. Please try again.' };
+      values.published = { ...draft, projectSnapshot: homepageWork(draft, projects?.data ?? []) };
+    }
+  }
   if (mode === 'unpublish') values.published = null;
   const { data, error } = await db.from('studio_websites')
     .upsert(values, { onConflict: 'workspace_id', defaultToNull: false })
@@ -23,6 +32,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   if (error) return { error: 'The website could not be saved. Please try again.' };
   revalidatePath('/studio/website');
   revalidatePath('/studio/settings');
+  revalidatePath('/studio/website/preview');
   revalidatePath('/sites/' + data.public_id);
   return { id: data.public_id as string, published: !!data.published };
 }

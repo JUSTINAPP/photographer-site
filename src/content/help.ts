@@ -2,16 +2,16 @@ export const helpArticles = [
   {
     slug: 'website-design', title: 'Design your website', summary: 'Choose a look, preview it on desktop or mobile, and save your draft.',
     steps: [
-      ['Start with Design', 'Open Studio → Website design → Design. Choose a template, then adjust typography, colours, header and homepage layout where the template offers those controls.'],
+      ['Start with Design', 'Open Studio → Edit website → Design. Choose a template, then adjust typography, colours, header and homepage layout where the template offers those controls.'],
       ['Preview at both sizes', 'Use Desktop and Mobile above the preview. Campaign Stories keeps its full-screen layout and white scroll header, with typography and social placement controls.'],
-      ['Save or publish', 'Save design keeps your draft. Open Publish, confirm that you have permission to publish the content, and click Publish website. Website live in the sidebar opens the public portfolio.'],
+      ['Save or publish', 'Save design keeps your draft. Preview saved draft opens it privately in a new tab. Open Publish, confirm that you have permission to publish the content, and click Publish website. Website live in the sidebar opens the public portfolio.'],
     ], related: ['edit-campaign-pages', 'media-library'],
   },
   {
     slug: 'edit-campaign-pages', title: 'Edit homepage and campaign pages', summary: 'Place images, change frame sizes and set the order of your work.',
     steps: [
-      ['Choose a page', 'Choose Campaign Stories in Design, then open Pages. Select Homepage, About + Services or a campaign from the page menu. Mark campaigns for publication in Projects to make them available in the builder.'],
-      ['Place your media', 'Choose a homepage cover or showreel, or select a campaign cover. Add gallery photos from the media picker and enter descriptive alt text.'],
+      ['Choose a page', 'Open Edit website → Pages. Select Homepage, About + Services or an imported project. On the homepage, tick the projects you want to show and choose a grid or full-width layout.'],
+      ['Place your media', 'Choose a homepage cover or showreel, or select a project cover. With Campaign Stories, you can also add gallery photos and enter descriptive alt text.'],
       ['Arrange and review', 'Drag gallery thumbnails or use the arrow buttons. Choose Full screen, Full width or Small grid for each frame. On the Homepage, use the campaign arrows to set the order of the campaign tiles.'],
     ], related: ['website-design', 'media-library'],
   },

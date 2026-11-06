@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, useTransition, type CSSProperties } from 'react';
 import { saveWebsite } from '@/app/studio/website/actions';
 import { FONT_PAIRS, HEADERS, PALETTES, PRESETS, normaliseTheme, themeVars, type SiteTheme } from '@/lib/website-theme';
-import { normaliseWebsite, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
+import { homepageWork, normaliseWebsite, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
 import WebsitePages from './WebsitePages';
 import CampaignWebsite from './CampaignWebsite';
 import EditorialWebsite from './EditorialWebsite';
@@ -15,12 +15,12 @@ const contentFields = [
   ['email', 'Public enquiry email'], ['about', 'About'], ['services', 'Services'],
 ] as const;
 
-export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false }: {
-  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean;
+export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design' }: {
+  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages';
 }) {
   const [sampleImage, setSampleImage] = useState<string>(PRESETS.editorial.image);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
-  const [panel, setPanel] = useState<'design' | 'pages' | 'publish'>('design');
+  const [panel, setPanel] = useState<'design' | 'pages' | 'publish'>(initialPanel);
   useEffect(() => {
     const openLinkedPanel = () => {
       if (window.location.hash === '#page-editor') setPanel('pages');
@@ -61,6 +61,8 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
 
   const previewSite = normaliseWebsite(draft);
   const campaign = draft.theme.layout === 'campaign';
+  const work = homepageWork(previewSite, projects);
+  const editingProject = projects.find(project => project.id === page);
   return (
     <div className="website-builder">
       {readOnly && <p className="studio-panel">You have view-only access to this portfolio. Use the preview to review the draft.</p>}
@@ -132,8 +134,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </fieldset>
         </div>
         <div hidden={panel !== 'pages'}>
-        {campaign ? <WebsitePages draft={draft} setDraft={setDraft} projects={projects} media={media} page={page} onPage={setPage} /> :
-          <div id="page-editor" className="website-pages"><h2>Pages &amp; media</h2><p>Select Campaign Stories below to place library images and arrange campaign pages.</p></div>}
+        <WebsitePages draft={draft} setDraft={setDraft} projects={projects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
         <summary>Portfolio content</summary>
         {contentFields.map(([key, label]) => (
@@ -152,7 +153,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </div>
         <div hidden={panel !== 'publish'}>
         <h2>Publishing</h2>
-        <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Only published projects appear on your site.</p>
+        <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Use Pages to choose and order the work visitors will see.</p>
         <label className="rights-check"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I have permission to publish this content.</label>
         <button className="primary-button" disabled={pending || !confirmed} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</button>
         {pending && operation === 'publish' && <progress className="website-publish-progress" aria-label="Publishing website" />}
@@ -171,14 +172,15 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
             <button aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>Desktop</button>
             <button aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>Mobile</button>
           </div>
+          <Link href="/studio/website/preview" target="_blank" rel="noopener noreferrer">Open saved draft ↗</Link>
           {live && id && <Link href={'/sites/' + id}>Open website ↗</Link>}
         </div>
         {!campaign && !draft.image && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <div className={'design-preview-frame ' + device}>
-          {campaign ? <CampaignWebsite site={previewSite} projects={projects} preview
+          {campaign ? <CampaignWebsite site={previewSite} projects={work} preview previewProject={editingProject}
             view={projects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
             onPreviewPage={next => { setPage(next); if (panel === 'design') setPanel('pages'); }} /> :
-            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={projects} preview />}
+            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} preview />}
         </div>
       </section>
     </div>

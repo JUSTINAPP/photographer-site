@@ -21,12 +21,12 @@ export default function EditorialWebsite({ site, projects, preview = false }: {
         <h1>{site.headline || name}</h1>
         {site.image && site.theme.hero !== 'text' && <img src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
       </section>
-      <section className="editorial-work" id={preview ? undefined : 'work'}>
+      <section className={'editorial-work' + (site.homepageLayout === 'grid' ? ' editorial-work-grid' : '')} id={preview ? undefined : 'work'}>
         <h2>Selected work</h2>
         {projects.length === 0 && <p>{preview ? 'Publish a project to include it here.' : 'New work coming soon.'}</p>}
         {projects.map(project => (
           <article key={project.id}>
-            {websiteImage(project.image_url ?? '') && <img src={project.image_url!} alt={project.title} loading="lazy" referrerPolicy="no-referrer" />}
+            {websiteImage(site.covers[project.id] || project.image_url || '') && <img src={site.covers[project.id] || project.image_url!} alt={project.title} loading="lazy" referrerPolicy="no-referrer" />}
             <p className="eyebrow">{project.category}</p>
             <h3>{project.title}</h3>
             {project.description && <p>{project.description}</p>}

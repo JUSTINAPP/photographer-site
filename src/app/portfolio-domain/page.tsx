@@ -4,7 +4,7 @@ import CampaignWebsite from '@/components/CampaignWebsite';
 import EditorialWebsite from '@/components/EditorialWebsite';
 import { configured, database } from '@/lib/supabase';
 import { portfolioDomainTokens, portfolioHostname } from '@/lib/studio-domain';
-import { normaliseWebsite, type WebsiteProject } from '@/lib/website';
+import { normaliseWebsite, publishedWebsiteWork, type WebsiteProject } from '@/lib/website';
 
 export default async function DomainPortfolio({ searchParams }: { searchParams: Promise<{ about?: string; campaign?: string }> }) {
   const host = portfolioHostname((await headers()).get('host') || '');
@@ -19,10 +19,11 @@ export default async function DomainPortfolio({ searchParams }: { searchParams: 
   const result = data as { settings: unknown; projects: WebsiteProject[] } | null;
   if (!result) notFound();
   const site = normaliseWebsite(result.settings);
+  const projects = publishedWebsiteWork(result.settings, result.projects);
   if (site.theme.layout === 'campaign') {
     const view = await searchParams;
-    if (view.campaign && !result.projects.some(project => project.id === view.campaign)) notFound();
-    return <main><CampaignWebsite site={site} projects={result.projects} base="/" view={view} /></main>;
+    if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
+    return <main><CampaignWebsite site={site} projects={projects} base="/" view={view} /></main>;
   }
-  return <main><EditorialWebsite site={site} projects={result.projects} /></main>;
+  return <main><EditorialWebsite site={site} projects={projects} /></main>;
 }

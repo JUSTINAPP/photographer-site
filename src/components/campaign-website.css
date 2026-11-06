@@ -69,3 +69,8 @@
 @media (prefers-reduced-motion: reduce) { .campaign-header { transition: none; } }
 
 .campaign-gallery .campaign-frame-screen { grid-column: 1 / -1; height: var(--campaign-screen); aspect-ratio: auto; }
+
+.campaign-home-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding: 0 4% 4%; }
+.campaign-home-grid .campaign-screen { min-height: 0; aspect-ratio: 4 / 3; }
+.campaign-home-grid .campaign-caption h2 { font-size: clamp(23px, 4vw, 60px); }
+@media (max-width: 600px) { .campaign-home-grid { grid-template-columns: 1fr; } }

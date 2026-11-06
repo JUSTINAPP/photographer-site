@@ -26,7 +26,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     db.from('studio_websites').select('draft,published,public_id').eq('workspace_id', id).maybeSingle(),
     db.from('studio_team').select('email,role,user_id').eq('workspace_id', id).order('created_at'),
     db.from('studio_domains').select('hostname,verification_token').eq('workspace_id', id).maybeSingle(),
-    db.from('projects').select('id,title,category,description,image_url').eq('workspace_id', id).eq('published', true).order('created_at', { ascending: false }),
+    db.from('projects').select('id,title,category,description,image_url,published').eq('workspace_id', id).order('created_at', { ascending: false }),
     db.from('studio_media').select('id,name,source_url,kind,website_selected').eq('workspace_id', id).order('website_selected', { ascending: false }).order('created_at', { ascending: false }),
   ]);
   if (site.error) throw new Error('Settings could not be loaded.');
@@ -50,7 +50,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         <div><strong>{live ? '● Your website is live' : 'Your website is a draft'}</strong>
           <p>{live ? <Link href={path} target="_blank" rel="noopener noreferrer">{'www.fresnelstudio.com' + path}</Link> : 'Preview your portfolio and publish it when you’re ready.'}</p>
         </div>
-        <Link className="secondary-button" href={live ? path : '#website-preview'} target={live ? '_blank' : undefined}>{live ? 'View website ↗' : 'Preview draft ↗'}</Link>
+        <Link className="secondary-button" href={live ? path : '/studio/website/preview'} target="_blank" rel="noopener noreferrer">{live ? 'View website ↗' : 'Preview draft ↗'}</Link>
       </div>
       {live && <form action={takeWebsiteOffline.bind(null, id)}><button className="settings-text-button">Take the website offline</button></form>}
     </section>

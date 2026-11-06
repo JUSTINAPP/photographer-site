@@ -63,6 +63,11 @@ export function normaliseWebsite(input: unknown) {
     : [];
   return {
     placements, covers, projectOrder,
+    homepageProjects: Array.isArray(data.homepageProjects)
+      ? [...new Set(data.homepageProjects.filter((id): id is string => typeof id === 'string' && projectId.test(id)).slice(0, 150))]
+      : null,
+    homepageLayout: data.homepageLayout === 'grid' ? 'grid' as const : 'full' as const,
+    showIntro: data.showIntro !== false,
     logo: /^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/]+={0,2}$/i.test(logo) ? logo : '',
     logoSize,
     currentWebsite: websiteImage(field('currentWebsite', 2048)),
@@ -89,9 +94,30 @@ export type WebsiteProject = {
   category: string;
   description: string | null;
   image_url: string | null;
+  published?: boolean;
 };
 
 export function websiteGallery(site: Website, project: string): GalleryImage[] {
   return site.placements[project] ?? (site.galleries[project] || '').split('\n').filter(Boolean)
     .map((url, index) => ({ url, size: index % 3 === 0 ? 'wide' : 'grid', alt: '' }));
+}
+
+export function homepageWork(site: Website, projects: WebsiteProject[]) {
+  const selected = site.homepageProjects && new Set(site.homepageProjects);
+  return orderWebsiteProjects(projects.filter(project => selected ? selected.has(project.id) : project.published !== false), site.projectOrder);
+}
+
+export function publishedWebsiteWork(settings: unknown, fallback: WebsiteProject[]) {
+  const snapshot = settings && typeof settings === 'object' && 'projectSnapshot' in settings ? settings.projectSnapshot : null;
+  if (!Array.isArray(snapshot)) return orderWebsiteProjects(fallback, normaliseWebsite(settings).projectOrder);
+  return snapshot.slice(0, 150).flatMap(project => {
+    if (!project || typeof project.id !== 'string' || !projectId.test(project.id) || typeof project.title !== 'string') return [];
+    return [{
+      id: project.id,
+      title: project.title.slice(0, 180),
+      category: typeof project.category === 'string' ? project.category.slice(0, 80) : '',
+      description: typeof project.description === 'string' ? project.description.slice(0, 2000) : null,
+      image_url: typeof project.image_url === 'string' ? websiteImage(project.image_url.slice(0, 2048)) || null : null,
+    }];
+  });
 }
