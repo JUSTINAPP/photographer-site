@@ -1,6 +1,6 @@
+import { ActionLink } from '@/components/ActionFeedback';
 import { redirect } from 'next/navigation';
 import { canEditWebsite, isStudioAdmin } from '@/lib/studio-access';
-import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
 import WebsiteBuilder from '@/components/WebsiteBuilder';
 import { requireStudio } from '@/lib/supabase';
@@ -17,7 +17,7 @@ export default async function WebsiteSettings({ searchParams }: { searchParams: 
   ]);
   return (
     <StudioShell active="Website" email={user.email}>
-      <div className="studio-page-heading"><div><h1>Website editor</h1><p>Edit your homepage, images and campaign order with a live preview.</p></div><div className="settings-links"><Link className="secondary-button" href="/studio/website/preview" target="_blank" rel="noopener noreferrer">Preview saved draft ↗</Link>{isStudioAdmin(role) && <Link className="secondary-button" href="/studio/settings">Settings</Link>}</div></div>
+      <div className="studio-page-heading"><div><h1>Website editor</h1><p>Edit your homepage, images and campaign order with a live preview.</p></div><div className="settings-links"><ActionLink className="secondary-button" href="/studio/website/preview" target="_blank" rel="noopener noreferrer">Preview saved draft ↗</ActionLink>{isStudioAdmin(role) && <ActionLink className="secondary-button" href="/studio/settings">Settings</ActionLink>}</div></div>
       {site.error || projects.error || media.error
         ? <p role="alert">The website builder could not load. Please try again later.</p>
         : <WebsiteBuilder initialPage={page} initialPanel={panel === 'design' ? 'design' : 'pages'} studioId={workspace.id} readOnly={!canEditWebsite(role)} initial={preloadWebsiteDraft(normaliseWebsite(site.data?.draft), media.data ?? [])} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={!!site.data?.published} />}

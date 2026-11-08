@@ -1,3 +1,4 @@
+import { SubmitButton } from '@/components/ActionFeedback';
 import FresnelMark from '@/components/FresnelMark';
 import Link from 'next/link';
 import StudioNavLoading from '@/components/StudioNavLoading';
@@ -47,7 +48,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
       {studios.length > 1 && <form action={switchStudio} className="studio-switcher">
         <label>Switch studio<select name="studio" defaultValue={studioId}>{studios.map(studio =>
           <option key={studio.id} value={studio.id}>{studio.id === studioId ? name : studio.name}</option>
-        )}</select></label><button className="secondary-button">Open</button>
+        )}</select></label><SubmitButton className="secondary-button">Open</SubmitButton>
       </form>}
       <nav aria-label="Studio navigation">
         {groups.map(([heading, links]) => <div key={heading} className="studio-nav-group">

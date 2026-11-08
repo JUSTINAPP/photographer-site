@@ -1,3 +1,4 @@
+import { ActionLink, SubmitButton } from '@/components/ActionFeedback';
 import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
 import StudioLogoSettings from '@/components/StudioLogoSettings';
@@ -19,7 +20,7 @@ const messages: Record<string, string> = {
   error: 'Could not save settings. Please try again.',
 };
 
-export default async function Settings({ searchParams }: { searchParams: Promise<{ settings?: string; team?: string }> }) {
+export default async function Settings({ searchParams }: { searchParams: Promise<{ settings?: string }> }) {
   const { db, workspace, user, role } = await requireStudioAccess('admin');
   const id = workspace.id;
   const [site, team, domain, projects, media] = await Promise.all([
@@ -30,7 +31,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     db.from('studio_media').select('id,name,source_url,kind,website_selected').eq('workspace_id', id).order('created_at').order('id'),
   ]);
   if (site.error) throw new Error('Settings could not be loaded.');
-  const { settings, team: teamStatus } = await searchParams;
+  const { settings } = await searchParams;
   const draft = normaliseWebsite(site.data?.draft);
   const name = draft.name || workspace.name;
   const live = !!site.data?.published;
@@ -50,16 +51,16 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         <div><strong>{live ? '● Your website is live' : 'Your website is a draft'}</strong>
           <p>{live ? <Link href={path} target="_blank" rel="noopener noreferrer">{'www.fresnelstudio.com' + path}</Link> : 'Preview your portfolio and publish it when you’re ready.'}</p>
         </div>
-        <Link className="secondary-button" href={live ? path : '/studio/website/preview'} target="_blank" rel="noopener noreferrer">{live ? 'View website ↗' : 'Preview draft ↗'}</Link>
+        <ActionLink className="secondary-button" href={live ? path : '/studio/website/preview'} target="_blank" rel="noopener noreferrer">{live ? 'View website ↗' : 'Preview draft ↗'}</ActionLink>
       </div>
-      {live && <form action={takeWebsiteOffline.bind(null, id)}><button className="settings-text-button">Take the website offline</button></form>}
+      {live && <form action={takeWebsiteOffline.bind(null, id)}><SubmitButton className="settings-text-button">Take the website offline</SubmitButton></form>}
     </section>
 
     <form id="studio" action={saveStudioSettings.bind(null, id, 'studio')} className="studio-panel studio-setting-form">
       <h2>Studio</h2>
       <label>Portfolio name<input name="name" required maxLength={100} defaultValue={name} /></label>
       <label>Current website<input name="currentWebsite" type="url" defaultValue={draft.currentWebsite} placeholder="https://yourportfolio.com" /></label>
-      <button className="primary-button">Save studio</button>
+      <SubmitButton className="primary-button">Save studio</SubmitButton>
     </form>
 
     <SettingsDesignPanel>
@@ -71,7 +72,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
 
     <section className="studio-panel studio-setting-row">
       <div><h2>Website homepage</h2><p>Set the cover, choose a showreel and put campaigns in order.</p></div>
-      <Link className="secondary-button" href="#page-editor">Edit homepage ↗</Link>
+      <ActionLink className="secondary-button" href="#page-editor">Edit homepage ↗</ActionLink>
     </section>
 
     <section id="domain" className="studio-panel studio-setting-form settings-wide">
@@ -79,8 +80,8 @@ export default async function Settings({ searchParams }: { searchParams: Promise
       <div className="settings-columns">
         <form action={saveStudioSettings.bind(null, id, 'domain')}>
           <label>Domain<input name="hostname" defaultValue={host} placeholder="portfolio.example.com" required maxLength={253} /></label>
-          <button className="primary-button">{host ? 'Save domain' : 'Add domain'}</button>
-          {host && <> <button className="secondary-button" name="intent" value="remove" formNoValidate>Remove domain</button></>}
+          <SubmitButton className="primary-button">{host ? 'Save domain' : 'Add domain'}</SubmitButton>
+          {host && <> <SubmitButton className="secondary-button" name="intent" value="remove" formNoValidate>Remove domain</SubmitButton></>}
         </form>
         <div><h3>Before you connect</h3><p>Add the domain to the Fresnel Vercel project and follow its DNS instructions. Leave your existing mail records in place. Point the domain here when the portfolio is ready.</p>
           <a href="https://vercel.com/docs/domains/set-up-custom-domain" target="_blank" rel="noopener noreferrer">Vercel setup guide ↗</a>
@@ -91,14 +92,14 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         <p><strong>{verified ? 'Ownership TXT record verified' : 'Waiting for ownership TXT record'}</strong></p>
         <p>Add this TXT record in your DNS provider in addition to the records Vercel requests.</p>
         <dl><dt>Name</dt><dd><code>{'_fresnel.' + host}</code></dd><dt>Value</dt><dd><code>{token}</code></dd></dl>
-        <form action={saveStudioSettings.bind(null, id, 'domain')} className="settings-domain-recheck"><button className="settings-text-button" name="intent" value="recheck">Recheck DNS</button></form>
+        <form action={saveStudioSettings.bind(null, id, 'domain')} className="settings-domain-recheck"><SubmitButton className="settings-text-button" name="intent" value="recheck">Recheck DNS</SubmitButton></form>
         {verified && live && <> · <a href={'https://' + host} target="_blank" rel="noopener noreferrer">Open custom domain ↗</a></>}
       </div>}
     </section>
 
     <form id="enquiries" action={saveStudioSettings.bind(null, id, 'enquiries')} className="studio-panel studio-setting-form settings-wide">
       <h2>Website enquiries</h2><p>The contact link on your portfolio opens an email to this address. Publish your site to apply the change.</p>
-      <label>Public enquiry email<input name="email" type="email" defaultValue={draft.email} /></label><button className="primary-button">Save enquiry email</button>
+      <label>Public enquiry email<input name="email" type="email" defaultValue={draft.email} /></label><SubmitButton className="primary-button">Save enquiry email</SubmitButton>
     </form>
 
     <section className="studio-panel studio-setting-row">
@@ -106,6 +107,6 @@ export default async function Settings({ searchParams }: { searchParams: Promise
       <div className="settings-links"><Link href="/studio/tools/contacts">Contacts</Link><Link href="/studio/tools/newsletters">Newsletters</Link><Link href="/studio/tools/invoices">Invoices</Link></div>
     </section>
 
-    <StudioTeamSettings id={id} owner={role === 'owner'} email={user.email} members={team.data ?? []} status={teamStatus} error={!!team.error} />
+    <StudioTeamSettings id={id} owner={role === 'owner'} email={user.email} members={team.data ?? []} error={!!team.error} />
   </StudioShell>;
 }

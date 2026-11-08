@@ -1,5 +1,7 @@
 'use client';
 
+import { ActionButton } from '@/components/ActionFeedback';
+
 import { useEffect, useRef, useState, useTransition, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
 import { createCampaignPage } from '@/app/studio/website/actions';
@@ -108,7 +110,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       <label>Campaign name<input name="title" required maxLength={180} /></label>
       <label>Category<input name="category" placeholder="Fashion, nautical or lifestyle" maxLength={80} /></label>
       <label>Campaign introduction<textarea name="description" rows={3} maxLength={2000} /></label>
-      <button className="secondary-button" disabled={pending}>{pending ? 'Creating…' : 'Create campaign'}</button>
+      <ActionButton busy={pending} className="secondary-button" disabled={pending}>{pending ? 'Creating…' : 'Create campaign'}</ActionButton>
       {message && <p role="status">{message}</p>}
     </form>}
     <nav className="website-page-list" aria-label="Pages">

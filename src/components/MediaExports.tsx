@@ -1,5 +1,7 @@
 'use client';
 
+import { ActionButton } from '@/components/ActionFeedback';
+
 import { useState } from 'react';
 import { keepMediaOriginal } from '@/app/studio/media/actions';
 
@@ -12,11 +14,11 @@ const formats = {
 export default function MediaExports({ id, name, kind }: { id: string; name: string; kind: 'photo' | 'video' }) {
   const [format, setFormat] = useState<keyof typeof formats>('square');
   const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
   const [original, setOriginal] = useState('');
 
   async function process(exportImage: boolean) {
-    setBusy(true);
+    setBusy(exportImage ? 'export' : 'original');
     setMessage('');
     try {
       const result = await keepMediaOriginal(id);
@@ -58,23 +60,23 @@ export default function MediaExports({ id, name, kind }: { id: string; name: str
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'The file could not be processed.');
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
   return (
     <div className="media-actions">
-      <button className="secondary-button" disabled={busy} onClick={() => process(false)}>Keep private original</button>
+      <ActionButton busy={busy === 'original'} className="secondary-button" disabled={!!busy} onClick={() => process(false)}>Keep private original</ActionButton>
       {original && <a href={original} target="_blank" rel="noreferrer">Open saved original ↗</a>}
       {kind === 'photo' && <>
         <label>Crop format
-          <select disabled={busy} value={format} onChange={event => setFormat(event.target.value as keyof typeof formats)}>
+          <select disabled={!!busy} value={format} onChange={event => setFormat(event.target.value as keyof typeof formats)}>
             <option value="square">Square · 1080 × 1080</option>
             <option value="portrait">Portrait · 1080 × 1350</option>
             <option value="reel">Reels cover · 1080 × 1920</option>
           </select>
         </label>
-        <button className="primary-button" disabled={busy} onClick={() => process(true)}>Export JPEG crop</button>
+        <ActionButton busy={busy === 'export'} className="primary-button" disabled={!!busy} onClick={() => process(true)}>Export JPEG crop</ActionButton>
       </>}
       <p role="status">{busy ? 'Preparing file…' : message}</p>
     </div>

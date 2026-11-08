@@ -1,3 +1,8 @@
+'use client';
+
+import { useActionState, useState } from 'react';
+import { SubmitButton } from './ActionFeedback';
+import TeamAccessSelect from './TeamAccessSelect';
 import Link from 'next/link';
 import { manageTeam } from '@/app/studio/settings/team/actions';
 import { teamRoles } from '@/lib/studio-access';
@@ -14,39 +19,49 @@ const messages: Record<string, string> = {
 
 type Member = { email: string; role: string; user_id: string | null };
 
-export default function StudioTeamSettings({ id, owner, email, members, status, error }: {
-  id: string; owner: boolean; email?: string; members: Member[]; status?: string; error: boolean;
+export default function StudioTeamSettings({ id, owner, email, members, error }: {
+  id: string; owner: boolean; email?: string; members: Member[]; error: boolean;
 }) {
-  const action = manageTeam.bind(null, id);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [status, action, pendingAction] = useActionState(async (previous: string, form: FormData) => {
+    const result = await manageTeam(id, previous, form);
+    if (result === 'invited') setInviteEmail('');
+    return result;
+  }, '');
   const options = Object.entries(teamRoles).filter(([role]) => owner || role !== 'admin');
   function memberRow(member: Member) {
     return <form className="studio-team-member settings-team-row" action={action} key={member.email}>
+      <fieldset disabled={pendingAction} className="settings-team-fields">
       <input type="hidden" name="email" value={member.email} />
       <strong>{member.email}{member.email === email && ' (you)'}</strong>
       {owner || member.role !== 'admin' ? <>
-        <select name="role" defaultValue={member.role} aria-label={'Access for ' + member.email}>
-          {options.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
-        </select>
-        <button className="secondary-button" name="intent" value="update">Save</button>
-        <button className="settings-remove" name="intent" value="remove">{member.user_id ? 'Remove' : 'Revoke'}</button>
+        <TeamAccessSelect key={member.role} initial={member.role} options={options} label={'Access for ' + member.email} />
+        <SubmitButton className="secondary-button" name="intent" value="update">Save</SubmitButton>
+        <SubmitButton className="settings-remove" name="intent" value="remove">{member.user_id ? 'Remove' : 'Revoke'}</SubmitButton>
       </> : <span>Admin</span>}
+      </fieldset>
     </form>;
   }
   const pending = members.filter(member => !member.user_id);
   return <section id="team" className="studio-panel studio-setting-form settings-team">
     <h2>Team</h2><p>Manage the people who can work in this studio.</p>
-    {status && Object.hasOwn(messages, status) && <p role="status">{messages[status]}</p>}
+
     {error && <p role="alert">Could not load the team.</p>}
     <h3>People with access</h3>
     {owner && <p>{email} (you) · Owner</p>}
     {members.filter(member => member.user_id).map(memberRow)}
     <h3>Pending invitations</h3>
     {pending.length ? pending.map(memberRow) : <p>No pending invitations.</p>}
-    <form className="settings-team-invite" action={action}>
-      <label>Email<input type="email" name="email" placeholder="colleague@studio.com" required maxLength={254} /></label>
-      <label>Access<select name="role" defaultValue="assistant">{options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      <button className="primary-button" name="intent" value="invite">Create invitation</button>
+    <form action={action}>
+      <fieldset className="settings-team-invite settings-team-fields" disabled={pendingAction}>
+        <label>Email<input type="email" name="email" value={inviteEmail} onChange={event => setInviteEmail(event.target.value)} placeholder="colleague@studio.com" required maxLength={254} /></label>
+        <div className="team-access-field"><span>Access</span><TeamAccessSelect key={status === 'invited' ? 'invited' : 'new'} label="Access" initial="assistant" options={options} /></div>
+        <SubmitButton className="primary-button" name="intent" value="invite">Create invitation</SubmitButton>
+      </fieldset>
     </form>
+    <div className="settings-team-feedback" role="status" aria-live="polite">
+      {!pendingAction && Object.hasOwn(messages, status) && messages[status]}
+    </div>
     <p>Share the <Link href="/signup">signup link</Link> with new teammates. Existing accounts can <Link href="/login">sign in</Link> with the invited email address.</p>
     <details><summary>What each role can do</summary>
       <ul>

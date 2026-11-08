@@ -1,3 +1,4 @@
+import { ActionLink, SubmitButton } from '@/components/ActionFeedback';
 import Link from 'next/link';
 import StudioShell from './StudioShell';
 import { requireStudioAccess } from '@/lib/supabase';
@@ -47,7 +48,7 @@ export default async function StudioPlanner({ social = false, params }: { social
   return <StudioShell active={social ? 'Social' : 'Calendar'} email={user.email}>
     <div className="studio-page-heading"><div><h1>{social ? 'Social scheduler' : 'Production calendar'}</h1>
       <p>{social ? 'Plan captions and media, schedule a local posting time, and mark posts published after posting.' : 'See shoots, meetings, deliveries and planned social posts together.'}</p></div>
-      <Link className="primary-button" href={base + '#planner-editor'}>{social ? 'New post' : 'Add event'}</Link>
+      <ActionLink className="primary-button" href={base + '#planner-editor'}>{social ? 'New post' : 'Add event'}</ActionLink>
     </div>
     <div className="planner-toolbar">
       <div className="design-switch" aria-label="Calendar view">{['month', 'week', 'list'].map(option => <Link key={option} aria-current={view === option ? 'page' : undefined} href={path + '?view=' + option + '&d=' + date}>{option}</Link>)}</div>
@@ -85,8 +86,8 @@ export default async function StudioPlanner({ social = false, params }: { social
           <label>Media<select name="media_id" defaultValue={current?.media_id ?? ''}><option value="">Choose later</option>{media?.data?.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
           <label>Status<select name="status" defaultValue={current?.status ?? 'draft'}><option value="draft">Draft</option><option value="scheduled">Scheduled for manual posting</option><option value="posted">Posted</option></select></label>
         </>}
-        <button className="primary-button">Save {social ? 'post' : 'event'}</button>
-        {current && <> <Link className="secondary-button" href={base + '#planner-editor'}>Cancel</Link> <button className="secondary-button" name="intent" value="delete" formNoValidate>Delete</button></>}
+        <SubmitButton className="primary-button">Save {social ? 'post' : 'event'}</SubmitButton>
+        {current && <> <ActionLink className="secondary-button" href={base + '#planner-editor'}>Cancel</ActionLink> <SubmitButton className="secondary-button" name="intent" value="delete" formNoValidate>Delete</SubmitButton></>}
       </form>
     </section>
   </StudioShell>;

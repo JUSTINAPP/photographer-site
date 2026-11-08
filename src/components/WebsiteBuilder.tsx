@@ -1,5 +1,7 @@
 'use client';
 
+import { ActionButton } from '@/components/ActionFeedback';
+
 import Link from 'next/link';
 import { useEffect, useState, useTransition, type CSSProperties } from 'react';
 import { saveWebsite } from '@/app/studio/website/actions';
@@ -154,13 +156,13 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         <h2>Publishing</h2>
         <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Use Pages to choose and order the work visitors will see.</p>
         <label className="rights-check"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I have permission to publish this content.</label>
-        <button className="primary-button" disabled={pending || !confirmed} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</button>
+        <ActionButton busy={pending && operation === 'publish'} className="primary-button" disabled={pending || !confirmed} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</ActionButton>
         {pending && operation === 'publish' && <progress className="website-publish-progress" aria-label="Publishing website" />}
         {live && id && <p><Link href={'/sites/' + id}>Open published website ↗</Link></p>}
-        {live && <button className="secondary-button" disabled={pending} onClick={() => save('unpublish')}>Take website offline</button>}
+        {live && <ActionButton busy={pending && operation === 'unpublish'} className="secondary-button" disabled={pending} onClick={() => save('unpublish')}>Take website offline</ActionButton>}
         </div>
         <div className="website-save-strip">
-          <button className="secondary-button" disabled={pending} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save design'}</button>
+          <ActionButton busy={pending && operation === 'draft'} className="secondary-button" disabled={pending} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save design'}</ActionButton>
           {panel !== 'publish' && <button className="primary-button" onClick={() => setPanel('publish')}>Publishing options</button>}
         </div>
         <p role="status">{pending ? operation === 'publish' ? 'Publishing your website…' : 'Saving…' : notice}</p>

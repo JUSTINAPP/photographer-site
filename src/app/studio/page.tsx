@@ -1,3 +1,4 @@
+import { ActionLink } from '@/components/ActionFeedback';
 import { isStudioAdmin } from '@/lib/studio-access';
 import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
@@ -8,7 +9,7 @@ export default async function Studio() {
   const { db, workspace, user, role } = await requireStudio();
   if (!isStudioAdmin(role)) return <StudioShell email={user.email}>
     <div className="studio-page-heading"><div><h1>Shared portfolio</h1><p>Review the site, projects and media in this studio.</p></div></div>
-    <Link className="primary-button" href={role === 'social' ? '/studio/social' : '/studio/website'}>{role === 'social' ? 'Open social scheduler' : role === 'editor' ? 'Open website editor' : 'Open website preview'} ↗</Link>
+    <ActionLink className="primary-button" href={role === 'social' ? '/studio/social' : '/studio/website'}>{role === 'social' ? 'Open social scheduler' : role === 'editor' ? 'Open website editor' : 'Open website preview'} ↗</ActionLink>
   </StudioShell>;
   const today = dayKey(new Date());
   const [projects, photos, videos, scheduled, upcoming] = await Promise.all([
@@ -22,7 +23,7 @@ export default async function Studio() {
   return <StudioShell email={user.email}>
     <div className="studio-page-heading">
       <div><h1>Overview</h1><p>{new Intl.DateTimeFormat('en-AU', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date())}</p></div>
-      <Link className="secondary-button" href="/studio/website">Open design editor ↗</Link>
+      <ActionLink className="secondary-button" href="/studio/website">Open design editor ↗</ActionLink>
     </div>
     <div className="studio-metrics">
       {([

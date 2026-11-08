@@ -1,3 +1,4 @@
+import { ActionLink, SubmitButton } from '@/components/ActionFeedback';
 import { canEditWebsite } from '@/lib/studio-access';
 import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
@@ -14,7 +15,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
     .eq('workspace_id', workspace.id).eq('kind', kind).order('created_at', { ascending: false });
   return (
     <StudioShell active="Media" email={user.email}>
-      <div className="studio-page-heading"><div><p className="eyebrow">Your portfolio assets</p><h1>Media library</h1><p>Select assets for the page editor, rename files and keep private originals. Selection adds an item to the website picker. Place it on a page and publish to make it visible.</p></div>{canEditWebsite(role) && <div className="website-media-links"><Link className="secondary-button" href="/studio/website?panel=pages">Edit website pages ↗</Link><Link className="secondary-button" href="/studio/import">Import website ↗</Link></div>}</div>
+      <div className="studio-page-heading"><div><p className="eyebrow">Your portfolio assets</p><h1>Media library</h1><p>Select assets for the page editor, rename files and keep private originals. Selection adds an item to the website picker. Place it on a page and publish to make it visible.</p></div>{canEditWebsite(role) && <div className="website-media-links"><ActionLink className="secondary-button" href="/studio/website?panel=pages">Edit website pages ↗</ActionLink><ActionLink className="secondary-button" href="/studio/import">Import website ↗</ActionLink></div>}</div>
       <nav className="media-tabs" aria-label="Media type">
         <Link aria-current={kind === 'photo' ? 'page' : undefined} href="/studio/media">Photos</Link>
         <Link aria-current={kind === 'video' ? 'page' : undefined} href="/studio/media?view=videos">Videos</Link>
@@ -29,7 +30,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
             <form action={renameMedia}>
               <input type="hidden" name="id" value={item.id} />
               <label>Display name<input name="name" defaultValue={item.name} maxLength={150} required /></label>
-              <button className="secondary-button">Save name</button>
+              <SubmitButton className="secondary-button">Save name</SubmitButton>
             </form>
             <MediaExports id={item.id} kind={kind} name={item.name} />
             </>}

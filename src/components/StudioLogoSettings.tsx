@@ -1,5 +1,7 @@
 'use client';
 
+import { SubmitButton } from '@/components/ActionFeedback';
+
 import { useEffect, useState } from 'react';
 import { Upload } from 'lucide-react';
 import { saveStudioSettings } from '@/app/studio/settings/actions';
@@ -26,7 +28,7 @@ export default function StudioLogoSettings({ id, name, logo, size }: { id: strin
       <small>PNG, JPEG or WebP up to 256 KB</small>
     </label>
     <label>Logo height · {height}px<input name="logoSize" type="range" min="24" max="120" value={height} onChange={event => setHeight(Number(event.target.value))} /></label>
-    <button className="primary-button">Save logo</button>{' '}
-    {logo && <button className="secondary-button" name="intent" value="remove">Remove logo</button>}
+    <SubmitButton className="primary-button">Save logo</SubmitButton>{' '}
+    {logo && <SubmitButton className="secondary-button" name="intent" value="remove">Remove logo</SubmitButton>}
   </form>;
 }

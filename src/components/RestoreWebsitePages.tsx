@@ -1,5 +1,7 @@
 'use client';
 
+import { ActionButton } from '@/components/ActionFeedback';
+
 import { useState, useTransition } from 'react';
 import { importPageStructure } from '@/app/studio/website/actions';
 import type { WebsiteProject } from '@/lib/website';
@@ -31,7 +33,7 @@ export default function RestoreWebsitePages({ id, source, onRestore }: {
       });
     }}>
       <label>Original website<input type="url" value={url} placeholder="https://yourportfolio.com" required onChange={event => setUrl(event.target.value)} /></label>
-      <button className="secondary-button" disabled={pending}>{pending ? 'Scanning source…' : 'Scan and arrange photos'}</button>
+      <ActionButton busy={pending} className="secondary-button" disabled={pending}>{pending ? 'Scanning source…' : 'Scan and arrange photos'}</ActionButton>
       {pending && <progress className="website-publish-progress" aria-label="Scanning website" />}
       <p role="status">{message}</p>
     </form>

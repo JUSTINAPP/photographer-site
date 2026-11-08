@@ -266,7 +266,6 @@
 .settings-team { max-width: 860px; }
 .settings-team h3 { margin-top: 18px; }
 .settings-team-row strong { flex: 1 1 170px; overflow-wrap: anywhere; }
-.settings-team-row select { width: auto; max-width: 100%; }
 .settings-team-invite { align-items: flex-end; margin: 12px 0; }
 .settings-team-invite label { margin: 0; }
 .settings-team-invite label:first-child { flex: 1 1 200px; }
@@ -323,3 +322,77 @@
 .design-preview-frame .portfolio-section-full:has(.portfolio-section-image) { min-height: min(65vh, 550px); }
 .mobile .portfolio-section-split:has(.portfolio-section-image):has(.portfolio-section-copy) { grid-template-columns: 1fr; }
 @media (max-width: 650px) { .portfolio-section-split:has(.portfolio-section-image):has(.portfolio-section-copy) { grid-template-columns: 1fr; } }
+
+/* Shared feedback for calls to action. */
+:where(.primary-button, .secondary-button, .mk-button, .mk-outline, .mk-nav-cta, .settings-text-button, .settings-remove) {
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.primary-button:hover:not(:disabled) { background: #282c45; border-color: #282c45; }
+.secondary-button:hover:not(:disabled) { background: #f3f0e8; border-color: #aaa596; }
+.mk-button:hover, .mk-outline:hover, .mk-nav-cta:hover { box-shadow: inset 0 0 0 2px currentColor; }
+.settings-text-button:hover:not(:disabled), .settings-remove:hover:not(:disabled) { text-decoration-thickness: 2px; }
+:where(.primary-button, .secondary-button, .mk-button, .mk-outline, .mk-nav-cta, .settings-text-button, .settings-remove, .team-access-trigger):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+button[aria-busy="true"] { cursor: progress; }
+.action-spinner { flex: none; vertical-align: middle; }
+.action-link-spinner { display: inline-flex; margin-inline-start: .4em; }
+:is(.settings-text-button, .settings-remove) .action-spinner { margin-inline-end: .4em; }
+:is(.studio-setting-form, .studio-switcher, .website-controls, .tools-module, .studio-panel) select {
+  appearance: none;
+  color-scheme: light;
+  padding-inline-end: 2.35em;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m3.5 6 4.5 4.5L12.5 6' stroke='%2314162b' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75em center;
+  background-size: 1em;
+}
+.settings-team-fields { border: 0; min-inline-size: 0; padding: 0; margin-inline: 0; }
+.settings-team-row .settings-team-fields { display: flex; flex-wrap: wrap; width: 100%; align-items: center; gap: 12px; }
+.team-access-field { display: grid; gap: 5px; flex: 0 1 195px; }
+.team-access-select { position: relative; width: min(195px, 100%); }
+.team-access-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 13px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+.team-access-trigger:hover:not(:disabled), .team-access-trigger[aria-expanded="true"] { background: #f7f5ef; }
+.team-access-trigger svg { flex-shrink: 0; }
+.team-access-select [role="listbox"] {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 4px);
+  z-index: 3;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px #14162b20;
+}
+.team-access-select [role="option"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 9px;
+  gap: 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.team-access-select [role="option"][aria-selected="true"] { background: #eeebe3; }
+.team-access-select [role="option"][data-active="true"] { background: #14162b; color: white; }
+.settings-team-feedback { min-height: 1.5em; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) {
+  :where(.primary-button, .secondary-button, .mk-button, .mk-outline, .mk-nav-cta, .settings-text-button, .settings-remove) { transition: none; }
+}
