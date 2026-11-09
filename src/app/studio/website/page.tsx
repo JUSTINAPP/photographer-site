@@ -6,6 +6,8 @@ import WebsiteBuilder from '@/components/WebsiteBuilder';
 import { requireStudio } from '@/lib/supabase';
 import { normaliseWebsite, preloadWebsiteDraft } from '@/lib/website';
 
+export const maxDuration = 60;
+
 export default async function WebsiteSettings({ searchParams }: { searchParams: Promise<{ panel?: string; page?: string }> }) {
   const { db, user, workspace, role } = await requireStudio();
   if (role === 'social') redirect('/studio/social');

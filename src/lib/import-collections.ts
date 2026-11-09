@@ -22,10 +22,19 @@ export function extractCollection(html: string, page: string, category: string) 
   });
 }
 
+async function readCollectionPage(url: string) {
+  try {
+    return await readPublicPage(url);
+  } catch {
+    // Public portfolio hosts can occasionally reject a single request.
+    return readPublicPage(url);
+  }
+}
+
 export async function scanPortfolioCollections(input: string) {
-  const root = await readPublicPage(new URL('/', importWebsiteUrl(input)).href);
+  const root = await readCollectionPage(new URL('/', importWebsiteUrl(input)).href);
   const results = await Promise.allSettled(portfolioCollections.map(async ({ name, path }) => {
-    const page = path === '/' ? root : await readPublicPage(new URL(path, root.url).href);
+    const page = path === '/' ? root : await readCollectionPage(new URL(path, root.url).href);
     if (new URL(page.url).origin !== new URL(root.url).origin) return [];
     return extractCollection(page.html, page.url, name);
   }));

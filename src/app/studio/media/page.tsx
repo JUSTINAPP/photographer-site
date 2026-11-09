@@ -1,3 +1,4 @@
+import MediaYearFilter from '@/components/MediaYearFilter';
 import MediaOrganisation from '@/components/MediaOrganisation';
 import { portfolioCollections } from '@/lib/portfolio-collections';
 import { mediaIdentity, vimeoEmbed } from '@/lib/import-identity';
@@ -65,25 +66,15 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
     <StudioShell active="Media" email={user.email}>
       <div className="studio-page-heading"><div><p className="eyebrow">Your portfolio assets</p><h1>Media library</h1><p>Select assets for the page editor, rename files and keep private originals. Selection adds an item to the website picker. Place it on a page and publish to make it visible.</p></div>{canEditWebsite(role) && <div className="website-media-links"><ActionLink className="secondary-button" href="/studio/website?panel=pages">Edit website pages ↗</ActionLink><ActionLink className="secondary-button" href="/studio/import">Import website ↗</ActionLink></div>}</div>
       <nav className="media-tabs" aria-label="Media type">
-        <Link aria-current={kind === 'photo' ? 'page' : undefined} href="/studio/media">Photos</Link>
-        <Link aria-current={kind === 'video' ? 'page' : undefined} href="/studio/media?view=videos">Videos</Link>
+        <ActionLink aria-current={kind === 'photo' ? 'page' : undefined} href="/studio/media">Photos</ActionLink>
+        <ActionLink aria-current={kind === 'video' ? 'page' : undefined} href="/studio/media?view=videos">Videos</ActionLink>
       </nav>
       {(derived.length > 0 || custom.length > 0) && <nav className="media-tabs" aria-label="Media categories">
-        <Link href={filterLink()} aria-current={!activeCollection ? 'page' : undefined}>All categories</Link>
-        {derived.map(({ name }) => <Link key={name} href={filterLink(name.toLowerCase())} aria-current={selected?.name === name ? 'page' : undefined}>{name}</Link>)}
-        {custom.map(({ id, name }) => <Link key={id} href={filterLink(id)} aria-current={customSelected?.id === id ? 'page' : undefined}>{name}</Link>)}
+        <ActionLink href={filterLink()} aria-current={!activeCollection ? 'page' : undefined}>All categories</ActionLink>
+        {derived.map(({ name }) => <ActionLink key={name} href={filterLink(name.toLowerCase())} aria-current={selected?.name === name ? 'page' : undefined}>{name}</ActionLink>)}
+        {custom.map(({ id, name }) => <ActionLink key={id} href={filterLink(id)} aria-current={customSelected?.id === id ? 'page' : undefined}>{name}</ActionLink>)}
       </nav>}
-      <form action="/studio/media" className="media-year-filter">
-        {kind === 'video' && <input type="hidden" name="view" value="videos" />}
-        {activeCollection && <input type="hidden" name="collection" value={activeCollection} />}
-        <label>Year <select name="year" defaultValue={activeYear} key={activeYear}>
-          <option value="">All years</option>
-          {years.map(value => <option key={value}>{value}</option>)}
-          <option value="undated">No year set</option>
-        </select></label>
-        <button className="secondary-button">Filter</button>
-        <span>{filtered.length.toLocaleString()} {kind === 'photo' ? 'photos' : 'videos'}</span>
-      </form>
+      <MediaYearFilter key={filterLink(activeCollection)} kind={kind} collection={activeCollection} year={activeYear || ''} years={years} count={filtered.length} />
       {editable && !categoryError && <MediaOrganisation key={filterLink(activeCollection, currentPage)} studioId={workspace.id} categories={custom} hasFiles={visible.length > 0} />}
       {categoryError && <p role="alert">Custom categories could not be loaded.</p>}
       {error ? <p role="alert">The library could not load. Please try again later.</p>
@@ -110,9 +101,9 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
           </article>
         ); })}</div> : <div className="studio-panel"><p>No {kind === 'photo' ? 'photos' : 'videos'}{activeCollection || activeYear ? ' match these filters' : ' in your library yet'}.</p>{canEditWebsite(role) && <Link href="/studio/import">Import from a website ↗</Link>}</div>}
       {pages > 1 && <nav className="media-tabs" aria-label="Media pages">
-        {currentPage > 1 && <Link href={filterLink(activeCollection, currentPage - 1)}>← Previous</Link>}
+        {currentPage > 1 && <ActionLink href={filterLink(activeCollection, currentPage - 1)}>← Previous</ActionLink>}
         <span>Page {currentPage} of {pages}</span>
-        {currentPage < pages && <Link href={filterLink(activeCollection, currentPage + 1)}>Next →</Link>}
+        {currentPage < pages && <ActionLink href={filterLink(activeCollection, currentPage + 1)}>Next →</ActionLink>}
       </nav>}
     </StudioShell>
   );

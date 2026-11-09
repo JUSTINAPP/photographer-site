@@ -3,8 +3,9 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 
-export default function TeamAccessSelect({ label, initial, options }: {
+export default function TeamAccessSelect({ label, initial, options, name = 'role' }: {
   label: string;
+  name?: string;
   initial: string;
   options: [string, string][];
 }) {
@@ -33,7 +34,7 @@ export default function TeamAccessSelect({ label, initial, options }: {
   return <div className="team-access-select" ref={root} onBlur={event => {
     if (!event.currentTarget.contains(event.relatedTarget)) setActive(null);
   }}>
-    <input type="hidden" name="role" value={value} />
+    <input type="hidden" name={name} value={value} />
     <button type="button" ref={trigger} role="combobox" aria-label={label} aria-controls={id}
       aria-expanded={active !== null} aria-activedescendant={active === null ? undefined : id + '-' + active}
       className="team-access-trigger" onClick={() => setActive(active === null ? Math.max(selected, 0) : null)}
@@ -53,7 +54,7 @@ export default function TeamAccessSelect({ label, initial, options }: {
           setActive(null);
         }
       }}>
-      <span>{options[selected]?.[1] ?? 'Choose access'}</span><ChevronDown size={16} aria-hidden="true" />
+      <span>{options[selected]?.[1] ?? label}</span><ChevronDown size={16} aria-hidden="true" />
     </button>
     <ul id={id} role="listbox" aria-label={label} hidden={active === null}>
       {options.map(([key, name], index) => <li key={key} id={id + '-' + index} role="option"

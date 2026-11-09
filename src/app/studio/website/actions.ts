@@ -116,6 +116,7 @@ export async function createCampaignPage(studioId: string, input: { title: strin
 export async function rebuildPortfolioCollections(studioId: string, input: string, recoverMissing = false) {
   const { db, workspace } = await requireStudioAccess('edit');
   if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen the editor.' };
+  let stage: 'scan' | 'library' | 'save' | 'draft' = 'scan';
   try {
     const { importWebsiteUrl } = await import('@/lib/public-url');
     const address = importWebsiteUrl(input).href;
@@ -134,10 +135,12 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
         if (data.length < 500) return library;
       }
     }
+    stage = 'library';
     let library = await readLibrary();
     const { vimeoEmbed } = await import('@/lib/import-identity');
     let added = 0;
     if (recoverMissing) {
+      stage = 'save';
       const missing = new Map(scan.projects.flatMap(project => project.media)
         .filter(item => !library.has(mediaIdentity(item.url)))
         .map(item => [mediaIdentity(item.url), item]));
@@ -166,6 +169,7 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
       unmatched: unmatched.size,
     };
 
+    stage = 'draft';
     const projectColumns = 'id,title,category,description,image_url,published,source_url';
     const existing = await db.from('projects').select(projectColumns).eq('workspace_id', studioId);
     if (existing.error) return { error: 'Could not check for existing project drafts.' };
@@ -190,9 +194,14 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
     });
     revalidatePath('/studio/projects');
     return { projects: allProjects, pages, added, unmatched: unmatched.size, review: [...unmatched.values()].slice(0, 100), missing: scan.missing, instagram: websiteImage(scan.instagram) };
-  } catch {
-    return { error: recoverMissing
-      ? 'Could not finish adding media and rebuilding. Try again to continue. Files already saved will be skipped.'
-      : 'The Squarespace site could not be scanned. Check the address and try again.' };
+  } catch (error) {
+    const messages = {
+      scan: 'Could not read the Squarespace site. Check the address or try again shortly.',
+      library: 'Could not read your Media library. Try again shortly.',
+      save: 'Could not save all the missing files to Media. Try again to continue. Files already saved will be skipped.',
+      draft: 'Could not finish rebuilding the draft. Try again to continue.',
+    };
+    console.warn('Portfolio recovery failed', { stage, type: error instanceof Error ? error.name : 'unknown' });
+    return { error: messages[stage] };
   }
 }

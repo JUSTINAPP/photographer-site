@@ -414,3 +414,8 @@ button[aria-busy="true"] { cursor: progress; }
 .media-organise form p { flex-basis: 100%; margin: 0; }
 .media-year-filter select, .media-organise select, .media-organise input { border: 1px solid var(--line); border-radius: 5px; padding: 7px 10px; font: inherit; }
 .media-tags { color: var(--muted); }
+
+.media-year-filter .team-access-select { width: 140px; }
+.media-year-filter .team-access-select [role="listbox"] { max-height: 260px; overflow-y: auto; }
+.media-tabs a { display: inline-flex; align-items: center; }
+.media-tabs a:hover { text-decoration: underline; text-underline-offset: 3px; }
