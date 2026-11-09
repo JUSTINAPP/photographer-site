@@ -2,7 +2,7 @@ import { mediaIdentity } from './import-identity';
 import { discoverMedia, discoverSitemapMedia, type FoundMedia } from './import-media';
 import {lookup} from 'node:dns/promises';
 import https from 'node:https';
-import { publicAddress, websiteUrl } from './public-url';
+import { importWebsiteUrl, publicAddress, websiteUrl } from './public-url';
 export { publicAddress, websiteUrl } from './public-url';
 import * as cheerio from 'cheerio';
 // Pin the socket to an address we checked. Never follow redirects without checking again.
@@ -64,7 +64,7 @@ export function extractPage(html:string,url:string):{candidate:ImportCandidate;l
  return {candidate:{source_url:url,title,description,image_url:image,category:'Imported'},links:[...links].slice(0,24)};
 }
 export async function previewWebsite(input: string, includeSitemap = false) {
-  const first = await readPublicPage(input);
+  const first = await readPublicPage(importWebsiteUrl(input).href);
   const root = extractPage(first.html, first.url);
   const candidates: ImportCandidate[] = [];
   const homepageMedia = discoverMedia(first.html, first.url);

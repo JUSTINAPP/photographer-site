@@ -45,3 +45,14 @@ test('recognises an escaped Squarespace Vimeo embed and keeps its unlisted video
     { url: 'https://player.vimeo.com/video/123456?h=abc123', kind: 'video' },
   ]);
 });
+
+import { importWebsiteUrl } from '../src/lib/public-url';
+
+test('accepts a bare import address while retaining strict network URL checks', () => {
+  assert.equal(importWebsiteUrl('  www.davidmandelberg.com  ').href, 'https://www.davidmandelberg.com/');
+  assert.equal(importWebsiteUrl('example.com/motion').href, 'https://example.com/motion');
+  assert.equal(importWebsiteUrl('https://example.com/').href, 'https://example.com/');
+  for (const address of ['', 'not a website', '127.0.0.1', 'http://example.com', 'file:///etc/passwd']) {
+    assert.throws(() => importWebsiteUrl(address));
+  }
+});

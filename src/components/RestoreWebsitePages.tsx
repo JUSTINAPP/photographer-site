@@ -32,7 +32,7 @@ export default function RestoreWebsitePages({ id, source, onRestore }: {
         } catch { setMessage('Could not restore pages. Please try again.'); }
       });
     }}>
-      <label>Original website<input type="url" value={url} placeholder="https://yourportfolio.com" required onChange={event => setUrl(event.target.value)} /></label>
+      <label>Original website<input type="text" inputMode="url" autoCapitalize="none" spellCheck={false} autoComplete="url" value={url} placeholder="www.yourwebsite.com" required onChange={event => setUrl(event.target.value)} /></label>
       <ActionButton busy={pending} className="secondary-button" disabled={pending}>{pending ? 'Scanning source…' : 'Scan and arrange photos'}</ActionButton>
       {pending && <progress className="website-publish-progress" aria-label="Scanning website" />}
       <p role="status">{message}</p>

@@ -135,8 +135,8 @@ export const helpArticles: HelpArticle[] = [
       {
         title: 'Scan your current website',
         instructions: [
-          'Open Import website from the studio sidebar. Paste the full public address, starting with https://, into Your current website. Click Preview import.',
-          'Wait for Fresnel to scan the homepage and up to ten linked pages. Review any warnings along with the results.',
+          'Open Import website from the studio sidebar. Enter your website address in Your current website, for example www.yourwebsite.com. Click Preview import.',
+          'Wait for Fresnel to scan the homepage, linked pages and any public sitemap. Review any warnings along with the results.',
         ],
         shot: { file: 'import-address.webp', width: 1430, height: 194 }, caption: 'Paste the source address here and select Preview import. The screenshot uses the sample importer.',
       },
