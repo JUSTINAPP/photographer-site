@@ -111,6 +111,14 @@ export const helpArticles: HelpArticle[] = [
         shot: { file: 'media-card.webp', width: 700, height: 1262 }, caption: 'Each media card has a website selection checkbox, a display name and file actions.',
       },
       {
+        title: 'Organise files by category or year',
+        instructions: [
+          'Use the category tabs and Year filter to narrow the library. The year describes when the work was made. Choose No year set to see files that still need a year.',
+          'Open Organise media to add a category. Tick individual files or select the whole page, then add or remove a custom category, or set a year for the selected files. Leave the year blank to clear it.',
+          'Collections from a rebuilt site appear after you save the website design. Custom media categories are for organising your library.',
+        ],
+      },
+      {
         title: 'Rename a file or keep a private copy',
         instructions: [
           'Enter a recognisable label in Display name and click Save name. Use names you’ll recognise in the media picker, such as the campaign and frame number.',

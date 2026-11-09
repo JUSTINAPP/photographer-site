@@ -405,3 +405,12 @@ button[aria-busy="true"] { cursor: progress; }
 .import-review summary { cursor: pointer; font-weight: 600; }
 .import-review section details { margin-top: 14px; }
 .import-review [role="status"] a { text-decoration: underline; text-underline-offset: 3px; }
+
+.media-tabs, .media-year-filter, .media-organise form { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.media-year-filter { margin-block: 16px; }
+.media-organise { margin-bottom: 16px; }
+.media-organise summary { cursor: pointer; font-weight: 600; }
+.media-organise form { margin-top: 16px; }
+.media-organise form p { flex-basis: 100%; margin: 0; }
+.media-year-filter select, .media-organise select, .media-organise input { border: 1px solid var(--line); border-radius: 5px; padding: 7px 10px; font: inherit; }
+.media-tags { color: var(--muted); }

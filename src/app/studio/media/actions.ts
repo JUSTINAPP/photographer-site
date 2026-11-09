@@ -72,3 +72,34 @@ export async function selectWebsiteMedia(id: string, selected: boolean) {
   revalidatePath('/studio/media');
   revalidatePath('/studio/website');
 }
+
+export async function createMediaCategory(studioId: string, _previous: string, form: FormData) {
+  const { db, workspace } = await requireStudioAccess('edit');
+  if (workspace.id !== studioId) return 'The active studio changed. Refresh Media and try again.';
+  const name = String(form.get('name') ?? '').trim();
+  if (!name || name.length > 60) return 'Enter a category name up to 60 characters.';
+  const { error } = await db.from('studio_media_categories').insert({ workspace_id: studioId, name });
+  if (error) return error.code === '23505' ? 'That category already exists.' : 'Could not create the category.';
+  revalidatePath('/studio/media');
+  return 'Category added.';
+}
+
+export async function organiseMedia(studioId: string, _previous: string, form: FormData) {
+  const { db, workspace } = await requireStudioAccess('edit');
+  if (workspace.id !== studioId) return 'The active studio changed. Refresh Media and try again.';
+  const { workspaceIdPattern } = await import('@/lib/studio-access');
+  const ids = [...new Set(form.getAll('media').map(String))];
+  if (!ids.length || ids.length > 100 || ids.some(id => !workspaceIdPattern.test(id))) return 'Select up to 100 files first.';
+  const operation = String(form.get('operation') ?? '');
+  const category = String(form.get('category') ?? '');
+  const year = String(form.get('year') ?? '').trim();
+  if (operation === 'year' && year && (!/^\d{4}$/.test(year) || Number(year) < 1800 || Number(year) > 2100)) return 'Enter a year between 1800 and 2100, or leave it blank to clear it.';
+  if (operation !== 'year' && (!['add', 'remove'].includes(operation) || !workspaceIdPattern.test(category))) return 'Choose a category first.';
+  const { data, error } = await db.rpc('organise_studio_media', {
+    studio: studioId, assets: ids, operation, category: operation === 'year' ? null : category,
+    year_value: operation === 'year' && year ? Number(year) : null,
+  });
+  if (error || !data) return 'Could not update the selected files.';
+  revalidatePath('/studio/media');
+  return `Updated ${data} ${data === 1 ? 'file' : 'files'}.`;
+}
