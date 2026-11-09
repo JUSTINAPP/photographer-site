@@ -1,7 +1,7 @@
 'use client';
 
 import { normaliseTheme, PRESETS } from '@/lib/website-theme';
-import { vimeoEmbed } from '@/lib/import-identity';
+import { mediaIdentity, vimeoEmbed } from '@/lib/import-identity';
 
 import { ActionButton } from '@/components/ActionFeedback';
 
@@ -90,8 +90,12 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       for (const entry of result.pages) {
         collections[entry.id] = entry.category;
         if (entry.film && !films[entry.id]) films[entry.id] = entry.film;
-        if (!Object.hasOwn(placements, entry.id) && !Object.hasOwn(current.galleries, entry.id)) {
-          placements[entry.id] = entry.photos.map(url => ({ url, size: 'grid', alt: '' }));
+        const hasGallery = Object.hasOwn(placements, entry.id) || Object.hasOwn(current.galleries, entry.id);
+        if (!hasGallery || result.fillGaps) {
+          const frames = hasGallery ? websiteGallery(current, entry.id) : [];
+          const used = new Set(frames.map(frame => mediaIdentity(frame.url)));
+          const additions = entry.photos.filter(url => !used.has(mediaIdentity(url))).map(url => ({ url, size: 'grid' as const, alt: '' }));
+          if (!hasGallery || additions.length) placements[entry.id] = [...frames, ...additions].slice(0, 100);
         }
       }
       const ids = result.pages.map(entry => entry.id);

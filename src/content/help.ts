@@ -168,7 +168,7 @@ export const helpArticles: HelpArticle[] = [
         title: 'Arrange the imported work in the editor',
         instructions: [
           'Open Website design → Pages and choose an imported campaign. Confirm its cover and gallery order, and choose which projects you want on the homepage.',
-          'For a Squarespace portfolio organised into Portfolio, Advertising, Motion and Personal, open Rebuild from my existing site and click Rebuild draft collections. Review the galleries and covers, then click Save design to see the collection filters in Media.',
+          'For a Squarespace portfolio organised into Portfolio, Advertising, Motion and Personal, open Rebuild from my existing site and click Rebuild draft collections. If the scan lists missing files, click Add missing media and rebuild to save their source links and fill gaps in the draft galleries. Review the galleries and covers, then click Save design to see the collection filters in Media.',
         ],
       },
     ],

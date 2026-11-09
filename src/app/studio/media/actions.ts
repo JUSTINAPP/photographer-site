@@ -7,8 +7,9 @@ import { mediaIdentity } from '@/lib/import-identity';
 import { existingMediaIdentities } from '@/lib/import-library';
 import type { FoundMedia } from '@/lib/import-media';
 
-export async function saveImportedMedia(input: FoundMedia[]) {
+export async function saveImportedMedia(input: FoundMedia[], studioId?: string) {
   const { db, workspace } = await requireStudioAccess('edit');
+  if (studioId && workspace.id !== studioId) throw new Error('The active studio changed. Reopen the editor.');
   if (!Array.isArray(input) || input.length < 1 || input.length > 2500) throw new Error('Select up to 2,500 media items.');
   const existing = await existingMediaIdentities(db, workspace.id);
   const rows = new Map(input.map(item => {

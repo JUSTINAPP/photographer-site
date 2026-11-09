@@ -7,30 +7,37 @@ import { importPageStructure, rebuildPortfolioCollections } from '@/app/studio/w
 import type { WebsiteProject } from '@/lib/website';
 
 export default function RestoreWebsitePages({ id, source, onRestore, onRebuild }: {
-  onRebuild: (result: { pages: { id: string; category: string; photos: string[]; film: string }[]; projects: WebsiteProject[]; instagram: string }) => void;
+  onRebuild: (result: { pages: { id: string; category: string; photos: string[]; film: string }[]; projects: WebsiteProject[]; instagram: string; fillGaps: boolean }) => void;
   id: string; source: string; onRestore: (home: string[], pages: { id: string; photos: string[] }[], projects: WebsiteProject[]) => void;
 }) {
   const [url, setUrl] = useState(source);
   const [message, setMessage] = useState('');
   const [review, setReview] = useState<{ total: number; names: string[] } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [operation, setOperation] = useState('rebuild');
 
   return <details className="restore-website-pages">
     <summary>Rebuild from my existing site</summary>
     <p>Match the original Squarespace galleries against your Media library and create a private draft organised into Portfolio, Advertising, Motion and Personal. Existing campaign galleries are kept. Review before saving the design.</p>
     <form onSubmit={event => {
       event.preventDefault();
-      const rebuild = (event.nativeEvent as SubmitEvent).submitter?.getAttribute('value') !== 'restore';
+      const intent = (event.nativeEvent as SubmitEvent).submitter?.getAttribute('value') ?? 'rebuild';
+      setOperation(intent);
       setMessage('');
-      setReview(null);
-      if (rebuild) {
+      if (intent !== 'recover') setReview(null);
+      if (intent !== 'restore') {
         startTransition(async () => {
           try {
-            const result = await rebuildPortfolioCollections(id, url);
-            if (!result.pages || !result.projects) { setMessage(result.error ?? 'The scan could not be completed.'); return; }
-            onRebuild({ pages: result.pages, projects: result.projects, instagram: result.instagram });
+            const result = await rebuildPortfolioCollections(id, url, intent === 'recover');
+            if (!result.pages || !result.projects) {
+              if (result.unmatched) setReview({ total: result.unmatched, names: [] });
+              setMessage(result.error ?? 'The scan could not be completed.');
+              return;
+            }
+            onRebuild({ pages: result.pages, projects: result.projects, instagram: result.instagram, fillGaps: intent === 'recover' });
             setReview({ total: result.unmatched, names: result.review });
-            setMessage(`Prepared ${result.pages.length} galleries and films. ${result.unmatched} source items need review.` +
+            setMessage(`${result.added ? `Added ${result.added} items to Media. ` : ''}Prepared ${result.pages.length} galleries and films.` +
+              (result.unmatched ? ` ${result.unmatched} source items still need review.` : '') +
               (result.missing.length ? ` Sections with no readable galleries: ${result.missing.join(', ')}.` : '') +
               ' Review the preview, then save the design.');
           } catch { setMessage('Could not rebuild the draft. Please try again.'); }
@@ -51,14 +58,20 @@ export default function RestoreWebsitePages({ id, source, onRestore, onRebuild }
       });
     }}>
       <label>Original website<input type="text" inputMode="url" autoCapitalize="none" spellCheck={false} autoComplete="url" value={url} placeholder="www.yourwebsite.com" required onChange={event => setUrl(event.target.value)} /></label>
-      <ActionButton value="rebuild" busy={pending} className="primary-button" disabled={pending}>{pending ? 'Scanning source…' : 'Rebuild draft collections'}</ActionButton>
+      <ActionButton value="rebuild" busy={pending && operation === 'rebuild'} className="primary-button" disabled={pending}>{pending && operation === 'rebuild' ? 'Scanning source…' : 'Rebuild draft collections'}</ActionButton>
       {' '}<ActionButton value="restore" className="secondary-button" disabled={pending}>Restore photo order only</ActionButton>
+      <div className="rebuild-recovery">
+        <p>{review?.total ? `${review.total} source items are missing from the matched library.` : 'Missing photos or films?' } Add the missing source links to Media and fill gaps in the draft galleries. Existing frames and their order are kept.</p>
+        <ActionButton value="recover" busy={pending && operation === 'recover'} className="secondary-button" disabled={pending}>
+          {pending && operation === 'recover' ? 'Adding media and rebuilding…' : 'Add missing media and rebuild'}
+        </ActionButton>
+      </div>
       {pending && <progress className="website-publish-progress" aria-label="Scanning website" />}
       <p role="status">{message}</p>
     </form>
-    {!!review?.total && <details>
+    {!!review?.names.length && <details>
       <summary>Needs review · {review.total} unmatched source items</summary>
-      <p>These items are on the source site but could not be matched to Media. Check the filenames or import the source gallery again.</p>
+      <p>These source items have no matching file URL in Media. You can add them together using the button above.</p>
       <ul>{review.names.map((name, index) => <li key={index}>{name}</li>)}</ul>
       {review.total > review.names.length && <p>Showing the first {review.names.length} items.</p>}
     </details>}

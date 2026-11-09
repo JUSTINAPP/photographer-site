@@ -1,5 +1,6 @@
 'use server';
 
+import { saveImportedMedia } from '@/app/studio/media/actions';
 import { mediaIdentity } from '@/lib/import-identity';
 
 import { revalidatePath } from 'next/cache';
@@ -112,7 +113,7 @@ export async function createCampaignPage(studioId: string, input: { title: strin
   return { project: data as WebsiteProject };
 }
 
-export async function rebuildPortfolioCollections(studioId: string, input: string) {
+export async function rebuildPortfolioCollections(studioId: string, input: string, recoverMissing = false) {
   const { db, workspace } = await requireStudioAccess('edit');
   if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen the editor.' };
   try {
@@ -124,14 +125,29 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
     const scan = await scanPortfolioCollections(address);
     if (!scan.projects.length) return { error: 'No Squarespace galleries were found. Check the site address.' };
 
-    const library = new Map<string, string>();
-    for (let offset = 0; ; offset += 500) {
-      const { data, error } = await db.from('studio_media').select('source_url').eq('workspace_id', studioId).order('id').range(offset, offset + 499);
-      if (error) return { error: 'Could not read the Media library.' };
-      for (const item of data) library.set(mediaIdentity(item.source_url), item.source_url);
-      if (data.length < 500) break;
+    async function readLibrary() {
+      const library = new Map<string, string>();
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await db.from('studio_media').select('source_url').eq('workspace_id', studioId).order('id').range(offset, offset + 499);
+        if (error) throw new Error('Could not read the Media library.');
+        for (const item of data) library.set(mediaIdentity(item.source_url), item.source_url);
+        if (data.length < 500) return library;
+      }
     }
+    let library = await readLibrary();
     const { vimeoEmbed } = await import('@/lib/import-identity');
+    let added = 0;
+    if (recoverMissing) {
+      const missing = new Map(scan.projects.flatMap(project => project.media)
+        .filter(item => !library.has(mediaIdentity(item.url)))
+        .map(item => [mediaIdentity(item.url), item]));
+      const items = [...missing.values()];
+      for (let start = 0; start < items.length; start += 2500) {
+        const result = await saveImportedMedia(items.slice(start, start + 2500), studioId);
+        added += result.added;
+      }
+      if (items.length) library = await readLibrary();
+    }
     const unmatched = new Map<string, string>();
     const prepared = scan.projects.map(({ media, ...project }) => {
       const photos: string[] = [];
@@ -145,7 +161,10 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
       }
       return { ...project, photos: [...new Set(photos)].slice(0, 100), film };
     }).filter(project => project.photos.length || project.film);
-    if (!prepared.length) return { error: 'No images or Vimeo films matched your library. Import and save media before rebuilding.' };
+    if (!prepared.length) return {
+      error: 'No images or Vimeo films matched your library. Use Add missing media and rebuild to bring in the files from the source galleries.',
+      unmatched: unmatched.size,
+    };
 
     const projectColumns = 'id,title,category,description,image_url,published,source_url';
     const existing = await db.from('projects').select(projectColumns).eq('workspace_id', studioId);
@@ -170,8 +189,10 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
       return project ? [{ id: project.id, category, photos, film }] : [];
     });
     revalidatePath('/studio/projects');
-    return { projects: allProjects, pages, unmatched: unmatched.size, review: [...unmatched.values()].slice(0, 100), missing: scan.missing, instagram: websiteImage(scan.instagram) };
+    return { projects: allProjects, pages, added, unmatched: unmatched.size, review: [...unmatched.values()].slice(0, 100), missing: scan.missing, instagram: websiteImage(scan.instagram) };
   } catch {
-    return { error: 'The Squarespace site could not be scanned. Check the address and try again.' };
+    return { error: recoverMissing
+      ? 'Could not finish adding media and rebuilding. Try again to continue. Files already saved will be skipped.'
+      : 'The Squarespace site could not be scanned. Check the address and try again.' };
   }
 }
