@@ -95,7 +95,7 @@ export const helpArticles: HelpArticle[] = [
         shot: { file: 'more-work.webp', width: 742, height: 366 }, caption: 'More work controls the campaign links at the bottom of the current page.',
       },
     ],
-    tip: 'If the media picker looks empty, turn on Show all library items. For imported work, Restore pages and photo order can match photos already in Media to their order on the source site.',
+    tip: 'If the media picker looks empty, turn on Show all library items. For imported work, Rebuild from my existing site can match photos already in Media to their order on the source site.',
     related: ['website-design', 'media-library'],
   },
   {
@@ -160,7 +160,7 @@ export const helpArticles: HelpArticle[] = [
         title: 'Arrange the imported work in the editor',
         instructions: [
           'Open Website design → Pages and choose an imported campaign. Confirm its cover and gallery order, and choose which projects you want on the homepage.',
-          'If the files are in Media but the order needs restoring, open Restore pages and photo order from a website and scan the source again. Review the result in the editor before saving.',
+          'For a Squarespace portfolio organised into Portfolio, Advertising, Motion and Personal, open Rebuild from my existing site and click Rebuild draft collections. Review the galleries and covers, then click Save design to see the collection filters in Media.',
         ],
       },
     ],

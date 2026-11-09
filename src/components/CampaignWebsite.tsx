@@ -6,6 +6,7 @@ import WebsiteGallery from './WebsiteGallery';
 import PortfolioLogo from './PortfolioLogo';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteProject } from '@/lib/website';
+import { collectionAnchor, portfolioCollections } from '@/lib/portfolio-collections';
 import { FONT_PAIRS } from '@/lib/website-theme';
 import './campaign-website.css';
 
@@ -34,6 +35,10 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   const [paused, setPaused] = useState(false);
   const current = view ?? localView;
   const work = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject) ? campaignSamples : orderWebsiteProjects(projects, site.projectOrder);
+  const groups = portfolioCollections.map(({ name }) => ({
+    name, projects: work.filter(project => site.collections[project.id] === name),
+  })).filter(group => group.projects.length);
+  const ungrouped = work.filter(project => !site.collections[project.id]);
   const targets = allProjects?.length ? allProjects : work;
   const selected = targets.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
   const illustrative = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject);
@@ -98,15 +103,24 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   const openProject = preview ? (id: string) => go({ campaign: id }) : undefined;
   const colours = FONT_PAIRS[site.theme.fonts];
 
+  const tiles = (items: WebsiteProject[], grid: boolean) => <div className={grid ? 'campaign-home-grid' : undefined}>
+    {items.map(project => <div key={project.id}>
+      {navigation({ campaign: project.id }, <>
+        <Media url={site.covers[project.id] || project.image_url} label="Campaign cover" />
+        <div className="campaign-caption"><p>{site.collections[project.id] || project.category}</p><h2>{project.title}</h2><span>View campaign ↗</span></div>
+      </>, 'campaign-screen campaign-feature')}
+    </div>)}
+  </div>;
+
   return <div className={'campaign-site' + (preview ? ' campaign-preview' : '')} ref={root}
     style={{ '--campaign-font': colours.text, '--campaign-display': colours.display } as CSSProperties}>
     <header className={'campaign-header' + (scrolled || current.about ? ' is-solid' : '')}>
       {navigation({}, <PortfolioLogo site={site} />, 'campaign-wordmark')}
       <nav aria-label="Portfolio">
-        {navigation({}, 'Work', undefined, 'work')}
+        {groups.length ? groups.map(group => <span key={group.name}>{navigation({}, group.name, undefined, collectionAnchor(group.name))}</span>) : navigation({}, 'Work', undefined, 'work')}
         {navigation({ about: '1' }, 'About + Services')}
         {navigation({ about: '1' }, 'Contact', undefined, 'contact')}
-        {site.theme.social !== 'footer' && social}
+        {(groups.length > 0 || site.theme.social !== 'footer') && social}
       </nav>
     </header>
 
@@ -128,6 +142,9 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
         <div className="campaign-caption"><p>{selected.category}</p><h1>{selected.title}</h1></div>
       </section>
       <section className="campaign-copy"><p className="campaign-kicker">{selected.category}</p><h2>{selected.title}</h2><p>{selected.description}</p></section>
+      {site.films[selected.id] && <div className="campaign-film">
+        <iframe src={site.films[selected.id]} title={selected.title} loading="lazy" allow="fullscreen; picture-in-picture" allowFullScreen />
+      </div>}
       <WebsiteSections sections={site.sections[selected.id]} projects={targets} base={base} onProject={openProject} />
       {illustrative && gallery.length > 0 && <section className="campaign-gallery" aria-label="Campaign gallery">
         {gallery.map(({ url, size, alt }, i) => <div key={i} className={'campaign-frame-' + size}><Media url={url} label={alt || (size === 'grid' ? 'Campaign grid image' : 'Full-size campaign image')} /></div>)}
@@ -154,14 +171,12 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
       </section> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
       <WebsiteSections sections={site.sections.home} projects={targets} base={base} onProject={openProject} />
       <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={targets} base={base} onProject={openProject} />
-      <div className={site.homepageLayout === 'grid' ? 'campaign-home-grid' : undefined}>
-      {work.map(project => <div key={project.id}>
-        {navigation({ campaign: project.id }, <>
-          <Media url={site.covers[project.id] || project.image_url} label="Full-screen campaign image" />
-          <div className="campaign-caption"><p>{project.category}</p><h2>{project.title}</h2><span>View campaign ↗</span></div>
-        </>, 'campaign-screen campaign-feature')}
-      </div>)}
-      </div>
+      {groups.map(group => <section className="campaign-collection" key={group.name}
+        id={preview ? undefined : collectionAnchor(group.name)} data-anchor={collectionAnchor(group.name)}>
+        <h2>{group.name}</h2>
+        {tiles(group.projects, true)}
+      </section>)}
+      {tiles(ungrouped, site.homepageLayout === 'grid')}
     </>}
 
     <footer className="campaign-copy campaign-footer" id={preview ? undefined : 'contact'} data-anchor="contact">

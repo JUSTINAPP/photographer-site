@@ -111,3 +111,67 @@ export async function createCampaignPage(studioId: string, input: { title: strin
   revalidatePath('/studio/projects');
   return { project: data as WebsiteProject };
 }
+
+export async function rebuildPortfolioCollections(studioId: string, input: string) {
+  const { db, workspace } = await requireStudioAccess('edit');
+  if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen the editor.' };
+  try {
+    const { importWebsiteUrl } = await import('@/lib/public-url');
+    const address = importWebsiteUrl(input).href;
+    const { data: allowed } = await db.rpc('claim_import_preview', { workspace: studioId });
+    if (!allowed) return { error: 'Please wait one minute before scanning again.' };
+    const { scanPortfolioCollections } = await import('@/lib/import-collections');
+    const scan = await scanPortfolioCollections(address);
+    if (!scan.projects.length) return { error: 'No Squarespace galleries were found. Check the site address.' };
+
+    const library = new Map<string, string>();
+    for (let offset = 0; ; offset += 500) {
+      const { data, error } = await db.from('studio_media').select('source_url').eq('workspace_id', studioId).order('id').range(offset, offset + 499);
+      if (error) return { error: 'Could not read the Media library.' };
+      for (const item of data) library.set(mediaIdentity(item.source_url), item.source_url);
+      if (data.length < 500) break;
+    }
+    const { vimeoEmbed } = await import('@/lib/import-identity');
+    const unmatched = new Map<string, string>();
+    const prepared = scan.projects.map(({ media, ...project }) => {
+      const photos: string[] = [];
+      let film = '';
+      for (const item of media) {
+        const key = mediaIdentity(item.url);
+        const stored = library.get(key);
+        if (!stored) { unmatched.set(key, item.name); continue; }
+        if (item.kind === 'photo') photos.push(stored);
+        else if (!film) film = vimeoEmbed(stored) ?? '';
+      }
+      return { ...project, photos: [...new Set(photos)].slice(0, 100), film };
+    }).filter(project => project.photos.length || project.film);
+    if (!prepared.length) return { error: 'No images or Vimeo films matched your library. Import and save media before rebuilding.' };
+
+    const projectColumns = 'id,title,category,description,image_url,published,source_url';
+    const existing = await db.from('projects').select(projectColumns).eq('workspace_id', studioId);
+    if (existing.error) return { error: 'Could not check for existing project drafts.' };
+    const sourceKey = (url: string) => url.replace(/\/$/, '');
+    let allProjects = existing.data;
+    const bySource = new Map(allProjects.map(project => [sourceKey(project.source_url), project]));
+    const fresh = [...new Map(prepared.filter(project => !bySource.has(sourceKey(project.source_url))).map(project => [sourceKey(project.source_url), {
+      workspace_id: studioId, source_url: project.source_url, title: project.title, category: project.category,
+      image_url: project.photos[0] ?? null, description: '', published: false,
+    }])).values()];
+    if (fresh.length) {
+      const result = await db.from('projects').upsert(fresh, { onConflict: 'workspace_id,source_url', ignoreDuplicates: true });
+      if (result.error) return { error: 'Could not create the private project drafts.' };
+      const loaded = await db.from('projects').select(projectColumns).eq('workspace_id', studioId);
+      if (loaded.error) return { error: 'Could not load the project drafts. You can retry safely.' };
+      allProjects = loaded.data;
+      for (const project of allProjects) bySource.set(sourceKey(project.source_url), project);
+    }
+    const pages = prepared.flatMap(({ source_url, category, photos, film }) => {
+      const project = bySource.get(sourceKey(source_url));
+      return project ? [{ id: project.id, category, photos, film }] : [];
+    });
+    revalidatePath('/studio/projects');
+    return { projects: allProjects, pages, unmatched: unmatched.size, review: [...unmatched.values()].slice(0, 100), missing: scan.missing, instagram: websiteImage(scan.instagram) };
+  } catch {
+    return { error: 'The Squarespace site could not be scanned. Check the address and try again.' };
+  }
+}

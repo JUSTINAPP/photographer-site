@@ -1,3 +1,5 @@
+import { portfolioCollections } from './portfolio-collections';
+import { vimeoEmbed } from './import-identity';
 import type { WebsiteSection } from './website-sections';
 import { normaliseTheme, PRESETS } from './website-theme';
 
@@ -89,8 +91,21 @@ export function normaliseWebsite(input: unknown) {
       related[page] = [...new Set(items.filter(id => typeof id === 'string' && projectId.test(id) && id !== page))].slice(0, 12);
     }
   }
+  const collections: Record<string, string> = {};
+  const films: Record<string, string> = {};
+  if (data.collections && typeof data.collections === 'object') {
+    for (const [id, name] of Object.entries(data.collections).slice(0, 150)) {
+      if (projectId.test(id) && typeof name === 'string' && portfolioCollections.some(collection => collection.name === name)) collections[id] = name;
+    }
+  }
+  if (data.films && typeof data.films === 'object') {
+    for (const [id, input] of Object.entries(data.films).slice(0, 150)) {
+      const film = projectId.test(id) && typeof input === 'string' ? vimeoEmbed(input.slice(0, 2048)) : null;
+      if (film) films[id] = film;
+    }
+  }
   return {
-    placements, covers, projectOrder, sections, related,
+    placements, covers, projectOrder, sections, related, collections, films,
     homeGallery: cleanFrames(data.homeGallery, 150),
     homepageProjects: Array.isArray(data.homepageProjects)
       ? [...new Set(data.homepageProjects.filter((id): id is string => typeof id === 'string' && projectId.test(id)).slice(0, 150))]
@@ -193,6 +208,8 @@ export function publishWebsiteSnapshot(site: Website, projects: WebsiteProject[]
     placements: keepPages(site.placements),
     galleries: keepPages(site.galleries),
     covers: keepPages(site.covers),
+    collections: keepPages(site.collections),
+    films: keepPages(site.films),
     projectSnapshot,
   };
 }

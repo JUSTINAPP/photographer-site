@@ -56,3 +56,18 @@ test('accepts a bare import address while retaining strict network URL checks', 
     assert.throws(() => importWebsiteUrl(address));
   }
 });
+
+import { extractCollection } from '../src/lib/import-collections';
+
+test('keeps Squarespace gallery titles, source paths and photo order within a collection', () => {
+  const groups = extractCollection(`<div class="gallery-project" data-url="/marcs/">
+    <div class="project-meta"><h2>Marcs</h2></div>
+    <img data-src="/cover.jpg"><img data-src="/detail.jpg">
+  </div><div class="gallery-project" data-url="/another/">
+    <div class="project-meta"><h2>Second campaign</h2></div><img data-src="/second.jpg">
+  </div>`, 'https://example.com/clients', 'Advertising');
+  assert.deepEqual(groups.map(group => [group.title, group.category, group.source_url, group.media.map(item => item.url)]), [
+    ['Marcs', 'Advertising', 'https://example.com/marcs/', ['https://example.com/cover.jpg', 'https://example.com/detail.jpg']],
+    ['Second campaign', 'Advertising', 'https://example.com/another/', ['https://example.com/second.jpg']],
+  ]);
+});

@@ -1,5 +1,6 @@
 'use client';
 
+import { normaliseTheme, PRESETS } from '@/lib/website-theme';
 import { vimeoEmbed } from '@/lib/import-identity';
 
 import { ActionButton } from '@/components/ActionFeedback';
@@ -80,6 +81,35 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
     setPicker(null);
   }
 
+  function rebuild(result: Parameters<React.ComponentProps<typeof RestoreWebsitePages>['onRebuild']>[0]) {
+    onProjects(result.projects);
+    setDraft(current => {
+      const placements = { ...current.placements };
+      const collections = { ...current.collections };
+      const films = { ...current.films };
+      for (const entry of result.pages) {
+        collections[entry.id] = entry.category;
+        if (entry.film && !films[entry.id]) films[entry.id] = entry.film;
+        if (!Object.hasOwn(placements, entry.id) && !Object.hasOwn(current.galleries, entry.id)) {
+          placements[entry.id] = entry.photos.map(url => ({ url, size: 'grid', alt: '' }));
+        }
+      }
+      const ids = result.pages.map(entry => entry.id);
+      const included = homepageWork(current, result.projects).map(item => item.id);
+      return {
+        ...current, placements, collections, films,
+        theme: current.theme.layout === 'campaign' ? current.theme : normaliseTheme(PRESETS.campaign.theme),
+        image: current.image || result.pages.find(entry => entry.photos.length)?.photos[0] || '',
+        instagram: current.instagram || result.instagram,
+        homeGallery: current.homeGallery ?? [],
+        homepageProjects: [...new Set([...ids, ...included])].slice(0, 150),
+        projectOrder: [...new Set([...ids, ...current.projectOrder])].slice(0, 150),
+      };
+    });
+    onPage('home');
+    setPicker(null);
+  }
+
   function choose(asset: WebsiteMedia) {
     if (picker === 'gallery') updateGallery([...gallery, { url: asset.source_url, size: 'grid', alt: '' }]);
     else if (picker === 'video') setDraft(current => ({ ...current, video: asset.source_url }));
@@ -118,9 +148,9 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
     <nav className="website-page-list" aria-label="Pages">
       {[{ id: 'home', title: 'Homepage' }, { id: 'about', title: 'About + Services' }, ...ordered].map(item =>
         <button type="button" key={item.id} aria-current={page === item.id ? 'page' : undefined}
-          onClick={() => { onPage(item.id); setPicker(null); }}>{item.title}</button>)}
+          onClick={() => { onPage(item.id); setPicker(null); }}>{draft.collections[item.id] ? draft.collections[item.id] + ' · ' : ''}{item.title}</button>)}
     </nav>
-    <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} />
+    <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} onRebuild={rebuild} />
     <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
 
     <WebsiteSectionEditor key={page} page={page} sections={draft.sections[page] ?? []} media={media} projects={projects}
