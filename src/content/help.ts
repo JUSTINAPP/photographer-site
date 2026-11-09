@@ -141,10 +141,10 @@ export const helpArticles: HelpArticle[] = [
         shot: { file: 'import-address.webp', width: 1430, height: 194 }, caption: 'Paste the source address here and select Preview import. The screenshot uses the sample importer.',
       },
       {
-        title: 'Save the projects and media you want',
+        title: 'Save photos and videos first',
         instructions: [
-          'Review the project titles and thumbnails. Untick any pages you don’t want, then click Save privately. Find the saved work in Projects.',
-          'Review the photos and videos separately, untick unwanted files, then click Save media to library. Find the saved files under Photos or Videos in Media.',
+          'In Photos and videos, choose the files you want and click the save button. It shows the number of selected photos and videos. Find them in Media.',
+          'To bring over page titles and covers as well, open Project drafts (optional), choose the pages and click Save project drafts. Find them in Projects.',
         ],
         shot: { file: 'import-projects.webp', width: 1430, height: 728 }, caption: 'The import preview lets you review project titles and thumbnails before saving.',
       },
@@ -153,7 +153,7 @@ export const helpArticles: HelpArticle[] = [
         instructions: [
           'Try importing the address of the specific gallery first. Fresnel skips media already in your library.',
           'For photos the scan still misses, open the Assets panel in Squarespace on a computer. Open the image’s three-dot menu, choose File Details, then right-click the preview and save it. Squarespace downloads these images one at a time.',
-          'Save media to library keeps source links. Use Keep private original on individual assets to keep private copies. Published pages still need image URLs that remain available after the move.',
+          'Saving photos and videos to Media keeps source links. Use Keep private original on individual assets to keep private copies. Published pages still need image URLs that remain available after the move.',
         ],
       },
       {

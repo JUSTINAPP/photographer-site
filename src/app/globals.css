@@ -399,3 +399,9 @@ button[aria-busy="true"] { cursor: progress; }
 .squarespace-import-help summary { cursor: pointer; font-weight: 600; }
 .squarespace-import-help details :is(p, ol) { max-width: 70ch; line-height: 1.6; }
 .squarespace-import-help a { text-decoration: underline; text-underline-offset: 3px; }
+
+.import-review { display: grid; gap: 14px; margin-top: 24px; }
+.import-review > p { margin: 0; }
+.import-review summary { cursor: pointer; font-weight: 600; }
+.import-review section details { margin-top: 14px; }
+.import-review [role="status"] a { text-decoration: underline; text-underline-offset: 3px; }

@@ -1,33 +1,179 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, type FormEvent } from 'react';
+import { ArrowRight, Globe } from 'lucide-react';
 import { ActionButton } from '@/components/ActionFeedback';
-import {useState} from 'react';import {ArrowRight,Globe,Check} from 'lucide-react';import {saveImportedMedia} from '@/app/studio/media/actions';
+import { saveImported } from '@/app/studio/actions';
+import { saveImportedMedia } from '@/app/studio/media/actions';
 import { vimeoEmbed } from '@/lib/import-identity';
 import type { FoundMedia } from '@/lib/import-media';
-import {saveImported} from '@/app/studio/actions';import type {ImportCandidate} from '@/lib/importer';
-export default function ImportPanel({demo=false}:{demo?:boolean}){const [url,setUrl]=useState(demo ? 'https://example.com/' : '');const [media,setMedia]=useState<FoundMedia[]>([]);const [excluded,setExcluded]=useState<string[]>([]);const [items,setItems]=useState<ImportCandidate[]>([]);const [selected,setSelected]=useState<number[]>([]);const [busy,setBusy]=useState<string | null>(null);const [message,setMessage]=useState('');const [warnings,setWarnings]=useState<string[]>([]);
- async function preview(e:React.FormEvent){e.preventDefault();if(demo){setItems([{title:'Studies in form — AI concept',description:'Fashion concept imagery. Illustrative preview only.',image_url:'/images/fashion.jpg',source_url:'https://example.com/fashion',category:'Fashion'},{title:'Drawn to the sea — AI concept',description:'Sailing concept imagery. Illustrative preview only.',image_url:'/images/sailing.jpg',source_url:'https://example.com/sailing',category:'Sailing'},{title:'Summer, unhurried — AI concept',description:'Lifestyle concept imagery. Illustrative preview only.',image_url:'/images/lifestyle.jpg',source_url:'https://example.com/lifestyle',category:'Lifestyle'}]);setSelected([0,1,2]);setMessage('Example only: this shows the review step using AI concept images. Your URL has not been fetched.');return}setBusy('preview');setMessage('');setItems([]);setMedia([]);setExcluded([]);try{const response=await fetch('/api/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});const result=await response.json();if(!response.ok)throw new Error(result.error);setItems(result.candidates);setMedia(result.media ?? []);setSelected(result.candidates.map((_:unknown,i:number)=>i));setWarnings(result.warnings);setMessage(result.alreadySaved ? `Found ${result.media.length} new media items. Skipped ${result.alreadySaved} already in your library.` : 'Preview ready. Review the project pages and media before saving.')}catch(e){setMessage(e instanceof Error?e.message:'Preview failed.')}finally{setBusy(null)}}
- async function saveMedia(){
-  setBusy('media');
-  try {
-    const { added, skipped } = await saveImportedMedia(media.filter(item => !excluded.includes(item.url)));
-    setMessage(`Added ${added} media items to your library.${skipped ? ` Skipped ${skipped} duplicates.` : ''} Open Media to review them.`);
-    setMedia([]);
-  } catch (error) {
-    setMessage(error instanceof Error ? error.message : 'Media could not be saved. Please try again.');
-  } finally {
-    setBusy(null);
+import type { ImportCandidate } from '@/lib/importer';
+
+const exampleProjects = [
+  ['Studies in form', 'fashion'],
+  ['Drawn to the sea', 'sailing'],
+  ['Summer, unhurried', 'lifestyle'],
+].map(([title, category]) => ({
+  title, category, description: 'AI concept imagery for this demo.',
+  image_url: '/images/' + category + '.jpg',
+  source_url: 'https://example.com/' + category,
+}));
+
+type Preview = { candidates: ImportCandidate[]; media: FoundMedia[]; alreadySaved: number; warnings: string[] };
+type SaveResult = { message: string; saved?: boolean };
+
+function mediaCount(items: FoundMedia[]) {
+  const photos = items.filter(item => item.kind === 'photo').length;
+  const videos = items.length - photos;
+  return [
+    photos ? photos.toLocaleString() + (photos === 1 ? ' photo' : ' photos') : '',
+    videos ? videos.toLocaleString() + (videos === 1 ? ' video' : ' videos') : '',
+  ].filter(Boolean).join(' and ');
+}
+
+export default function ImportPanel({ demo = false }: { demo?: boolean }) {
+  const [url, setUrl] = useState(demo ? 'https://example.com/' : '');
+  const [scan, setScan] = useState<Preview | null>(null);
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [busy, setBusy] = useState<'preview' | 'media' | 'projects' | null>(null);
+  const [scanError, setScanError] = useState('');
+  const [mediaResult, setMediaResult] = useState<SaveResult | null>(null);
+  const [projectResult, setProjectResult] = useState<SaveResult | null>(null);
+  const selectedMedia = scan?.media.filter(item => !excluded.includes(item.url)) ?? [];
+
+  async function preview(event: FormEvent) {
+    event.preventDefault();
+    setScan(null);
+    setExcluded([]);
+    setScanError('');
+    setMediaResult(null);
+    setProjectResult(null);
+    setBusy('preview');
+    try {
+      let result: Preview;
+      if (demo) {
+        result = {
+          candidates: exampleProjects,
+          media: exampleProjects.map(item => ({ url: item.image_url, name: item.title, kind: 'photo' })),
+          alreadySaved: 0,
+          warnings: [],
+        };
+      } else {
+        const response = await fetch('/api/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        result = data;
+      }
+      setScan(result);
+      setSelected(result.candidates.map((_, index) => index));
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : 'Preview failed. Please try again.');
+    } finally {
+      setBusy(null);
+    }
   }
- }
- async function save(){if(demo){setMessage(`${selected.length} example projects selected for this screen. Nothing has been imported, published or saved.`);return}setBusy('projects');try{const n=await saveImported(items.filter((_,i)=>selected.includes(i)));setMessage(`${n} project${n===1?'':'s'} saved privately. Open Projects to review and publish.`);setItems([])}catch(e){setMessage(e instanceof Error?e.message:'Saving failed.')}finally{setBusy(null)}}
- return <><div className="import-intro"><div className="import-icon"><Globe size={24}/></div><h2>Import from a website</h2><p>Enter your website address, preview what Fresnel finds, then choose what to save.</p></div><form onSubmit={preview} className="import-form"><label htmlFor="website">Your current website</label><div className="url-field"><input id="website" type="text" inputMode="url" autoCapitalize="none" spellCheck={false} autoComplete="url" required value={url} onChange={e=>setUrl(e.target.value)} placeholder="www.yourwebsite.com"/><ActionButton busy={busy === 'preview'} className="primary-button" disabled={!!busy}>Preview import {busy !== 'preview' && <ArrowRight size={16}/>}</ActionButton></div><p>Enter the address as you’d type it in your browser. We’ll find photos, videos and projects and skip media already in your library.</p></form><div role="status" className="import-status">{message}</div>{warnings.map(w=><p key={w} className="warning">{w}</p>)}{items.length>0&&<div><div className="import-results">{items.map((item,i)=><label className="import-result" key={item.source_url}><input type="checkbox" checked={selected.includes(i)} onChange={()=>setSelected(prev=>prev.includes(i)?prev.filter(n=>n!==i):[...prev,i])}/>{item.image_url&&<img src={item.image_url} alt="Imported project preview" referrerPolicy="no-referrer"/>}<div><strong>{item.title}</strong><p>{item.description||'No description found.'}</p><small>{new URL(item.source_url).pathname}</small></div></label>)}</div><ActionButton busy={busy === 'projects'} className="primary-button" disabled={!!busy||!selected.length} onClick={save}>{busy !== 'projects' && <Check size={16}/>} {demo?'Review selection':'Save privately'} ({selected.length})</ActionButton></div>}{media.length > 0 && <section className="studio-panel">
-   <h2>Discovered media</h2>
-   <p>{media.filter(item=>item.kind==='photo').length} photos · {media.filter(item=>item.kind==='video').length} videos</p>
-   <p>Save the source references first. You can keep private copies and crop photos in the Media library.</p>
-   <details><summary>Review files</summary><ul>{media.map(item=><li key={item.url}><label><input type="checkbox" checked={!excluded.includes(item.url)} onChange={event => setExcluded(current => event.target.checked ? current.filter(url => url !== item.url) : [...current, item.url])} /> {item.name} · {vimeoEmbed(item.url) ? 'Vimeo link' : item.kind}</label></li>)}</ul></details>
-   <ActionButton busy={busy === 'media'} className="secondary-button" disabled={!!busy || excluded.length === media.length} onClick={saveMedia}>Save media to library</ActionButton>
- </section>}
+
+  async function saveMedia() {
+    setBusy('media');
+    setMediaResult(null);
+    try {
+      if (demo) {
+        setMediaResult({ message: 'Demo complete. These are sample photos and no files were saved.', saved: true });
+        return;
+      }
+      const { added, skipped } = await saveImportedMedia(selectedMedia);
+      setMediaResult({ message: `Added ${added.toLocaleString()} items to Media.${skipped ? ` Skipped ${skipped.toLocaleString()} already saved.` : ''}`, saved: true });
+    } catch (error) {
+      setMediaResult({ message: error instanceof Error ? error.message : 'Media could not be saved. Please try again.' });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveProjects() {
+    if (!scan) return;
+    setBusy('projects');
+    setProjectResult(null);
+    try {
+      if (demo) {
+        setProjectResult({ message: 'Demo complete. No project drafts were created.', saved: true });
+        return;
+      }
+      const added = await saveImported(scan.candidates.filter((_, index) => selected.includes(index)));
+      setProjectResult({
+        message: added ? `Created ${added} private project ${added === 1 ? 'draft' : 'drafts'}.` : 'The selected project drafts are already in Projects.',
+        saved: true,
+      });
+    } catch (error) {
+      setProjectResult({ message: error instanceof Error ? error.message : 'Projects could not be saved. Please try again.' });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return <>
+    <div className="import-intro">
+      <div className="import-icon"><Globe size={24} /></div>
+      <h2>Import from a website</h2>
+      <p>Scan your website, then choose the photos, videos and project drafts to bring into your studio.</p>
+    </div>
+    <form onSubmit={preview} className="import-form">
+      <label htmlFor="website">Your current website</label>
+      <div className="url-field">
+        <input id="website" type="text" inputMode="url" autoCapitalize="none" spellCheck={false} autoComplete="url" required
+          value={url} onChange={event => setUrl(event.target.value)} placeholder="www.yourwebsite.com" />
+        <ActionButton busy={busy === 'preview'} className="primary-button" disabled={!!busy}>
+          {busy === 'preview' ? 'Scanning website…' : <>Preview import <ArrowRight size={16} /></>}
+        </ActionButton>
+      </div>
+      <p>Enter the address as you’d type it in your browser.</p>
+    </form>
+    {scanError && <p role="alert" className="import-status">{scanError}</p>}
+    {scan && <div className="import-review">
+      <p role="status">{demo ? 'Sample results' : 'Scan complete.'} {scan.alreadySaved > 0 && `Skipped ${scan.alreadySaved.toLocaleString()} items already in Media.`}</p>
+      {scan.warnings.map(warning => <p key={warning} className="warning">{warning}</p>)}
+      <section className="studio-panel" aria-labelledby="import-media-heading">
+        <h2 id="import-media-heading">Photos and videos</h2>
+        {!mediaResult?.saved && (scan.media.length ? <p>{mediaCount(scan.media)} found. Save the selected items to your Media library. They stay private until you add them to a page and publish.</p>
+          : <p>No new photos or videos to save.</p>)}
+        {scan.media.length > 0 && !mediaResult?.saved && <>
+          <ActionButton busy={busy === 'media'} className="primary-button" disabled={!!busy || !selectedMedia.length} onClick={saveMedia}>
+            {busy === 'media' ? 'Saving to Media…' : selectedMedia.length ? `Save ${mediaCount(selectedMedia)} to Media` : 'Select photos or videos to save'}
+          </ActionButton>
+          <details>
+            <summary>Review photos and videos</summary>
+            <ul>{scan.media.map(item => <li key={item.url}><label>
+              <input type="checkbox" disabled={!!busy} checked={!excluded.includes(item.url)}
+                onChange={event => setExcluded(current => event.target.checked ? current.filter(url => url !== item.url) : [...current, item.url])} />
+              {' '}{item.name} · {vimeoEmbed(item.url) ? 'Vimeo link' : item.kind}
+            </label></li>)}</ul>
+          </details>
+        </>}
+        {mediaResult && <p role="status">{mediaResult.message} {mediaResult.saved && !demo && <Link href="/studio/media">Open Media library →</Link>}</p>}
+      </section>
+      {scan.candidates.length > 0 && <details className="studio-panel">
+        <summary>Project drafts (optional) · {scan.candidates.length} pages found</summary>
+        <p>Create editable project drafts from the selected pages. Their titles and covers go to Projects. Use the Media section above to save photos and videos.</p>
+        {!projectResult?.saved && <>
+          <ActionButton busy={busy === 'projects'} className="secondary-button" disabled={!!busy || !selected.length} onClick={saveProjects}>
+            {busy === 'projects' ? 'Saving drafts…' : `Save ${selected.length} project ${selected.length === 1 ? 'draft' : 'drafts'}`}
+          </ActionButton>
+          <div className="import-results">{scan.candidates.map((item, index) => <label className="import-result" key={item.source_url}>
+            <input type="checkbox" disabled={!!busy} checked={selected.includes(index)}
+              onChange={() => setSelected(current => current.includes(index) ? current.filter(value => value !== index) : [...current, index])} />
+            {item.image_url && <img src={item.image_url} alt="" referrerPolicy="no-referrer" />}
+            <div><strong>{item.title}</strong><p>{item.description || 'No description found.'}</p><small>{new URL(item.source_url).pathname}</small></div>
+          </label>)}</div>
+        </>}
+        {projectResult && <p role="status">{projectResult.message} {projectResult.saved && !demo && <Link href="/studio/projects">Open Projects →</Link>}</p>}
+      </details>}
+    </div>}
  <section className="studio-panel squarespace-import-help" aria-labelledby="squarespace-import-heading">
    <h2 id="squarespace-import-heading">Moving from Squarespace?</h2>
    <details>
@@ -39,7 +185,7 @@ export default function ImportPanel({demo=false}:{demo?:boolean}){const [url,set
        <li>Find the image, open its three-dot menu and choose <strong>File Details</strong>.</li>
        <li>Right-click the image preview and save it to your computer. Repeat for any other missing images.</li>
      </ol>
-     <p>In Fresnel, <strong>Save media to library</strong> saves the source links. Use <strong>Keep private original</strong> on an individual photo in Media to keep a copy. Before taking the old site offline, check that the image URLs on your published portfolio are hosted somewhere that will stay available.</p>
+     <p>In Fresnel, saving photos and videos to <strong>Media</strong> keeps their source links. Use <strong>Keep private original</strong> on an individual photo in Media to keep a copy. Before taking the old site offline, check that the image URLs on your published portfolio are hosted somewhere that will stay available.</p>
      <p><a href="https://support.squarespace.com/hc/en-us/articles/206542377-Add-and-reuse-images-with-the-Asset-library" target="_blank" rel="noreferrer">Squarespace’s Asset Library instructions ↗</a></p>
    </details>
    <details>
@@ -53,4 +199,5 @@ export default function ImportPanel({demo=false}:{demo?:boolean}){const [url,set
      <p>The homepage plays the clip in a muted loop. For a quicker start, use a short, compressed H.264 MP4 exported for web playback.</p>
    </details>
  </section>
- <div className="import-explainer"><div><span>01</span><h3>Discover</h3><p>Read public project pages and find titles, descriptions and cover images.</p></div><div><span>02</span><h3>Review</h3><p>Select the projects you want. Nothing is published automatically.</p></div><div><span>03</span><h3>Make it yours</h3><p>Review saved projects and confirm permission before publishing.</p></div></div></>}
+  </>;
+}
