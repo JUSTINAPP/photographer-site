@@ -32,6 +32,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
     .upsert(values, { onConflict: 'workspace_id', defaultToNull: false })
     .select('public_id, published').single();
   if (error) return { error: 'The website could not be saved. Please try again.' };
+  revalidatePath('/studio/media');
   revalidatePath('/studio/website');
   revalidatePath('/studio/settings');
   revalidatePath('/studio/website/preview');

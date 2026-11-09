@@ -14,7 +14,7 @@ export default function WebsiteMediaCheckbox({ id, selected }: { id: string; sel
       startTransition(async () => {
         try { await selectWebsiteMedia(id, next); } catch { setError(true); }
       });
-    }} /> Select for website</label>
+    }} /> Select for website picker</label>
     {pending && <small role="status">Saving selection…</small>}
     {error && <small role="alert">Could not save selection. Please try again.</small>}
   </div>;

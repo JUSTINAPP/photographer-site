@@ -42,10 +42,26 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
   const activeCollection = selected?.name.toLowerCase() ?? customSelected?.id;
   const projectIds = [...new Set([...draft.projectOrder, ...Object.keys(draft.collections)])]
     .filter(id => draft.collections[id] === selected?.name);
-  const { data: projects, error: projectError } = projectIds.length
-    ? await db.from('projects').select('id,title,image_url').eq('workspace_id', workspace.id).in('id', projectIds)
-    : { data: [], error: null };
-  const projectById = new Map((projects ?? []).map(project => [project.id, project]));
+  const draftGalleryIds = [...new Set([...Object.keys(draft.placements), ...Object.keys(draft.galleries)])];
+  const draftProjectIds = [...new Set([
+    ...draftGalleryIds, ...Object.keys(draft.sections), ...Object.keys(draft.films), ...(draft.homepageProjects ?? []),
+  ])];
+  const mediaProjectIds = [...new Set([...projectIds, ...draftProjectIds])];
+  const projectBatches = await Promise.all(Array.from({ length: Math.ceil(mediaProjectIds.length / 100) }, (_, index) =>
+    db.from('projects').select('id,title,image_url').eq('workspace_id', workspace.id)
+      .in('id', mediaProjectIds.slice(index * 100, (index + 1) * 100))));
+  const projectError = projectBatches.some(batch => batch.error);
+  const projectById = new Map(projectBatches.flatMap(batch => batch.data ?? []).map(project => [project.id, project]));
+  const draftMedia = new Set([
+    draft.image,
+    draft.video,
+    ...Object.values(draft.covers),
+    ...Object.values(draft.films),
+    ...Object.values(draft.sections).flatMap(sections => sections.map(section => section.image)),
+    ...(draft.homeGallery ?? []).map(frame => frame.url),
+    ...draftGalleryIds.flatMap(id => websiteGallery(draft, id).map(frame => frame.url)),
+    ...draftProjectIds.map(id => draft.covers[id] || projectById.get(id)?.image_url),
+  ].filter((url): url is string => Boolean(url && websiteImage(url))).map(mediaIdentity));
   const years = [...new Set(data.flatMap(item => item.capture_year === null ? [] : [item.capture_year]))].sort((a, b) => b - a);
   const activeYear = year === 'undated' || years.some(value => String(value) === year) ? year : '';
   const matchesYear = (item: (typeof data)[number]) => !activeYear
@@ -89,7 +105,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
   const editable = canEditWebsite(role);
   return (
     <StudioShell active="Media" email={user.email}>
-      <div className="studio-page-heading"><div><p className="eyebrow">Your portfolio assets</p><h1>Media library</h1><p>Select assets for the page editor, rename files and keep private originals. Selection adds an item to the website picker. Place it on a page and publish to make it visible.</p></div>{canEditWebsite(role) && <div className="website-media-links"><ActionLink className="secondary-button" href="/studio/website?panel=pages">Edit website pages ↗</ActionLink><ActionLink className="secondary-button" href="/studio/import">Import website ↗</ActionLink></div>}</div>
+      <div className="studio-page-heading"><div><p className="eyebrow">Your portfolio assets</p><h1>Media library</h1><p>See which files are in your saved website draft, or select more for the editor’s media picker. Use Website design to change page content and publish.</p></div>{canEditWebsite(role) && <div className="website-media-links"><ActionLink className="secondary-button" href="/studio/website?panel=pages">Edit website pages ↗</ActionLink><ActionLink className="secondary-button" href="/studio/import">Import website ↗</ActionLink></div>}</div>
       <nav className="media-tabs" aria-label="Media type">
         <ActionLink aria-current={kind === 'photo' ? 'page' : undefined} href="/studio/media">Photos</ActionLink>
         <ActionLink aria-current={kind === 'video' ? 'page' : undefined} href="/studio/media?view=videos">Videos</ActionLink>
@@ -121,6 +137,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
         : browseGalleries && galleries.length > 0 ? null
         : visible.length ? <div className="media-grid">{visible.map(item => {
           const embed = item.kind === 'video' ? vimeoEmbed(item.source_url) : null;
+          const inDraft = draftMedia.has(mediaIdentity(item.source_url));
           return (
           <article className="studio-panel website-controls" key={item.id}>
             {editable && !categoryError && <label className="rights-check"><input type="checkbox" form="organise-media" name="media" value={item.id} aria-label={'Select ' + item.name + ' for organisation'} /> Select to organise</label>}
@@ -130,8 +147,13 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
             {kind === 'photo' && websiteImage(item.source_url) && <img className="media-thumb" src={item.source_url} alt={item.name} loading="lazy" referrerPolicy="no-referrer" />}
             {embed && <p><a href={embed} target="_blank" rel="noreferrer">Watch Vimeo film ↗</a> · Hosted on Vimeo</p>}
             {kind === 'video' && !embed && websiteImage(item.source_url) && <video className="media-thumb" src={item.source_url} controls preload="none" />}
-            {!canEditWebsite(role) ? <p>{item.name}</p> : <>
-            {!embed && <WebsiteMediaCheckbox id={item.id} selected={item.website_selected} />}
+            {inDraft
+              ? <div className="website-media-checkbox">
+                <label><input type="checkbox" checked disabled readOnly /> In website draft</label>
+                {editable && <ActionLink href="/studio/website?panel=pages">Edit website placement ↗</ActionLink>}
+              </div>
+              : editable && !embed && <WebsiteMediaCheckbox id={item.id} selected={item.website_selected} />}
+            {!editable ? <p>{item.name}</p> : <>
             <form action={renameMedia}>
               <input type="hidden" name="id" value={item.id} />
               <label>Display name<input name="name" defaultValue={item.name} maxLength={150} required /></label>
