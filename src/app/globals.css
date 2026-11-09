@@ -419,3 +419,14 @@ button[aria-busy="true"] { cursor: progress; }
 .media-year-filter .team-access-select [role="listbox"] { max-height: 260px; overflow-y: auto; }
 .media-tabs a { display: inline-flex; align-items: center; }
 .media-tabs a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.media-gallery-browser { margin-block: 24px; }
+.media-gallery-heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.media-gallery-heading h2 { margin: 0; }
+.media-gallery-heading a { text-decoration: underline; text-underline-offset: 3px; }
+.media-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 215px), 1fr)); gap: 16px; }
+.media-gallery-card { position: relative; display: block; overflow: hidden; border: 1px solid #dedad1; border-radius: 6px; background: #f5f3ee; }
+.media-gallery-card:hover { border-color: currentColor; }
+.media-gallery-card img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+.media-gallery-card > span:not(.action-link-spinner) { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: space-between; padding: 12px; }
+.media-gallery-card > .action-link-spinner { position: absolute; top: 8px; right: 8px; padding: 6px; border-radius: 50%; background: white; }
