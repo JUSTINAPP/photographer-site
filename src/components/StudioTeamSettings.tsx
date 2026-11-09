@@ -8,7 +8,7 @@ import { manageTeam } from '@/app/studio/settings/team/actions';
 import { teamRoles } from '@/lib/studio-access';
 
 const messages: Record<string, string> = {
-  invited: 'Invitation created. Share the sign-up link below with your teammate.',
+  invited: 'Invitation created. Share the studio invitation link below with your teammate.',
   updated: 'Access updated.',
   removed: 'Access removed.',
   invalid: 'Enter a valid teammate email and choose an available access level.',
@@ -22,6 +22,7 @@ type Member = { email: string; role: string; user_id: string | null };
 export default function StudioTeamSettings({ id, owner, email, members, error }: {
   id: string; owner: boolean; email?: string; members: Member[]; error: boolean;
 }) {
+  const [copyFeedback, setCopyFeedback] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [status, action, pendingAction] = useActionState(async (previous: string, form: FormData) => {
     const result = await manageTeam(id, previous, form);
@@ -62,7 +63,16 @@ export default function StudioTeamSettings({ id, owner, email, members, error }:
     <div className="settings-team-feedback" role="status" aria-live="polite">
       {!pendingAction && Object.hasOwn(messages, status) && messages[status]}
     </div>
-    <p>Share the <Link href="/signup">signup link</Link> with new teammates. Existing accounts can <Link href="/login">sign in</Link> with the invited email address.</p>
+    <p>Share this studio’s <Link href={'/join/' + id}>invitation link</Link>. Teammates can use it with the email address you invited, whether they’re new to Fresnel or already have an account.</p>
+    <button className="secondary-button" type="button" onClick={async () => {
+      try {
+        await navigator.clipboard.writeText(new URL('/join/' + id, window.location.origin).href);
+        setCopyFeedback('Studio invitation link copied.');
+      } catch {
+        setCopyFeedback('Open the invitation link and copy the address from your browser.');
+      }
+    }}>Copy studio invitation link</button>
+    <span role="status"> {copyFeedback}</span>
     <details><summary>What each role can do</summary>
       <ul>
         <li><strong>Admin</strong> manages the studio, website, business tools and non-admin teammates. The owner assigns admin access.</li>
