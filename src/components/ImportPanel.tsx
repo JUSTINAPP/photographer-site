@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { ActionButton } from '@/components/ActionFeedback';
 import {useState} from 'react';import {ArrowRight,Globe,Check} from 'lucide-react';import {saveImportedMedia} from '@/app/studio/media/actions';
 import { vimeoEmbed } from '@/lib/import-identity';
@@ -26,4 +27,30 @@ export default function ImportPanel({demo=false}:{demo?:boolean}){const [url,set
    <p>Save the source references first. You can keep private copies and crop photos in the Media library.</p>
    <details><summary>Review files</summary><ul>{media.map(item=><li key={item.url}><label><input type="checkbox" checked={!excluded.includes(item.url)} onChange={event => setExcluded(current => event.target.checked ? current.filter(url => url !== item.url) : [...current, item.url])} /> {item.name} · {vimeoEmbed(item.url) ? 'Vimeo link' : item.kind}</label></li>)}</ul></details>
    <ActionButton busy={busy === 'media'} className="secondary-button" disabled={!!busy || excluded.length === media.length} onClick={saveMedia}>Save media to library</ActionButton>
- </section>}<div className="import-explainer"><div><span>01</span><h3>Discover</h3><p>Read public project pages and find titles, descriptions and cover images.</p></div><div><span>02</span><h3>Review</h3><p>Select the projects you want. Nothing is published automatically.</p></div><div><span>03</span><h3>Make it yours</h3><p>Review saved projects and confirm permission before publishing.</p></div></div></>}
+ </section>}
+ <section className="studio-panel squarespace-import-help" aria-labelledby="squarespace-import-heading">
+   <h2 id="squarespace-import-heading">Moving from Squarespace?</h2>
+   <details>
+     <summary>How to bring over your photos</summary>
+     <p><strong>Start with the website scan above.</strong> Fresnel can find many public photos in one pass. If a gallery is missing, scan that gallery’s own page address and save the new results.</p>
+     <p><strong>Download individual missing images from Squarespace.</strong> Its Asset Library downloads photos one at a time.</p>
+     <ol>
+       <li>Sign in to Squarespace on a computer and open your site’s <strong>Assets</strong> panel.</li>
+       <li>Find the image, open its three-dot menu and choose <strong>File Details</strong>.</li>
+       <li>Right-click the image preview and save it to your computer. Repeat for any other missing images.</li>
+     </ol>
+     <p>In Fresnel, <strong>Save media to library</strong> saves the source links. Use <strong>Keep private original</strong> on an individual photo in Media to keep a copy. Before taking the old site offline, check that the image URLs on your published portfolio are hosted somewhere that will stay available.</p>
+     <p><a href="https://support.squarespace.com/hc/en-us/articles/206542377-Add-and-reuse-images-with-the-Asset-library" target="_blank" rel="noreferrer">Squarespace’s Asset Library instructions ↗</a></p>
+   </details>
+   <details>
+     <summary>How to play a short video on your Fresnel site</summary>
+     <p>Imported Vimeo films appear as links in <strong>Media → Videos</strong>. For a homepage loop, start with an MP4 export of your clip and host it at a public HTTPS file URL.</p>
+     <ol>
+       <li>In <Link href="/studio/website">Edit website</Link>, select the <strong>Campaign Stories</strong> template under <strong>Design</strong>.</li>
+       <li>Go to <strong>Pages → Portfolio content</strong> and paste the direct file address into <strong>Showreel video URL</strong>. If a direct video is already in Media, use <strong>Choose showreel</strong> on Homepage.</li>
+       <li>Choose a homepage cover photo as the still shown while the clip loads. Save and check the draft on desktop and mobile.</li>
+     </ol>
+     <p>The homepage plays the clip in a muted loop. For a quicker start, use a short, compressed H.264 MP4 exported for web playback.</p>
+   </details>
+ </section>
+ <div className="import-explainer"><div><span>01</span><h3>Discover</h3><p>Read public project pages and find titles, descriptions and cover images.</p></div><div><span>02</span><h3>Review</h3><p>Select the projects you want. Nothing is published automatically.</p></div><div><span>03</span><h3>Make it yours</h3><p>Review saved projects and confirm permission before publishing.</p></div></div></>}

@@ -149,6 +149,14 @@ export const helpArticles: HelpArticle[] = [
         shot: { file: 'import-projects.webp', width: 1430, height: 728 }, caption: 'The import preview lets you review project titles and thumbnails before saving.',
       },
       {
+        title: 'Recover missing Squarespace images',
+        instructions: [
+          'Try importing the address of the specific gallery first. Fresnel skips media already in your library.',
+          'For photos the scan still misses, open the Assets panel in Squarespace on a computer. Open the image’s three-dot menu, choose File Details, then right-click the preview and save it. Squarespace downloads these images one at a time.',
+          'Save media to library keeps source links. Use Keep private original on individual assets to keep private copies. Published pages still need image URLs that remain available after the move.',
+        ],
+      },
+      {
         title: 'Arrange the imported work in the editor',
         instructions: [
           'Open Website design → Pages and choose an imported campaign. Confirm its cover and gallery order, and choose which projects you want on the homepage.',

@@ -148,6 +148,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         ))}
         {campaign && <>
           <label>Showreel video URL<input type="url" placeholder="https://…/showreel.mp4" value={draft.video} onChange={e => setDraft({ ...draft, video: e.target.value })} /></label>
+          <p>Use a public link to the MP4 file. The homepage loops it silently and uses your cover photo while the clip loads.</p>
 
         </>}
         </details>

@@ -393,3 +393,9 @@ button[aria-busy="true"] { cursor: progress; }
 @media (prefers-reduced-motion: reduce) {
   :where(.primary-button, .secondary-button, .mk-button, .mk-outline, .mk-nav-cta, .settings-text-button, .settings-remove) { transition: none; }
 }
+
+.squarespace-import-help { margin-block: 24px; }
+.squarespace-import-help details { border-top: 1px solid var(--line); padding-block: 12px; }
+.squarespace-import-help summary { cursor: pointer; font-weight: 600; }
+.squarespace-import-help details :is(p, ol) { max-width: 70ch; line-height: 1.6; }
+.squarespace-import-help a { text-decoration: underline; text-underline-offset: 3px; }
