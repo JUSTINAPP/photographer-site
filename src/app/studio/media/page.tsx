@@ -64,7 +64,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
     const suffix = ' — ' + draft.name;
     const title = draft.name && project.title.startsWith(prefix) && project.title.endsWith(suffix)
       ? project.title.slice(prefix.length, -suffix.length) || project.title : project.title;
-    return [{ id, title, items, cover: websiteImage(draft.covers[id]) || websiteImage(project.image_url) || websiteImage(frames[0]?.url) }];
+    return [{ id, title, items, cover: websiteImage(draft.covers[id] ?? '') || websiteImage(project.image_url ?? '') || websiteImage(frames[0]?.url ?? '') }];
   });
   const galleryFilter = selected && (gallery === 'all' || projectById.has(gallery ?? '')) ? gallery : undefined;
   const browseGalleries = Boolean(selected && !galleryFilter);
