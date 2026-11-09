@@ -1,3 +1,4 @@
+import { vimeoEmbed } from '@/lib/import-identity';
 import { ActionLink, SubmitButton } from '@/components/ActionFeedback';
 import { canEditWebsite } from '@/lib/studio-access';
 import Link from 'next/link';
@@ -21,21 +22,24 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
         <Link aria-current={kind === 'video' ? 'page' : undefined} href="/studio/media?view=videos">Videos</Link>
       </nav>
       {error ? <p role="alert">The library could not load. Please try again later.</p>
-        : data?.length ? <div className="media-grid">{data.map(item => (
+        : data?.length ? <div className="media-grid">{data.map(item => {
+          const embed = item.kind === 'video' ? vimeoEmbed(item.source_url) : null;
+          return (
           <article className="studio-panel website-controls" key={item.id}>
             {kind === 'photo' && websiteImage(item.source_url) && <img className="media-thumb" src={item.source_url} alt={item.name} loading="lazy" referrerPolicy="no-referrer" />}
-            {kind === 'video' && websiteImage(item.source_url) && <video className="media-thumb" src={item.source_url} controls preload="none" />}
+            {embed && <p><a href={embed} target="_blank" rel="noreferrer">Watch Vimeo film ↗</a> · Hosted on Vimeo</p>}
+            {kind === 'video' && !embed && websiteImage(item.source_url) && <video className="media-thumb" src={item.source_url} controls preload="none" />}
             {!canEditWebsite(role) ? <p>{item.name}</p> : <>
-            <WebsiteMediaCheckbox id={item.id} selected={item.website_selected} />
+            {!embed && <WebsiteMediaCheckbox id={item.id} selected={item.website_selected} />}
             <form action={renameMedia}>
               <input type="hidden" name="id" value={item.id} />
               <label>Display name<input name="name" defaultValue={item.name} maxLength={150} required /></label>
               <SubmitButton className="secondary-button">Save name</SubmitButton>
             </form>
-            <MediaExports id={item.id} kind={kind} name={item.name} />
+            {!embed && <MediaExports id={item.id} kind={kind} name={item.name} />}
             </>}
           </article>
-        ))}</div> : <div className="studio-panel"><p>No {kind === 'photo' ? 'photos' : 'videos'} in your library yet.</p>{canEditWebsite(role) && <Link href="/studio/import">Import from a website ↗</Link>}</div>}
+        ); })}</div> : <div className="studio-panel"><p>No {kind === 'photo' ? 'photos' : 'videos'} in your library yet.</p>{canEditWebsite(role) && <Link href="/studio/import">Import from a website ↗</Link>}</div>}
     </StudioShell>
   );
 }

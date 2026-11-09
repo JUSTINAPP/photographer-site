@@ -1,5 +1,7 @@
 'use server';
 
+import { mediaIdentity } from '@/lib/import-identity';
+
 import { revalidatePath } from 'next/cache';
 import { requireStudioAccess } from '@/lib/supabase';
 import { normaliseWebsite, publishWebsiteSnapshot, websiteImage, type WebsiteProject } from '@/lib/website';
@@ -66,9 +68,9 @@ export async function importPageStructure(studioId: string, input: string) {
     const scan = await previewWebsite(input);
     const { data: media, error: mediaError } = await db.from('studio_media').select('source_url,kind').eq('workspace_id', studioId);
     if (mediaError) return { error: 'Could not read the media library.' };
-    const urls = new Set((media ?? []).filter(item => item.kind === 'photo').map(item => item.source_url));
+    const urls = new Map((media ?? []).filter(item => item.kind === 'photo').map(item => [mediaIdentity(item.source_url), item.source_url]));
     if (!urls.size) return { error: 'Import and save photos in Media before restoring page order.' };
-    const orderedPhotos = (items: { url: string }[]) => [...new Set(items.map(item => item.url))].filter(url => urls.has(url));
+    const orderedPhotos = (items: { url: string }[]) => [...new Set(items.flatMap(item => urls.get(mediaIdentity(item.url)) ?? []))];
     const home = orderedPhotos(scan.homepageMedia);
     const sourcePages = scan.pages.filter(page => orderedPhotos(page.media).length);
     const candidates = scan.candidates.filter(candidate => sourcePages.some(page => page.source === candidate.source_url));

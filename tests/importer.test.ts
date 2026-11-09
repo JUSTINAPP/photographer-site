@@ -18,3 +18,30 @@ test('discovers responsive photos and direct videos, deduplicates, and rejects p
     ['https://example.com/poster.jpg', 'photo', 'poster'],
   ].sort());
 });
+
+import { discoverSitemapMedia } from '../src/lib/import-media';
+import { mediaIdentity } from '../src/lib/import-identity';
+
+test('finds sitemap gallery photos once across Squarespace size variants and identifies Motion pages', () => {
+  const photo = 'https://images.squarespace-cdn.com/content/v1/example/frame.jpg';
+  const indexed = discoverSitemapMedia(`<urlset xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+    <url><loc>http://example.com/motion</loc>
+      <image:image><image:loc>${photo}</image:loc></image:image>
+      <image:image><image:loc>${photo.replace('images.squarespace-cdn.com', 'static1.squarespace.com')}?format=1500w</image:loc></image:image>
+    </url>
+    <url><loc>https://other.example/motion</loc>
+      <image:image><image:loc>https://other.example/frame.jpg</image:loc></image:image>
+    </url></urlset>`, 'https://example.com/');
+  assert.deepEqual(indexed.media.map(item => item.url), [photo]);
+  assert.deepEqual(indexed.videoPages, ['https://example.com/motion']);
+  assert.equal(mediaIdentity('https://example.com/frame.jpg?format=750w'), 'https://example.com/frame.jpg?format=750w');
+});
+
+test('recognises an escaped Squarespace Vimeo embed and keeps its unlisted video hash', () => {
+  const media = discoverMedia(`<div data-html="&lt;iframe src=&quot;https://player.vimeo.com/video/123456?h=abc123&amp;amp;autoplay=1&quot;&gt;&lt;/iframe&gt;"></div>
+    <iframe src="https://player.vimeo.com/video/123456?h=abc123"></iframe>
+    <iframe src="https://player.vimeo.com.example.net/video/123456"></iframe>`, 'https://example.com/motion');
+  assert.deepEqual(media.map(({ url, kind }) => ({ url, kind })), [
+    { url: 'https://player.vimeo.com/video/123456?h=abc123', kind: 'video' },
+  ]);
+});

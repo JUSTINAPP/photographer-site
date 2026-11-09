@@ -3,21 +3,32 @@
 import { revalidatePath } from 'next/cache';
 import { requireStudioAccess } from '@/lib/supabase';
 import { readPublicFile, websiteUrl } from '@/lib/importer';
+import { mediaIdentity } from '@/lib/import-identity';
+import { existingMediaIdentities } from '@/lib/import-library';
 import type { FoundMedia } from '@/lib/import-media';
 
 export async function saveImportedMedia(input: FoundMedia[]) {
   const { db, workspace } = await requireStudioAccess('edit');
-  if (!Array.isArray(input) || input.length < 1 || input.length > 150) throw new Error('Select up to 150 media items.');
+  if (!Array.isArray(input) || input.length < 1 || input.length > 2500) throw new Error('Select up to 2,500 media items.');
+  const existing = await existingMediaIdentities(db, workspace.id);
   const rows = new Map(input.map(item => {
-    const url = websiteUrl(item.url).href;
-    if (url.length > 2048 || !['photo', 'video'].includes(item.kind)) throw new Error('Invalid media item.');
-    return [url, { workspace_id: workspace.id, kind: item.kind, name: String(item.name || 'Imported media').trim().slice(0, 150) || 'Imported media', source_url: url }];
+    const source_url = websiteUrl(item.url).href;
+    const key = mediaIdentity(source_url);
+    if (source_url.length > 2048 || !['photo', 'video'].includes(item.kind)) throw new Error('Invalid media item.');
+    return [key, { workspace_id: workspace.id, kind: item.kind, name: String(item.name || 'Imported media').trim().slice(0, 150) || 'Imported media', source_url: key }];
   }));
-  const { error } = await db.from('studio_media').upsert([...rows.values()], {
-    onConflict: 'workspace_id,source_url', ignoreDuplicates: true,
-  });
-  if (error) throw new Error('Media could not be saved.');
+  const fresh = [...rows].filter(([key]) => !existing.has(key)).map(([, row]) => row);
+  let added = 0;
+  for (let start = 0; start < fresh.length; start += 150) {
+    const { data, error } = await db.from('studio_media').upsert(fresh.slice(start, start + 150), {
+      onConflict: 'workspace_id,source_url', ignoreDuplicates: true,
+    }).select('id');
+    if (error) throw new Error('Some media could not be saved. Try again to add the remaining files.');
+    added += data.length;
+  }
   revalidatePath('/studio/media');
+  revalidatePath('/studio/website');
+  return { added, skipped: input.length - added };
 }
 
 export async function renameMedia(form: FormData) {

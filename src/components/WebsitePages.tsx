@@ -1,5 +1,7 @@
 'use client';
 
+import { vimeoEmbed } from '@/lib/import-identity';
+
 import { ActionButton } from '@/components/ActionFeedback';
 
 import { useEffect, useRef, useState, useTransition, type Dispatch, type SetStateAction } from 'react';
@@ -40,7 +42,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   const gallery = project ? websiteGallery(draft, project.id) : draft.homeGallery ?? [];
   const galleryLimit = project ? 100 : 150;
   const cover = project ? draft.covers[project.id] || project.image_url : draft.image;
-  const candidates = media.filter(item => item.kind === (picker === 'video' ? 'video' : 'photo'));
+  const candidates = media.filter(item => picker === 'video' ? item.kind === 'video' && !vimeoEmbed(item.source_url) : item.kind === 'photo');
   const selectedOnly = !allMedia && candidates.some(item => item.website_selected);
   const visible = candidates.filter(item => (!selectedOnly || item.website_selected) && item.name.toLowerCase().includes(query.toLowerCase()));
 
