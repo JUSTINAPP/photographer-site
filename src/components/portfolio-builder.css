@@ -7,3 +7,5 @@
 @media(prefers-reduced-motion:reduce){.portfolio-menu-toggle span,.portfolio-mobile-menu .portfolio-menu-panel{transition:none}.motion-push,.journal-slide-image img{animation:none!important}}
 .campaign-site{color:var(--color-ink,#161616);background:var(--color-site,#fff)}.campaign-header.is-solid{color:var(--color-ink,#161616);background:var(--color-site,#fff)}.campaign-gallery{grid-template-columns:repeat(var(--portfolio-columns,2),minmax(0,1fr));gap:var(--portfolio-gap,8px)}
 .website-builder{color:#15162b}.website-controls .builder-upload input{color:#15162b}.website-controls input[type=range]{accent-color:#15162b;padding:0;background:transparent}.website-controls .agent-proposal h3{color:#15162b}.website-controls textarea:focus-visible{outline:2px solid #969187;outline-offset:3px}
+.motion-workspace{border:0;padding:0;margin:0;min-width:0}.agent-proposal>p{white-space:pre-line}
+.editorial-header>nav button{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}.editorial-header>nav :is(a,button):hover{opacity:.6}

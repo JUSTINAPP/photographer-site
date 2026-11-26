@@ -12,6 +12,8 @@ Opening: up to eight studio assets, 1–6 seconds each, capped at fifteen second
 
 FFmpeg encodes 24fps H.264 yuv420p, faststart, no audio, 1280×720 and 720×1280. Network input is downloaded with bounded DNS-pinned requests; FFmpeg sees local files and restricted demuxers/protocols. Native ffmpeg-static binary must be included in Vercel’s render function. Render timeout is 300 seconds; no durable background queue is promised. New encodes have immutable UUID names. Draft files are private in studio-originals, with short-lived signed previews. Explicit publication copies files to studio-web-assets; previously published URLs remain public after unpublishing (as with downloaded public assets).
 
-Apply migrations 202611260003 and 202611260004 before deployment. Studio roles and storage paths enforce workspace isolation. AI requests have a durable eight-second interval and 120-per-studio daily ceiling, separate from import cooldowns. Model access and API credit remain requirements on the Anthropic account.
+Apply migrations 202611260003, 202611260004 and 202611260005 before deployment. Studio roles and storage paths enforce workspace isolation. AI requests have a durable eight-second interval and 120-per-studio daily ceiling, separate from import cooldowns. Model access and API credit remain requirements on the Anthropic account.
 
 Validation: unit tests for sanitisation, template persistence, timing, render invalidation, reference digests and logo masks; all existing regression tests. Run typecheck/build. Test native encoding and inspect both output sizes. Verify production API access through the signed-in UI without saving/publishing customer changes.
+
+Migration 202611260005 fixes a legacy private-storage name binding: a bare name inside the workspace lookup resolved to the workspace name rather than the storage object path. The correction qualifies storage.objects.name and preserves the intended access scope.

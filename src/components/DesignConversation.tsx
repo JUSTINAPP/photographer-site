@@ -3,7 +3,16 @@ import {useState} from 'react';
 import {Sparkles,ArrowUpRight,Undo2,Check,Link2} from 'lucide-react';
 import {ActionButton} from './ActionFeedback';
 import type {Website} from '@/lib/website';
+import {FONT_PAIRS,PALETTES,type SiteTheme} from '@/lib/website-theme';
 import type {DesignPatch} from '@/lib/design-agent';
+function changeDescription(key:string,value:unknown){
+ if(key==='theme'){const t=value as SiteTheme;const layout=t.layout==='gallery'?'Image journal':t.layout==='campaign'?'Full-screen stories':'Editorial pages';return layout+' · '+FONT_PAIRS[t.fonts].label+' type · '+(t.palette==='custom'?'Your colours':PALETTES[t.palette].label)+' · '+t.columns+' columns · '+t.gap+'px spacing';}
+ if(key==='logoSize')return String(value)+'px high';
+ if(key==='homepageLayout')return value==='grid'?'Project grid':'Full-width projects';
+ if(key==='showIntro')return value?'Show the introduction':'Hide the introduction';
+ return String(value);
+}
+const changeLabels:Record<string,string>={theme:'Overall look',logoSize:'Logo size',headline:'Homepage headline',about:'About text',homepageLayout:'Project layout',showIntro:'Introduction'};
 type Proposal={explanation:string;templateName:string;changes:DesignPatch;references:{url:string;status:string}[]};
 export default function DesignConversation({draft,onApply,onUndo,canUndo,onSaveLook}:{draft:Website;onApply:(changes:DesignPatch)=>void;onUndo:()=>void;canUndo:boolean;onSaveLook:(name:string,references:string[])=>Promise<void>}){
  const [brief,setBrief]=useState(''),[references,setReferences]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[proposal,setProposal]=useState<Proposal|null>(null),[name,setName]=useState(''),[applied,setApplied]=useState(false),[saving,setSaving]=useState(false),[saved,setSaved]=useState(false),[screenshot,setScreenshot]=useState('');
@@ -17,7 +26,7 @@ export default function DesignConversation({draft,onApply,onUndo,canUndo,onSaveL
  <div className="agent-actions"><ActionButton className="primary-button" busy={busy} disabled={!brief.trim()||busy} onClick={ask}><Sparkles size={16}/>{busy?'Studying your request…':'Prepare a design'}<ArrowUpRight size={16}/></ActionButton><button type="button" className="secondary-button" disabled={!canUndo||busy} onClick={()=>{onUndo();setApplied(false)}}><Undo2 size={15}/> Undo</button></div>
  {busy&&<p role="status">Reading references and preparing a proposal. Your current draft stays visible.</p>}
  {error&&<p className="agent-error" role="alert">{error}</p>}
- {proposal&&<section className="agent-proposal"><p className="eyebrow">{applied?'APPLIED TO THIS DRAFT':'READY FOR YOUR REVIEW'}</p><h3>{proposal.templateName}</h3><p>{proposal.explanation}</p><ul>{Object.entries(proposal.changes).map(([key,value])=><li key={key}><strong>{key==='logoSize'?'Logo size':key==='theme'?'Design':key==='homepageLayout'?'Project layout':key}</strong>: {typeof value==='object'?Object.entries(value).map(([k,v])=>k+' '+v).join(' · '):String(value)}</li>)}</ul>{proposal.references.map((ref,i)=><small key={i}>{ref.url} · {ref.status==='read'?'Structure read':'Could not read this site; add a screenshot'}</small>)}
+ {proposal&&<section className="agent-proposal"><p className="eyebrow">{applied?'APPLIED TO THIS DRAFT':'READY FOR YOUR REVIEW'}</p><h3>{proposal.templateName}</h3><p>{proposal.explanation}</p><ul>{Object.entries(proposal.changes).map(([key,value])=><li key={key}><strong>{changeLabels[key]||key}</strong>: {changeDescription(key,value)}</li>)}</ul>{proposal.references.map((ref,i)=><small key={i}>{ref.url} · {ref.status==='read'?'Structure read':'Could not read this site; add a screenshot'}</small>)}
  {!applied?<button className="primary-button" type="button" onClick={()=>{onApply(proposal.changes);setApplied(true)}}><Check size={16}/> Apply to my draft</button>:<><p>Check the preview on desktop and mobile. You can keep asking for refinements.</p><label>Name this template<input value={name} maxLength={70} onChange={e=>setName(e.target.value)}/></label><ActionButton className="secondary-button" busy={saving} disabled={saving||!name.trim()||saved} onClick={async()=>{setSaving(true);setError('');try{await onSaveLook(name,proposal.references.filter(r=>r.status==='read').map(r=>r.url));setSaved(true)}catch(error){setError(error instanceof Error?error.message:'Could not save the template.')}finally{setSaving(false)}}}>{saved?'Template saved':'Save as my template'}</ActionButton><small>Saved templates appear beside the other looks in this studio. No photographs or content are copied into the template.</small></>}
  </section>}
  </div>;
