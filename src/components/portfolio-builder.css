@@ -9,3 +9,5 @@
 .website-builder{color:#15162b}.website-controls .builder-upload input{color:#15162b}.website-controls input[type=range]{accent-color:#15162b;padding:0;background:transparent}.website-controls .agent-proposal h3{color:#15162b}.website-controls textarea:focus-visible{outline:2px solid #969187;outline-offset:3px}
 .motion-workspace{border:0;padding:0;margin:0;min-width:0}.agent-proposal>p{white-space:pre-line}
 .editorial-header>nav button{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}.editorial-header>nav :is(a,button):hover{opacity:.6}
+
+.motion-review.motion-review-phone{aspect-ratio:9/16;max-width:320px;margin-inline:auto}.motion-review-phone .homepage-motion{aspect-ratio:9/16}
