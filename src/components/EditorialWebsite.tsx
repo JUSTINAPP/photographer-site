@@ -1,4 +1,5 @@
 'use client';
+import WebsiteAboutContent, { type AboutTextChange } from './WebsiteAboutContent';
 import HomepageMotion from './HomepageMotion';
 import './portfolio-builder.css';
 
@@ -15,7 +16,9 @@ import type { CSSProperties } from 'react';
 import { themeVars } from '@/lib/website-theme';
 import { websiteImage, type Website, type WebsiteProject } from '@/lib/website';
 
-export default function EditorialWebsite({ site, projects, preview = false, base, onProject, allProjects = projects }: {
+export default function EditorialWebsite({ site, projects, preview = false, base, onProject, allProjects = projects, onSectionChange, onAboutChange }: {
+  onAboutChange?: AboutTextChange;
+  onSectionChange?: (page: string, id: string, field: 'heading' | 'text', value: string) => void;
   site: Website; projects: WebsiteProject[]; preview?: boolean; base?: string; onProject?: (id: string) => void; allProjects?: WebsiteProject[];
 }) {
   const {root,look:headerLook}=usePortfolioHeader(site.theme,preview);
@@ -37,7 +40,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
         <h1>{site.headline || name}</h1>
         {site.image && site.theme.hero !== 'text' && <SmartImage variant="hero" priority src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
       </section>}
-      <WebsiteSections sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
+      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
       <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={allProjects} base={base} onProject={onProject} />
       <section className={'editorial-work' + (site.homepageLayout === 'grid' ? ' editorial-work-grid' : '')} id={preview ? undefined : 'work'}>
         <h2>Selected work</h2>
@@ -52,10 +55,8 @@ export default function EditorialWebsite({ site, projects, preview = false, base
           </article>
         ))}
       </section>
-      <section className="editorial-about" id={preview ? undefined : 'about'}>
-        <h2>About + Services</h2><p>{site.about}</p><p>{site.services}</p>
-      </section>
-      <WebsiteSections sections={site.sections.about} projects={allProjects} base={base} onProject={onProject} />
+      <div id={preview ? undefined : 'about'}><WebsiteAboutContent site={site} onChange={onAboutChange}/></div>
+      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={allProjects} base={base} onProject={onProject} />
       <footer className="editorial-about" id={preview ? undefined : 'contact'}>
         {site.logo && <PortfolioLogo site={site} />}
         <h2>Contact</h2>

@@ -1,4 +1,5 @@
 'use client';
+import WebsiteAboutContent, { type AboutTextChange } from './WebsiteAboutContent';
 import {headerPresentation} from '@/lib/website-header';
 import HomepageMotion from './HomepageMotion';
 import './portfolio-builder.css';
@@ -34,7 +35,8 @@ function Media({ url, label, eager = false }: { url?: string | null; label: stri
     : <div className="campaign-media campaign-placeholder"><span>{label}</span></div>;
 }
 
-export default function CampaignWebsite({ site, projects, base, view, preview = false, sample = false, onPreviewPage, previewProject, allProjects }: {
+export default function CampaignWebsite({ site, projects, base, view, preview = false, sample = false, onPreviewPage, previewProject, allProjects, onAboutChange, onSectionChange }: {
+  onAboutChange?: AboutTextChange; onSectionChange?: (page: string, id: string, field: 'heading' | 'text', value: string) => void;
   site: Website; projects: WebsiteProject[]; base?: string; view?: View; preview?: boolean; sample?: boolean; onPreviewPage?: (page: string) => void; previewProject?: WebsiteProject; allProjects?: WebsiteProject[];
 }) {
   const [localView, setLocalView] = useState<View>({});
@@ -142,17 +144,8 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     </header></div>
 
     {current.about ? <>
-      <section className="campaign-about campaign-copy">
-        <div><p className="campaign-kicker">About the studio</p><h1>{name}</h1>
-          <p>{site.about || (illustrative ? 'An independent photography and film practice working across fashion, coastal life and commercial campaigns.' : '')}</p></div>
-        {(site.clients || illustrative) && <aside><h2>Selected clients</h2>
-          <ul>{(site.clients || 'Client name 01\nClient name 02\nClient name 03').split('\n').map((client, i) => client.trim() && <li key={i}>{client.trim()}</li>)}</ul>
-        </aside>}
-      </section>
-      <section className="campaign-services campaign-copy"><p className="campaign-kicker">Capabilities</p><h2>Services</h2>
-        <p>{site.services || (illustrative ? 'Campaign photography\nEditorial photography\nMotion and short-form film\nCreative direction' : '')}</p>
-      </section>
-      <WebsiteSections sections={site.sections.about} projects={targets} base={base} onProject={openProject} />
+      <WebsiteAboutContent site={site} illustrative={illustrative} onChange={onAboutChange} />
+      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={targets} base={base} onProject={openProject} />
     </> : selected ? <>
       <section className="campaign-screen">
         <Media url={site.covers[selected.id] || selected.image_url} label="Campaign cover image" eager />
@@ -162,7 +155,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
       {site.films[selected.id] && <div className="campaign-film">
         <iframe src={site.films[selected.id]} title={selected.title} loading="lazy" allow="fullscreen; picture-in-picture" allowFullScreen />
       </div>}
-      <WebsiteSections sections={site.sections[selected.id]} projects={targets} base={base} onProject={openProject} />
+      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange(selected.id, id, field, text) : undefined} sections={site.sections[selected.id]} projects={targets} base={base} onProject={openProject} />
       {illustrative && gallery.length > 0 && <section className="campaign-gallery" aria-label="Campaign gallery">
         {gallery.map(({ url, size, alt }, i) => <div key={i} className={'campaign-frame-' + size}><Media url={url} label={alt || (size === 'grid' ? 'Campaign grid image' : 'Full-size campaign image')} /></div>)}
       </section>}
@@ -186,7 +179,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
         <p className="campaign-kicker">Selected work</p><h2>{site.about || (illustrative ? 'Photographs and films for stories worth spending time with.' : name)}</h2>
         {navigation({ about: '1' }, 'About the studio ↗', 'campaign-text-link')}
       </section> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
-      <WebsiteSections sections={site.sections.home} projects={targets} base={base} onProject={openProject} />
+      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={targets} base={base} onProject={openProject} />
       <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={targets} base={base} onProject={openProject} />
       {groups.map(group => <section className="campaign-collection" key={group.name}
         id={preview ? undefined : collectionAnchor(group.name)} data-anchor={collectionAnchor(group.name)}>

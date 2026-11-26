@@ -159,12 +159,25 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
     <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} onRebuild={rebuild} />
     <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
 
+    {page !== 'about' && <>
     <WebsiteSectionEditor key={page} page={page} sections={draft.sections[page] ?? []} media={media} projects={projects}
       onChange={sections => setDraft(current => ({ ...current, sections: { ...current.sections, [page]: sections } }))} />
+    </>}
     {page === 'about' ? <>
-      <label>About<textarea rows={4} value={draft.about} onChange={event => setDraft({ ...draft, about: event.target.value })} /></label>
-      {campaign && <label>Selected clients (one per line)<textarea rows={3} value={draft.clients} onChange={event => setDraft({ ...draft, clients: event.target.value })} /></label>}
-      <label>Services<textarea rows={4} value={draft.services} onChange={event => setDraft({ ...draft, services: event.target.value })} /></label>
+      <div className="about-page-fields"><h3>About page text</h3><p>Click and type directly in the preview, or use these matching fields. Each heading and label is editable.</p>
+      <label>Small label above the title<input maxLength={100} value={draft.aboutLabel} onChange={e=>setDraft(current=>({...current,aboutLabel:e.target.value}))}/></label>
+      <label>About page title<input maxLength={140} value={draft.aboutTitle || draft.name} onChange={e=>setDraft(current=>({...current,aboutTitle:e.target.value}))}/></label>
+      <label>Biography<textarea maxLength={2500} rows={6} value={draft.about} onChange={e=>setDraft(current=>({...current,about:e.target.value}))}/></label>
+      <label>Clients heading<input maxLength={100} value={draft.clientsHeading} onChange={e=>setDraft(current=>({...current,clientsHeading:e.target.value}))}/></label>
+      <label>Client names (one per line)<textarea maxLength={2000} rows={4} value={draft.clients} onChange={e=>setDraft(current=>({...current,clients:e.target.value}))}/></label>
+      <label>Small label above services<input maxLength={100} value={draft.servicesLabel} onChange={e=>setDraft(current=>({...current,servicesLabel:e.target.value}))}/></label>
+      <label>Services heading<input maxLength={140} value={draft.servicesHeading} onChange={e=>setDraft(current=>({...current,servicesHeading:e.target.value}))}/></label>
+      <label>Services description<textarea maxLength={1500} rows={5} value={draft.services} onChange={e=>setDraft(current=>({...current,services:e.target.value}))}/></label>
+      </div>
+      <details><summary>Extra page sections</summary>
+    <WebsiteSectionEditor key={page} page={page} sections={draft.sections[page] ?? []} media={media} projects={projects}
+      onChange={sections => setDraft(current => ({ ...current, sections: { ...current.sections, [page]: sections } }))} />
+      </details>
     </> : <>
       {!project && <label>Homepage headline<input maxLength={220} value={draft.headline} onChange={event => setDraft({ ...draft, headline: event.target.value })} /></label>}
       <h3>{project ? 'Project cover' : 'Homepage cover'}</h3>

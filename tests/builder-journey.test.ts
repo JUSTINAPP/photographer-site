@@ -34,3 +34,13 @@ test('private draft previews sign both valid studio-owned outputs and reject mix
  assert.ok((await draftMotionPreview(db,workspace,motion))?.desktop);assert.equal(count,2);
  assert.equal(await draftMotionPreview(db,'99999999-9999-4999-8999-999999999999',motion),undefined);assert.equal(count,2);
 });
+test('About headings, client names and services survive save and publication without changing the studio name',()=>{
+ const draft=normaliseWebsite({name:'Toby Burrows',aboutTitle:'Meet Toby',aboutLabel:'Behind the lens',about:'Portraits and stories.\nBased in Sydney.',clientsHeading:'Collaborators',clients:'Client A\nClient B',servicesLabel:'What I do',servicesHeading:'Photography & film',services:'Portraits\nCampaigns'});
+ const saved=normaliseWebsite(JSON.parse(JSON.stringify(draft)));
+ const published=publishWebsiteSnapshot(saved,[]);
+ for(const key of ['aboutTitle','aboutLabel','about','clientsHeading','clients','servicesLabel','servicesHeading','services'] as const) assert.equal(published[key],draft[key]);
+ assert.equal(published.name,'Toby Burrows');
+ assert.notEqual(websiteVersion(draft),websiteVersion({...draft,aboutLabel:'Another label'}));
+ assert.equal(normaliseWebsite({}).aboutLabel,'About the studio');
+ assert.equal(normaliseWebsite({aboutLabel:''}).aboutLabel,'');
+});

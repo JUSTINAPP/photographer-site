@@ -1,4 +1,5 @@
 'use client';
+import type {AboutTextField} from './WebsiteAboutContent';
 import SmartImage from '@/components/SmartImage';
 
 
@@ -49,6 +50,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
     window.addEventListener('hashchange', openLinkedPanel);
     return () => window.removeEventListener('hashchange', openLinkedPanel);
   }, []);
+  const [inlineEditing, setInlineEditing] = useState(true);
   const [page, setPage] = useState(initialPage === 'about' || projects.some(project => project.id === initialPage) ? initialPage! : 'home');
   const [editableProjects, setEditableProjects] = useState(projects);
   const [operation, setOperation] = useState<'draft' | 'publish' | 'unpublish'>('draft');
@@ -66,6 +68,11 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const [confirmed, setConfirmed] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  const inlineEnabled = !readOnly && panel === 'pages' && inlineEditing && !agentBusy && !motionBusy && !pending;
+  function editAbout(field: AboutTextField, text: string) { setDraft(current => ({...current, [field]: text})); }
+  function editSection(page: string, id: string, field: 'heading' | 'text', text: string) {
+    setDraft(current => ({...current, sections: {...current.sections, [page]: (current.sections[page] ?? []).map(section => section.id === id ? {...section, [field]: text} : section)}}));
+  }
   function updateTheme(changes: Partial<SiteTheme>) {
     setDraft(current => ({ ...current, theme: { ...current.theme, ...changes } }));
   }
@@ -245,14 +252,16 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           {readOnly?<Link prefetch={false} href="/studio/website/preview">Preview saved draft ↗</Link>:<ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & preview latest draft ↗</ActionButton>}
           {live && id && <Link prefetch={false} href={'/sites/' + id+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link>}
         </div>
+        {!readOnly && panel === 'pages' && <div className="inline-edit-guide"><p><strong>{inlineEditing ? 'Click outlined text in the page to edit it.' : 'Preview mode'}</strong><br/>{inlineEditing ? 'Type directly where it appears. Escape cancels the current text edit. Save your draft below.' : 'Turn on text editing to change the About page and your added page sections.'}</p><button type="button" className="secondary-button" disabled={busy} aria-pressed={inlineEditing} onClick={()=>setInlineEditing(value=>!value)}>{inlineEditing ? 'Preview without edit outlines' : 'Edit text on page'}</button></div>}
         {unpublished&&<p className="builder-version-hint">You are editing the draft. Publish changes to update the live site.</p>}
         {!campaign && draft.theme.layout !== 'gallery' && !draft.image && !draft.motion.enabled && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <div className={'design-preview-frame ' + device}>
-          {draft.theme.layout === 'gallery' ? <GalleryWebsite site={previewSite} projects={work} allProjects={editableProjects} preview view={{campaign:page!=='home'&&page!=='about'?page:undefined,about:page==='about'?'1':undefined}} onPreviewPage={next=>setPage(next)}/> : campaign || editingProject || page === 'about' ? <CampaignWebsite site={previewSite} projects={work} allProjects={editableProjects} preview previewProject={editingProject}
+          {draft.theme.layout === 'gallery' ? <GalleryWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={previewSite} projects={work} allProjects={editableProjects} preview view={{campaign:page!=='home'&&page!=='about'?page:undefined,about:page==='about'?'1':undefined}} onPreviewPage={next=>setPage(next)}/> : campaign || editingProject || page === 'about' ? <CampaignWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={previewSite} projects={work} allProjects={editableProjects} preview previewProject={editingProject}
             view={editableProjects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
             onPreviewPage={next => { setPage(next); if (panel === 'design') setPanel('pages'); }} /> :
-            <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} allProjects={editableProjects} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
+            <EditorialWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} allProjects={editableProjects} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
         </div>
+        {!readOnly && panel === 'pages' && <div className="inline-preview-save"><p><strong>{unsaved ? 'You have unsaved text or page changes.' : 'Draft saved.'}</strong><br/>Saving keeps this private. Publish when you want visitors to see it.</p><ActionButton type="button" busy={pending && operation === 'draft'} className="primary-button" disabled={busy} onClick={()=>save('draft')}>{pending ? 'Saving…' : 'Save page draft'}</ActionButton><button type="button" className="secondary-button" disabled={busy} onClick={()=>setPanel('publish')}>Review &amp; publish</button><span role="status">{notice}</span></div>}
       </section>
     </div>
   );
