@@ -1,0 +1,31 @@
+'use client';
+import {useEffect,useState,type CSSProperties} from 'react';
+import Link from 'next/link';
+import {Pause,Play,ChevronLeft,ChevronRight} from 'lucide-react';
+import type {Website,WebsiteProject} from '@/lib/website';
+import {websiteGallery} from '@/lib/website';
+import {themeVars} from '@/lib/website-theme';
+import SmartImage from './SmartImage';
+import PortfolioLogo from './PortfolioLogo';
+import MobilePortfolioMenu from './MobilePortfolioMenu';
+import WebsiteIdentity from './WebsiteIdentity';
+import HomepageMotion from './HomepageMotion';
+import WebsiteSections from './WebsiteSections';
+import WebsiteGallery from './WebsiteGallery';
+import './portfolio-builder.css';
+export default function GalleryWebsite({site,projects,allProjects=projects,preview=false,base='',view={},onPreviewPage}:{site:Website;projects:WebsiteProject[];allProjects?:WebsiteProject[];preview?:boolean;base?:string;view?:{campaign?:string;about?:string};onPreviewPage?:(id:string)=>void}){
+ const [index,setIndex]=useState(0),[playing,setPlaying]=useState(true),[allowed,setAllowed]=useState(false);
+ const selected=allProjects.find(p=>p.id===view.campaign);const images:Array<{url:string;alt:string;link?:string}>=(site.homeGallery?.length?site.homeGallery:projects.filter(p=>p.image_url).map(p=>({url:site.covers[p.id]||p.image_url!,alt:p.title,link:p.id}))).slice(0,40);if(!images.length&&site.image)images.push({url:site.image,alt:site.imageAlt});
+ useEffect(()=>{const q=matchMedia('(prefers-reduced-motion: reduce)');const update=()=>setAllowed(!q.matches);update();q.addEventListener('change',update);return()=>q.removeEventListener('change',update)},[]);
+ useEffect(()=>{if(!playing||!allowed||images.length<2||selected||view.about||site.motion.enabled)return;const timer=setInterval(()=>setIndex(n=>(n+1)%images.length),3000);return()=>clearInterval(timer)},[playing,allowed,images.length,selected,view.about,site.motion.enabled]);
+ const page=(id:string,label:React.ReactNode,cls?:string)=>preview?<button className={cls} type="button" onClick={()=>onPreviewPage?.(id)}>{label}</button>:<Link className={cls} href={id==='home'?base||'/':id==='about'?base+'?about=1':base+'?campaign='+encodeURIComponent(id)}>{label}</Link>;
+ const groups=[...new Set(projects.map(p=>site.collections[p.id]||p.category).filter(Boolean))].slice(0,6);
+ const nav=<>{page('home','Intro')}{groups.map(group=><a key={group} href={'#journal-'+encodeURIComponent(group)} onClick={preview?()=>onPreviewPage?.('home'):undefined}>{group}</a>)}{page('about','Bio')}{site.instagram&&<a href={site.instagram}>Instagram ↗</a>}{site.email&&<a href={'mailto:'+site.email}>Contact</a>}</>;
+ const related=selected?(site.related[selected.id]?.length?allProjects.filter(p=>site.related[selected.id].includes(p.id)):projects.filter(p=>p.id!==selected.id).slice(0,3)):[];
+ return <div className={'journal-site'+(preview?' journal-preview':'')} style={themeVars(site.theme) as CSSProperties}><WebsiteIdentity site={site} preview={preview}/><header className={'journal-header editorial-header-'+site.theme.header}>{page('home',<PortfolioLogo site={site}/>, 'journal-brand')}<nav aria-label="Portfolio">{nav}</nav><MobilePortfolioMenu>{nav}</MobilePortfolioMenu></header>
+ {view.about?<section className="journal-about"><p className="eyebrow">ABOUT THE STUDIO</p><h1>{site.name}</h1><p>{site.about}</p><p>{site.services}</p><WebsiteSections sections={site.sections.about} projects={allProjects} base={base} onProject={preview?onPreviewPage:undefined}/></section>:selected?<><section className="journal-project-heading"><p className="eyebrow">{selected.category}</p><h1>{selected.title}</h1><p>{selected.description}</p></section><WebsiteGallery images={websiteGallery(site,selected.id)} label={selected.title} projects={allProjects} base={base} onProject={preview?onPreviewPage:undefined}/><WebsiteSections sections={site.sections[selected.id]} projects={allProjects} base={base} onProject={preview?onPreviewPage:undefined}/>{related.length>0&&<section className="journal-projects"><h2>More work</h2><div className="journal-grid">{related.map(p=><article key={p.id}>{page(p.id,<><SmartImage src={site.covers[p.id]||p.image_url||''} alt={p.title}/><h3>{p.title}</h3></>)}</article>)}</div></section>}</>:<>
+ {site.motion.enabled&&site.motion.clips.length?<HomepageMotion motion={site.motion} poster={site.image} preview={preview}/>:images.length>0&&<section className={'journal-slider hero-'+site.theme.hero} aria-label="Selected photographs"><div className="journal-slide-image">{page(images[index%images.length]?.link||'home',<SmartImage key={index%images.length} src={images[index%images.length].url} variant="hero" priority alt={images[index%images.length].alt||''}/>)}</div>{images.length>1&&<div className="journal-slider-controls"><button aria-label="Previous photograph" type="button" onClick={()=>setIndex(n=>(n+images.length-1)%images.length)}><ChevronLeft size={16}/></button><span>{index%images.length+1} / {images.length}</span><button aria-label="Next photograph" type="button" onClick={()=>setIndex(n=>(n+1)%images.length)}><ChevronRight size={16}/></button><button aria-label={playing?'Pause photographs':'Play photographs'} type="button" onClick={()=>setPlaying(p=>!p)}>{playing?<Pause size={14}/>:<Play size={14}/>}</button></div>}</section>}
+ {site.headline&&<div className="journal-introduction"><h1>{site.headline}</h1>{site.showIntro&&site.about&&<p>{site.about}</p>}</div>}<WebsiteSections sections={site.sections.home} projects={allProjects} base={base} onProject={preview?onPreviewPage:undefined}/>
+ {(groups.length?groups:['Selected work']).map(group=><section className="journal-projects" key={group} id={'journal-'+encodeURIComponent(group)}><h2>{group}</h2><div className="journal-grid">{projects.filter(p=>!groups.length||(site.collections[p.id]||p.category)===group).map(p=><article key={p.id}>{page(p.id,<><SmartImage src={site.covers[p.id]||p.image_url||''} alt={p.title}/><h3>{p.title}</h3></>)}</article>)}</div></section>)}
+ </>}<footer className="journal-footer"><span>{site.name}</span>{site.email&&<a href={'mailto:'+site.email}>{site.email}</a>}{site.instagram&&<a href={site.instagram}>Instagram ↗</a>}</footer></div>;
+}

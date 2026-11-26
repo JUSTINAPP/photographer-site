@@ -1,3 +1,5 @@
+import {cleanSavedLooks} from './design-agent';
+import {normaliseMotion} from './home-motion';
 import { portfolioCollections } from './portfolio-collections';
 import { vimeoEmbed } from './import-identity';
 import type { WebsiteSection } from './website-sections';
@@ -31,6 +33,7 @@ export function normaliseWebsite(input: unknown) {
     typeof data[key] === 'string' ? data[key].trim().slice(0, length) : '';
   const email = field('email', 254);
   const logo = field('logo', 350000);
+  const cleanLogo=(key:string)=>{const value=field(key,350000);return /^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/]+={0,2}$/i.test(value)?value:'';};
   const logoSize = typeof data.logoSize === 'number' && Number.isFinite(data.logoSize) ? Math.round(Math.max(24, Math.min(120, data.logoSize))) : 44;
   const galleries: Record<string, string> = {};
   if (data.galleries && typeof data.galleries === 'object') {
@@ -106,6 +109,8 @@ export function normaliseWebsite(input: unknown) {
   }
   return {
     placements, covers, projectOrder, sections, related, collections, films,
+    savedLooks: cleanSavedLooks(data.savedLooks),
+    motion: normaliseMotion(data.motion),
     homeGallery: cleanFrames(data.homeGallery, 150),
     homepageProjects: Array.isArray(data.homepageProjects)
       ? [...new Set(data.homepageProjects.filter((id): id is string => typeof id === 'string' && projectId.test(id)).slice(0, 150))]
@@ -114,6 +119,7 @@ export function normaliseWebsite(input: unknown) {
     showIntro: data.showIntro !== false,
     logo: /^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/]+={0,2}$/i.test(logo) ? logo : '',
     logoSize,
+    logoDark:cleanLogo('logoDark'),logoLight:cleanLogo('logoLight'),favicon:cleanLogo('favicon'),faviconLight:cleanLogo('faviconLight'),
     currentWebsite: websiteImage(field('currentWebsite', 2048)),
     name: field('name', 100),
     headline: field('headline', 220),

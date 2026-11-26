@@ -1,6 +1,8 @@
-import { requireStudioAccess } from '@/lib/supabase';
+import { canEditWebsite } from '@/lib/studio-access';
+import { requireStudio } from '@/lib/supabase';
 export async function GET(request:Request){
- const {db,workspace}=await requireStudioAccess('social');
+ const {db,workspace,role}=await requireStudio();
+ if(!canEditWebsite(role)&&role!=='social')return Response.json({error:'You do not have media editing access.'},{status:403});
  if(new URL(request.url).searchParams.get('studio')!==workspace.id)return Response.json({error:'The active studio changed. Refresh this page.'},{status:409,headers:{'Cache-Control':'no-store'}});
  const assets=[];
  for(let offset=0;;offset+=1000){

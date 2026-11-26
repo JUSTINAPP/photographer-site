@@ -9,6 +9,13 @@ import { useEffect, useState, useTransition, type CSSProperties } from 'react';
 import { saveWebsite } from '@/app/studio/website/actions';
 import { FONT_PAIRS, HEADERS, PALETTES, PRESETS, normaliseTheme, themeVars, type SiteTheme } from '@/lib/website-theme';
 import { homepageWork, normaliseWebsite, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
+import DesignConversation from './DesignConversation';
+import MotionEditor from './MotionEditor';
+import LogoKitEditor from './LogoKitEditor';
+import GalleryWebsite from './GalleryWebsite';
+import {approveLogoKit} from '@/app/studio/settings/actions';
+import type {DesignPatch} from '@/lib/design-agent';
+import './portfolio-builder.css';
 import WebsitePages from './WebsitePages';
 import CampaignWebsite from './CampaignWebsite';
 import EditorialWebsite from './EditorialWebsite';
@@ -24,7 +31,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
 }) {
   const [sampleImage, setSampleImage] = useState<string>(PRESETS.editorial.image);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
-  const [panel, setPanel] = useState<'design' | 'pages' | 'publish'>(initialPanel);
+  const [panel, setPanel] = useState<'design' | 'pages' | 'publish' | 'brand' | 'motion'>(initialPanel);
   useEffect(() => {
     const openLinkedPanel = () => {
       if (window.location.hash === '#page-editor') setPanel('pages');
@@ -37,6 +44,13 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const [editableProjects, setEditableProjects] = useState(projects);
   const [operation, setOperation] = useState<'draft' | 'publish' | 'unpublish'>('draft');
   const [draft, setDraft] = useState(initial);
+  const [undo, setUndo] = useState<Website[]>([]);
+  function applyDesign(changes: DesignPatch) {setUndo(h=>[...h.slice(-19),draft]);setDraft(current=>normaliseWebsite({...current,...changes}));setPage('home');}
+  async function saveLook(name:string,references:string[]){
+    const look={id:crypto.randomUUID(),name,theme:draft.theme,logoSize:draft.logoSize,homepageLayout:draft.homepageLayout,references};
+    const next=normaliseWebsite({...draft,savedLooks:[...draft.savedLooks,look]});
+    const result=await saveWebsite(studioId,next,'draft');if(result.error)throw Error(result.error);setDraft(next);setId(result.id);setNotice('Template and draft saved.');
+  }
   const [live, setLive] = useState(isPublished);
   const [id, setId] = useState(publicId);
   const [notice, setNotice] = useState('');
@@ -74,15 +88,20 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
       {!readOnly &&
       <section className="studio-panel website-controls">
         <div className="website-editor-tabs design-switch" aria-label="Editor section">
-          {(['design', 'pages', 'publish'] as const).map(section =>
+          {(['design', 'brand', 'pages', 'motion', 'publish'] as const).map((section,index) =>
             <button key={section} type="button" aria-pressed={panel === section} onClick={() => {
               setPanel(section);
               if (section === 'design') setPage('home');
-            }}>{section}</button>
+            }}><span>{index+1}</span> {({design:'Create',brand:'Logo',pages:'Pages',motion:'Opening',publish:'Publish'})[section]}</button>
           )}
         </div>
         <div hidden={panel !== 'design'} className="website-design-options">
-        <h3>Start from a look</h3>
+        <DesignConversation draft={draft} onApply={applyDesign} canUndo={undo.length>0} onUndo={()=>{setDraft(undo[undo.length-1]);setUndo(h=>h.slice(0,-1));}} onSaveLook={saveLook}/>
+        <details className="builder-manual" open={false}><summary>Choose a template or adjust the design yourself</summary>
+        <h3>My saved templates</h3>
+        {draft.savedLooks.length===0&&<p>Apply a design above, give it a name, then save it here.</p>}
+        <div className="saved-look-options">{draft.savedLooks.map(look=><div key={look.id}><button type="button" onClick={()=>applyDesign({theme:look.theme,logoSize:look.logoSize,homepageLayout:look.homepageLayout})}><strong>{look.name}</strong><small>{look.theme.layout||'editorial'} · {look.theme.palette}</small></button><button type="button" aria-label={'Delete template '+look.name} onClick={()=>setDraft(d=>({...d,savedLooks:d.savedLooks.filter(l=>l.id!==look.id)}))}>×</button></div>)}</div>
+        <h3>Ready-made starting points</h3>
         <div className="template-options">
           {Object.entries(PRESETS).map(([key, preset]) => {
             const theme = normaliseTheme(preset.theme);
@@ -131,13 +150,22 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           )}</div>
         </fieldset>
         </>}
+        <fieldset className="design-options"><legend>Image layout</legend>
+          <label>Grid columns · {draft.theme.columns}<input type="range" min="1" max="4" value={draft.theme.columns} onChange={e=>updateTheme({columns:Number(e.target.value)})}/></label>
+          <label>Space between images · {draft.theme.gap}px<input type="range" min="0" max="80" value={draft.theme.gap} onChange={e=>updateTheme({gap:Number(e.target.value)})}/></label>
+          <div className="design-switch">{(['cover','contain'] as const).map(heroFit=><button key={heroFit} aria-pressed={draft.theme.heroFit===heroFit} onClick={()=>updateTheme({heroFit})}>{heroFit==='cover'?'Fill the opening':'Show the whole photograph'}</button>)}</div>
+          <label>Logo height · {draft.logoSize}px<input type="range" min="24" max="120" value={draft.logoSize} onChange={e=>setDraft(current=>({...current,logoSize:Number(e.target.value)}))}/></label>
+        </fieldset>
         <fieldset className="design-options"><legend>Social links</legend>
           <div className="design-switch">{(['footer', 'header', 'both'] as const).map(social =>
             <button key={social} aria-pressed={draft.theme.social === social} onClick={() => updateTheme({ social })}>{social}</button>
           )}</div>
           <label>Instagram profile URL<input type="url" value={draft.instagram} onChange={e => setDraft({ ...draft, instagram: e.target.value })} /></label>
         </fieldset>
+        </details>
         </div>
+        <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
+        <div hidden={panel !== 'motion'}><MotionEditor studioId={studioId} motion={draft.motion} media={media} onChange={motion=>{setDraft(current=>({...current,motion}));setPage('home');}}/></div>
         <div hidden={panel !== 'pages'}>
         <WebsitePages studioId={studioId} draft={draft} setDraft={setDraft} projects={editableProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
@@ -157,6 +185,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </div>
         <div hidden={panel !== 'publish'}>
         <h2>Publishing</h2>
+        <p>Review your desktop and mobile preview, then save or publish. AI edits stay in your draft until you publish.</p><ul className="builder-checklist"><li>{draft.name?'✓':'○'} Portfolio name</li><li>{draft.homeGallery?.length||work.length?'✓':'○'} Homepage photographs or projects</li><li>{draft.logo?'✓':'○'} Logo (optional)</li></ul>
         <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Use Pages to choose and order the work visitors will see.</p>
         <label className="rights-check"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I have permission to publish this content.</label>
         <ActionButton busy={pending && operation === 'publish'} className="primary-button" disabled={pending || !confirmed} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</ActionButton>
@@ -165,7 +194,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         {live && <ActionButton busy={pending && operation === 'unpublish'} className="secondary-button" disabled={pending} onClick={() => save('unpublish')}>Take website offline</ActionButton>}
         </div>
         <div className="website-save-strip">
-          <ActionButton busy={pending && operation === 'draft'} className="secondary-button" disabled={pending} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save design'}</ActionButton>
+          <ActionButton busy={pending && operation === 'draft'} className="secondary-button" disabled={pending} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save draft'}</ActionButton>
           {panel !== 'publish' && <button className="primary-button" onClick={() => setPanel('publish')}>Publishing options</button>}
         </div>
         <p role="status">{pending ? operation === 'publish' ? 'Publishing your website…' : 'Saving…' : notice}</p>
@@ -179,9 +208,9 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           <Link href="/studio/website/preview" target="_blank" rel="noopener noreferrer">Open saved draft ↗</Link>
           {live && id && <Link href={'/sites/' + id}>Open website ↗</Link>}
         </div>
-        {!campaign && !draft.image && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
+        {!campaign && draft.theme.layout !== 'gallery' && !draft.image && !draft.motion.enabled && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <div className={'design-preview-frame ' + device}>
-          {campaign || editingProject || page === 'about' ? <CampaignWebsite site={previewSite} projects={work} allProjects={editableProjects} preview previewProject={editingProject}
+          {draft.theme.layout === 'gallery' ? <GalleryWebsite site={previewSite} projects={work} allProjects={editableProjects} preview view={{campaign:page!=='home'&&page!=='about'?page:undefined,about:page==='about'?'1':undefined}} onPreviewPage={next=>setPage(next)}/> : campaign || editingProject || page === 'about' ? <CampaignWebsite site={previewSite} projects={work} allProjects={editableProjects} preview previewProject={editingProject}
             view={editableProjects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
             onPreviewPage={next => { setPage(next); if (panel === 'design') setPanel('pages'); }} /> :
             <EditorialWebsite site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} allProjects={editableProjects} preview onProject={id => { setPage(id); setPanel('pages'); }} />}

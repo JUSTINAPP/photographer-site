@@ -64,3 +64,10 @@ export async function takeWebsiteOffline(id: string) {
   if (data) revalidatePath('/sites/' + data.public_id);
   finish('website', error ? 'error' : 'offline');
 }
+
+export async function approveLogoKit(studio:string,input:unknown){
+ const {db,workspace}=await requireStudioAccess('edit');if(workspace.id!==studio)return {error:'The active studio changed. Please refresh.'};
+ const clean=normaliseWebsite(input);if(!clean.logoDark||!clean.logoLight||!clean.favicon)return {error:'Prepare the logo versions before approving.'};
+ const patch={logo:clean.logo,logoDark:clean.logoDark,logoLight:clean.logoLight,favicon:clean.favicon,faviconLight:clean.faviconLight,logoSize:clean.logoSize};
+ const {error}=await db.rpc('patch_studio_settings',{studio,patch});if(error)return {error:'Your logo could not be saved.'};revalidatePath('/studio','layout');return {ok:true};
+}

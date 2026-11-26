@@ -19,10 +19,10 @@ export default async function WebsiteSettings({ searchParams }: { searchParams: 
   ]);
   return (
     <StudioShell active="Website" email={user.email}>
-      <div className="studio-page-heading"><div><h1>Website editor</h1><p>Edit your homepage, images and campaign order with a live preview.</p></div><div className="settings-links"><ActionLink className="secondary-button" href="/studio/website/preview" target="_blank" rel="noopener noreferrer">Preview saved draft ↗</ActionLink>{isStudioAdmin(role) && <ActionLink className="secondary-button" href="/studio/settings">Settings</ActionLink>}</div></div>
+      <div className="studio-page-heading"><div><h1>Website editor</h1><p>Build with your AI design partner, or use the controls. Review every change in the live preview.</p></div><div className="settings-links"><ActionLink className="secondary-button" href="/studio/website/preview" target="_blank" rel="noopener noreferrer">Preview saved draft ↗</ActionLink>{isStudioAdmin(role) && <ActionLink className="secondary-button" href="/studio/settings">Settings</ActionLink>}</div></div>
       {site.error || projects.error || media.error
         ? <p role="alert">The website builder could not load. Please try again later.</p>
-        : <WebsiteBuilder initialPage={page} initialPanel={panel === 'design' ? 'design' : 'pages'} studioId={workspace.id} readOnly={!canEditWebsite(role)} initial={preloadWebsiteDraft(normaliseWebsite(site.data?.draft), media.data ?? [])} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={!!site.data?.published} />}
+        : <WebsiteBuilder initialPage={page} initialPanel={panel === 'pages' ? 'pages' : 'design'} studioId={workspace.id} readOnly={!canEditWebsite(role)} initial={preloadWebsiteDraft(normaliseWebsite(site.data?.draft), media.data ?? [])} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={!!site.data?.published} />}
     </StudioShell>
   );
 }

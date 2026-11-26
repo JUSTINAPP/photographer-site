@@ -1,36 +1,7 @@
 'use client';
-import SmartImage from '@/components/SmartImage';
-
-
-import { SubmitButton } from '@/components/ActionFeedback';
-
-import { useEffect, useState } from 'react';
-import { Upload } from 'lucide-react';
-import { saveStudioSettings } from '@/app/studio/settings/actions';
-
-export default function StudioLogoSettings({ id, name, logo, size }: { id: string; name: string; logo: string; size: number }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState('');
-  const [height, setHeight] = useState(size);
-  useEffect(() => {
-    if (!file) { setPreview(''); return; }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-
-  return <form id="logo" action={saveStudioSettings.bind(null, id, 'logo')} className="studio-panel studio-setting-form settings-wide">
-    <h2>Website logo</h2><p>Preview the logo used in your portfolio header and footer. Publish the website to apply the change.</p>
-    <div className="settings-logo-preview">
-      {preview || logo ? <SmartImage variant="thumb" className="portfolio-logo" src={preview || logo} alt={name} style={{ height }} /> : <strong>{name}</strong>}
-      <span>Work &nbsp; About &nbsp; Contact</span>
-    </div>
-    <label className="settings-logo-upload"><Upload size={20} />{file?.name || (logo ? 'Replace logo' : 'Upload logo')}
-      <input name="logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => setFile(event.target.files?.[0] ?? null)} />
-      <small>PNG, JPEG or WebP up to 256 KB</small>
-    </label>
-    <label>Logo height · {height}px<input name="logoSize" type="range" min="24" max="120" value={height} onChange={event => setHeight(Number(event.target.value))} /></label>
-    <SubmitButton className="primary-button">Save logo</SubmitButton>{' '}
-    {logo && <SubmitButton className="secondary-button" name="intent" value="remove">Remove logo</SubmitButton>}
-  </form>;
+import './portfolio-builder.css';
+import LogoKitEditor from './LogoKitEditor';
+import {approveLogoKit} from '@/app/studio/settings/actions';
+export default function StudioLogoSettings({id,logo,size}:{id:string;name:string;logo:string;size:number}){
+ return <section id="logo" className="studio-panel settings-wide"><h2>Logo and browser icon</h2><LogoKitEditor logo={logo} size={size} onApprove={async kit=>{const result=await approveLogoKit(id,kit);if(result.error)throw Error(result.error)}}/></section>;
 }

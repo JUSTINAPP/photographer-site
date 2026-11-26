@@ -1,3 +1,4 @@
+import GalleryWebsite from '@/components/GalleryWebsite';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import CampaignWebsite from '@/components/CampaignWebsite';
@@ -22,6 +23,10 @@ export default async function DomainPortfolio({ searchParams }: { searchParams: 
   const projects = publishedWebsiteWork(result.settings, result.projects);
   const work = homepageWork(site, projects);
   const view = await searchParams;
+  if (site.theme.layout === 'gallery') {
+    if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
+    return <main><GalleryWebsite site={site} projects={work} allProjects={projects} base="/" view={view} /></main>;
+  }
   if (site.theme.layout === 'campaign' || view.campaign || view.about) {
     if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
     return <main><CampaignWebsite site={site} projects={work} allProjects={projects} base="/" view={view} /></main>;

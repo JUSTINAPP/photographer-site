@@ -55,7 +55,7 @@ export type HeaderStyle = (typeof HEADERS)[number];
 export type HeroStyle = (typeof HEROES)[number];
 
 export type SiteTheme = {
-  layout?: "campaign";
+  layout?: "campaign" | "gallery";
   fonts: FontPair;
   palette: PaletteKey;
   bg: string; // used when palette is "custom"
@@ -63,9 +63,16 @@ export type SiteTheme = {
   header: HeaderStyle;
   hero: HeroStyle;
   social: SocialPlacement;
+  columns: number;
+  gap: number;
+  heroFit: "cover" | "contain";
 };
 
 export const PRESETS = {
+  gallery: {label:"Toby · Image journal",image:"/images/fashion.jpg",description:"A quiet white header and rotating images, inspired by Toby’s current website",theme:{layout:"gallery",fonts:"swiss",palette:"white",header:"left",hero:"framed",heroFit:"contain"}},
+  cinematic: {label:"Cinema",image:"/images/sailing.jpg",description:"A cinematic full-screen opening with a discreet menu",theme:{layout:"campaign",fonts:"swiss",palette:"dark",header:"left",hero:"full"}},
+  contact: {label:"Contact sheet",image:"/images/lifestyle.jpg",description:"A clean grid that leads straight into projects",theme:{fonts:"mono",palette:"white",header:"stacked",hero:"text"}},
+  atelier: {label:"Atelier",image:"/images/fashion.jpg",description:"Large type and a considered split introduction",theme:{fonts:"editorial",palette:"stone",header:"left",hero:"split"}},
   campaign: { label: "Campaign Stories", image: "", description: "Full-screen film and campaign stories", theme: { layout: "campaign", fonts: "swiss", palette: "white", header: "left", hero: "full" } },
   classic: { label: "Campaign", image: "/images/fashion.jpg", description: "Full-bleed fashion and commercial work", theme: { fonts: "classic", palette: "white", header: "left", hero: "full" } },
   whitecube: { label: "Print Portfolio", image: "/images/lifestyle.jpg", description: "Quiet, framed lifestyle and portrait work", theme: { fonts: "swiss", palette: "white", header: "centered", hero: "framed" } },
@@ -73,7 +80,7 @@ export const PRESETS = {
   darkroom: { label: "Motion", image: "/images/sports.jpg", description: "Dark, full-width opening for sport and action", theme: { fonts: "contemporary", palette: "dark", header: "left", hero: "full" } },
 } as const;
 
-export const DEFAULT_THEME: SiteTheme = { fonts: "classic", palette: "white", bg: "#ffffff", ink: "#1c1b19", header: "left", hero: "full", social: "footer" };
+export const DEFAULT_THEME: SiteTheme = { fonts: "classic", palette: "white", bg: "#ffffff", ink: "#1c1b19", header: "left", hero: "full", social: "footer", columns: 2, gap: 24, heroFit: "cover" };
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const oneOf = <T extends string>(v: unknown, list: readonly T[], fallback: T): T => (typeof v === "string" && (list as readonly string[]).includes(v) ? (v as T) : fallback);
@@ -86,7 +93,10 @@ export function normaliseTheme(input: unknown): SiteTheme {
   let palette = oneOf<PaletteKey>(x.palette, [...(Object.keys(PALETTES) as (keyof typeof PALETTES)[]), "custom"], "white");
   if (palette === "custom" && contrast(bg, ink) < 4.5) palette = "white";
   return {
-    ...(x.layout === "campaign" ? { layout: "campaign" as const } : {}),
+    ...((x.layout === "campaign" || x.layout === "gallery") ? { layout: x.layout as "campaign" | "gallery" } : {}),
+    columns: typeof x.columns === "number" && Number.isFinite(x.columns) ? Math.round(Math.max(1, Math.min(4, x.columns))) : 2,
+    gap: typeof x.gap === "number" && Number.isFinite(x.gap) ? Math.round(Math.max(0, Math.min(80, x.gap))) : 24,
+    heroFit: x.heroFit === "contain" ? "contain" : "cover",
     fonts: oneOf<FontPair>(x.fonts, Object.keys(FONT_PAIRS) as FontPair[], "classic"),
     palette,
     bg,
@@ -128,6 +138,9 @@ export function themeVars(t: SiteTheme): Record<string, string> {
   const c = themeColours(t);
   const f = FONT_PAIRS[t.fonts];
   return {
+    "--portfolio-columns": String(t.columns),
+    "--portfolio-gap": t.gap+"px",
+    "--portfolio-fit": t.heroFit,
     "--color-site": c.site,
     "--color-ink": c.ink,
     "--color-muted": c.muted,

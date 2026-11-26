@@ -1,3 +1,4 @@
+import GalleryWebsite from '@/components/GalleryWebsite';
 import { notFound } from 'next/navigation';
 import CampaignWebsite from '@/components/CampaignWebsite';
 import EditorialWebsite from '@/components/EditorialWebsite';
@@ -15,6 +16,10 @@ export default async function PublishedWebsite({ params, searchParams }: { param
   const projects = publishedWebsiteWork(result.settings, result.projects);
   const work = homepageWork(site, projects);
   const view = await searchParams;
+  if (site.theme.layout === 'gallery') {
+    if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
+    return <main><GalleryWebsite site={site} projects={work} allProjects={projects} base={'/sites/' + id} view={view} /></main>;
+  }
   if (site.theme.layout === 'campaign' || view.campaign || view.about) {
     if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
     return <main><CampaignWebsite site={site} projects={work} allProjects={projects} base={'/sites/' + id} view={view} /></main>;

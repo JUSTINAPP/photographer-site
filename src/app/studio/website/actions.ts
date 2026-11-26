@@ -1,5 +1,6 @@
 'use server';
 
+import {motionReady} from '@/lib/home-motion';
 import { saveImportedMedia } from '@/app/studio/media/actions';
 import { mediaIdentity } from '@/lib/import-identity';
 
@@ -12,13 +13,25 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen Website design before saving.' };
   const current = await db.from('studio_websites').select('draft').eq('workspace_id', workspace.id).maybeSingle();
   if (current.error) return { error: 'The website settings could not be loaded.' };
-  const { logo, logoSize, currentWebsite } = normaliseWebsite(current.data?.draft);
-  const draft = { ...normaliseWebsite(input), logo, logoSize, currentWebsite };
+  const { logo, logoDark, logoLight, favicon, faviconLight, currentWebsite } = normaliseWebsite(current.data?.draft);
+  const draft = { ...normaliseWebsite(input), logo, logoDark, logoLight, favicon, faviconLight, currentWebsite };
   if (mode === 'publish' && !draft.name) return { error: 'Add a portfolio name before publishing.' };
   const values: { workspace_id: string; draft: typeof draft; published?: (typeof draft & { projectSnapshot?: WebsiteProject[] }) | null } = {
     workspace_id: workspace.id, draft,
   };
   if (mode === 'publish') {
+    if(draft.motion.enabled){
+      if(!motionReady(draft.motion))return {error:'Generate your opening video after your latest timing changes before publishing.'};
+      for(const shape of ['desktop','mobile'] as const){
+        const path=draft.motion[shape+'Path' as 'desktopPath'|'mobilePath'];
+        if(!path.startsWith(workspace.id+'/motion/'))return {error:'This opening belongs to another studio. Generate it again.'};
+        const downloaded=await db.storage.from('studio-originals').download(path);
+        if(downloaded.error)return {error:'The opening video could not be loaded. Generate it again.'};
+        const stored=await db.storage.from('studio-web-assets').upload(path,downloaded.data,{contentType:'video/mp4',upsert:false,cacheControl:'31536000'});
+        if(stored.error&&String(stored.error.statusCode)!=='409')return {error:'The opening could not be published. Please try again or contact support.'};
+        draft.motion[shape+'Url' as 'desktopUrl'|'mobileUrl']=db.storage.from('studio-web-assets').getPublicUrl(path).data.publicUrl;
+      }
+    }
     values.published = draft;
     if (draft.homepageProjects !== null || Object.keys(draft.sections).length || Object.keys(draft.related).length || draft.homeGallery?.some(image => image.link) || Object.values(draft.placements).some(frames => frames.some(image => image.link))) {
       const projects = await db.from('projects').select('id,title,category,description,image_url,published')
@@ -27,6 +40,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
       values.published = publishWebsiteSnapshot(draft, projects.data ?? []);
     }
   }
+  if(values.published){values.published={...values.published,savedLooks:[],motion:{...values.published.motion,desktopPath:'',mobilePath:''}};}
   if (mode === 'unpublish') values.published = null;
   const { data, error } = await db.from('studio_websites')
     .upsert(values, { onConflict: 'workspace_id', defaultToNull: false })

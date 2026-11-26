@@ -1,3 +1,8 @@
+import HomepageMotion from './HomepageMotion';
+import './portfolio-builder.css';
+
+import WebsiteIdentity from './WebsiteIdentity';
+import MobilePortfolioMenu from './MobilePortfolioMenu';
 import SmartImage from '@/components/SmartImage';
 import Link from 'next/link';
 import WebsiteSections from './WebsiteSections';
@@ -15,17 +20,20 @@ export default function EditorialWebsite({ site, projects, preview = false, base
   const name = site.name || 'Your portfolio';
   return (
     <div className="editorial-site" style={themeVars(site.theme) as CSSProperties}>
-      <header className={'editorial-header editorial-header-' + site.theme.header}>
+      <WebsiteIdentity site={site} preview={preview}/><header className={'editorial-header editorial-header-' + site.theme.header}>
         <strong><PortfolioLogo site={site} /></strong>
         <nav aria-label="Portfolio">
-          {preview ? <><span>Work</span><span>About + Services</span><span>Contact</span></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
+          {preview ? <><button onClick={()=>onProject?.('home')}>Work</button><a href="#about">About + Services</a><a href="#contact">Contact</a></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
           {site.theme.social !== 'footer' && social}
-        </nav>
+        </nav><MobilePortfolioMenu>
+          {preview ? <><button onClick={()=>onProject?.('home')}>Work</button><a href="#about">About + Services</a><a href="#contact">Contact</a></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
+          {site.theme.social !== 'footer' && social}
+        </MobilePortfolioMenu>
       </header>
-      <section className={'editorial-intro editorial-intro-' + site.theme.hero}>
+      {site.motion.enabled && site.motion.clips.length ? <HomepageMotion motion={site.motion} poster={site.image} preview={preview}/> : <section className={'editorial-intro editorial-intro-' + site.theme.hero}>
         <h1>{site.headline || name}</h1>
         {site.image && site.theme.hero !== 'text' && <SmartImage variant="hero" priority src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
-      </section>
+      </section>}
       <WebsiteSections sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
       <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={allProjects} base={base} onProject={onProject} />
       <section className={'editorial-work' + (site.homepageLayout === 'grid' ? ' editorial-work-grid' : '')} id={preview ? undefined : 'work'}>

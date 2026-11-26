@@ -1,0 +1,18 @@
+'use client';
+import {useState} from 'react';
+import {ActionButton} from './ActionFeedback';
+import type {LogoKit} from '@/lib/logo-kit';
+export type LogoApproval={logo:string;logoDark:string;logoLight:string;favicon:string;faviconLight:string;logoSize:number};
+export default function LogoKitEditor({logo='',size=44,onApprove}:{logo?:string;size?:number;onApprove:(kit:LogoApproval)=>Promise<void>|void}){
+ const [kit,setKit]=useState<LogoKit|null>(null),[busy,setBusy]=useState(false),[saving,setSaving]=useState(false),[message,setMessage]=useState(''),[height,setHeight]=useState(size);
+ async function prepare(file:File){setBusy(true);setMessage('');try{const body=new FormData();body.set('logo',file);const response=await fetch('/api/studio/logo-kit',{method:'POST',body});const result=await response.json();if(!response.ok)throw Error(result.error);setKit(result);}catch(error){setMessage(error instanceof Error?error.message:'The logo could not be prepared.')}finally{setBusy(false)}}
+ async function existing(){const response=await fetch(logo);await prepare(new File([await response.blob()],'saved-logo.png',{type:'image/png'}))}
+ return <div className="logo-kit-editor"><p>Upload once. We prepare a logo for light pages, a white version for dark pages and a small browser icon. Your artwork keeps its original shape.</p>
+ <label className="builder-upload">Upload your logo<input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void prepare(file)}}/><small>PNG, JPEG or WebP · up to 2 MB. Transparent PNG works best.</small></label>
+ {logo&&!kit&&<ActionButton className="secondary-button" busy={busy} onClick={existing}>Prepare versions from my saved logo</ActionButton>}
+ {busy&&<p role="status">Preparing your logo versions…</p>}
+ {kit&&<><div className="logo-kit-grid"><figure><div className="logo-swatch light"><img src={kit.dark} alt="Dark logo on a light background"/></div><figcaption>Light pages · dark logo</figcaption></figure><figure><div className="logo-swatch dark"><img src={kit.light} alt="White logo on a dark background"/></div><figcaption>Dark pages · white logo</figcaption></figure><figure><div className="logo-swatch browser"><span className="favicon-tab"><img src={kit.icon} alt="Browser icon"/> Your photography site ×</span><img className="icon-large" src={kit.icon} alt="Enlarged browser icon"/></div><figcaption>Browser icon · check the crop</figcaption></figure></div><p>{kit.note}</p><label>Use your own square browser icon instead<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;setBusy(true);try{const body=new FormData();body.set('logo',file);const response=await fetch('/api/studio/logo-kit',{method:'POST',body});const result=await response.json();if(!response.ok)throw Error(result.error);setKit(current=>current?{...current,icon:result.dark,iconLight:result.light}:current)}catch{setMessage('That icon could not be prepared.')}finally{setBusy(false)}}}/></label>
+ <label>Logo size · {height}px<input type="range" min="24" max="120" value={height} onChange={e=>setHeight(Number(e.target.value))}/></label>
+ <ActionButton className="primary-button" busy={saving} disabled={busy} onClick={async()=>{setSaving(true);setMessage('');try{await onApprove({logo:kit.original,logoDark:kit.dark,logoLight:kit.light,favicon:kit.icon,faviconLight:kit.iconLight,logoSize:height});setMessage('Approved for your draft. Publish when the whole website is ready.')}catch(error){setMessage(error instanceof Error?error.message:'Could not save. Please try again.')}finally{setSaving(false)}}}>Approve these versions</ActionButton></>}
+ <p role="status">{message}</p></div>;
+}

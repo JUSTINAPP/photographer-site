@@ -1,4 +1,9 @@
 'use client';
+import HomepageMotion from './HomepageMotion';
+import './portfolio-builder.css';
+import WebsiteIdentity from './WebsiteIdentity';
+import MobilePortfolioMenu from './MobilePortfolioMenu';
+
 import { imageDisplayUrl } from '@/lib/image-display';
 
 import SmartImage from '@/components/SmartImage';
@@ -11,7 +16,7 @@ import PortfolioLogo from './PortfolioLogo';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { orderWebsiteProjects, websiteGallery, type GalleryImage, type Website, type WebsiteProject } from '@/lib/website';
 import { collectionAnchor, portfolioCollections } from '@/lib/portfolio-collections';
-import { FONT_PAIRS } from '@/lib/website-theme';
+import { FONT_PAIRS, themeVars } from '@/lib/website-theme';
 import './campaign-website.css';
 
 const campaignSamples: WebsiteProject[] = [
@@ -117,15 +122,21 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   </div>;
 
   return <div className={'campaign-site' + (preview ? ' campaign-preview' : '')} ref={root}
-    style={{ '--campaign-font': colours.text, '--campaign-display': colours.display } as CSSProperties}>
+    style={{ ...themeVars(site.theme), '--campaign-font': colours.text, '--campaign-display': colours.display } as CSSProperties}>
+    <WebsiteIdentity site={site} preview={preview}/>
     <header className={'campaign-header' + (scrolled || current.about ? ' is-solid' : '')}>
-      {navigation({}, <PortfolioLogo site={site} />, 'campaign-wordmark')}
+      {navigation({}, <PortfolioLogo site={site} light={!scrolled&&!current.about} />, 'campaign-wordmark')}
       <nav aria-label="Portfolio">
         {groups.length ? groups.map(group => <span key={group.name}>{navigation({}, group.name, undefined, collectionAnchor(group.name))}</span>) : navigation({}, 'Work', undefined, 'work')}
         {navigation({ about: '1' }, 'About + Services')}
         {navigation({ about: '1' }, 'Contact', undefined, 'contact')}
         {(groups.length > 0 || site.theme.social !== 'footer') && social}
-      </nav>
+      </nav><MobilePortfolioMenu>
+        {groups.length ? groups.map(group => <span key={group.name}>{navigation({}, group.name, undefined, collectionAnchor(group.name))}</span>) : navigation({}, 'Work', undefined, 'work')}
+        {navigation({ about: '1' }, 'About + Services')}
+        {navigation({ about: '1' }, 'Contact', undefined, 'contact')}
+        {(groups.length > 0 || site.theme.social !== 'footer') && social}
+      </MobilePortfolioMenu>
     </header>
 
     {current.about ? <>
@@ -161,7 +172,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
       </div></section>}
     </> : <>
       <section className="campaign-screen">
-        {site.video && playVideo
+        {site.motion.enabled && site.motion.clips.length ? <HomepageMotion motion={site.motion} poster={site.image} preview={preview}/> : site.video && playVideo
           ? <video ref={video} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} className="campaign-media" src={site.video} poster={site.image ? imageDisplayUrl(site.image,1280) : undefined} preload="metadata" muted autoPlay loop playsInline aria-label="Studio showreel" />
           : <Media url={site.image} label="Full-screen showreel" eager />}
         <div className="campaign-caption"><p>Photography &amp; film</p><h1>{site.headline || name}</h1>
@@ -184,7 +195,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     </>}
 
     <footer className="campaign-copy campaign-footer" id={preview ? undefined : 'contact'} data-anchor="contact">
-      <div>{site.logo && <PortfolioLogo site={site} />}<p className="campaign-kicker">Contact</p><h2>Let’s make something.</h2>
+      <div>{site.logo && <PortfolioLogo site={site} light={!scrolled&&!current.about} />}<p className="campaign-kicker">Contact</p><h2>Let’s make something.</h2>
         {site.email && <a href={'mailto:' + site.email}>{site.email}</a>}
       </div>
       {site.theme.social !== 'header' && social}
