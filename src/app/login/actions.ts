@@ -23,8 +23,8 @@ export async function requestSignIn(signup: boolean, studio: string | undefined,
     } else {
       jar.set(invitationCookie, '', { path: '/auth/callback', maxAge: 0 });
     }
-    if (studio) return { message: 'Check your inbox and open the link in this browser to join the studio.' };
-    return { message: signup ? 'Check your inbox for a link to open your studio.' : 'If you have an account, check your inbox for a secure sign-in link.' };
+    if (studio) return { message: 'Check your inbox. Open the email link, then choose Open my studio to join.' };
+    return { message: signup ? 'Check your inbox. Open the email link, then choose Open my studio.' : 'If you have an account, check your inbox. Open the email link, then choose Open my studio.' };
   } catch {
     return { message: 'Sign-in is temporarily unavailable. Please try again later.' };
   }

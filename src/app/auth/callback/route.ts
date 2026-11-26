@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { completeSignIn } from '@/lib/complete-sign-in';
 import { database } from '@/lib/supabase';
 import { invitationCookie, studioCookie, workspaceIdPattern } from '@/lib/studio-access';
 
@@ -15,24 +16,11 @@ export async function GET(request: NextRequest) {
   const db = await database();
   const { error } = await db.auth.exchangeCodeForSession(code);
   if (error) return signInError('signin');
-  const { data: joined, error: inviteError } = await db.rpc('accept_studio_invitations');
-  if (inviteError) return signInError('signin');
-
-  if (target) {
-    const { data: access, error: accessError } = await db.rpc('studio_role', { studio: target });
-    if (accessError) return signInError('signin');
-    if (!access) return signInError('access');
-  } else if (!joined) {
-    const accessible = await db.from('workspaces').select('id').limit(1);
-    if (accessible.error) return signInError('signin');
-    if (!accessible.data.length) {
-      const { error: setup } = await db.rpc('initialize_studio');
-      if (setup) return signInError('signin');
-    }
-  }
+  const result = await completeSignIn(db, target);
+  if (result.error) return signInError(result.error);
 
   const response = NextResponse.redirect(new URL('/studio', url.origin));
-  const active = target ?? joined;
+  const active = result.studio;
   if (active) response.cookies.set(studioCookie, active, { path: '/', httpOnly: true, sameSite: 'lax', secure: url.protocol === 'https:' });
   response.cookies.set(invitationCookie, '', { path: '/auth/callback', maxAge: 0 });
   return response;
