@@ -430,3 +430,39 @@ button[aria-busy="true"] { cursor: progress; }
 .media-gallery-card img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
 .media-gallery-card > span:not(.action-link-spinner) { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: space-between; padding: 12px; }
 .media-gallery-card > .action-link-spinner { position: absolute; top: 8px; right: 8px; padding: 6px; border-radius: 50%; background: white; }
+
+/* Fresnel platform back office, adapted from Bowerbird House admin. */
+.platform-admin .studio-identity { font-size: 20px; display: flex; gap: 9px; align-items: center; }
+.platform-admin .studio-identity svg { width: 27px; height: 27px; flex-shrink: 0; }
+.platform-admin .studio-main { max-width: 1400px; margin-inline: auto; }
+.admin-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+.admin-stats .studio-panel { margin: 0; padding: 20px; }
+.admin-stats p { font-size: 13px; margin: 0 0 12px; color: var(--muted); }
+.admin-stats strong { font: 40px Editorial, Georgia, serif; }
+.admin-stats strong.admin-date { font-size: 23px; }
+.admin-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 16px; }
+.admin-form label, .admin-search label { display: grid; gap: 8px; font-size: 14px; }
+.admin-form input, .admin-form textarea, .admin-table input, .admin-search input { width: 100%; padding: 11px 12px; background: #fff; color: #14162b; border: 1px solid #dedad1; border-radius: 5px; font: inherit; }
+.admin-form .team-access-select { width: 100%; }
+.admin-form .admin-full { grid-column: 1 / -1; }
+.admin-form > button { justify-self: start; align-self: flex-end; }
+.admin-search { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 22px; }
+.admin-search .rights-check { display: flex; align-items: center; align-self: center; }
+.admin-search input[type="checkbox"] { width: auto; }
+.admin-table-wrap { overflow-x: auto; margin-bottom: 28px; border: 1px solid #dedad1; border-radius: 7px; }
+.admin-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.admin-table th { padding: 14px 18px; font-weight: 500; background: #f4f1ea; color: #606777; }
+.admin-table td { border-top: 1px solid #e1ded7; padding: 16px 18px; vertical-align: top; }
+.admin-table small { display: block; margin-top: 6px; color: #606777; }
+.admin-table a { text-decoration: underline; text-underline-offset: 3px; }
+.admin-table tbody tr:hover { background: #faf9f6; }
+.admin-badge { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 20px; background: #efeee8; font-size: 11px; }
+.admin-overdue { color: #a53226; }
+.platform-support-banner { display: flex; gap: 16px; align-items: center; justify-content: space-between; padding: 18px 28px; background: #f9efd9; color: #14162b; border-bottom: 1px solid #e4d4b1; }
+.platform-support-banner span { display: block; margin-top: 5px; font-size: 13px; }
+.platform-admin section[id] { scroll-margin-top: 20px; }
+@media (max-width: 800px) {
+  .admin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-form { grid-template-columns: 1fr; }
+  .platform-support-banner { align-items: start; flex-direction: column; }
+}

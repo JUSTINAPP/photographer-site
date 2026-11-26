@@ -21,15 +21,18 @@ export async function requireStudio(redirectOnMissingAuth = true) {
     if (redirectOnMissingAuth) redirect('/login');
     throw new Error('Please sign in to your studio.');
   }
+  const platformAdmin = (await db.rpc('is_platform_admin')).data === true;
   const preference = (await cookies()).get(studioCookie)?.value;
   const studios = await db.from('workspaces').select('*').order('created_at');
-  if (studios.error || !studios.data.length) throw new Error('Your studio is not ready. Sign out and sign in again.');
+  if (studios.error) throw new Error('Your studios could not be loaded. Please refresh.');
+  if (!studios.data.length && platformAdmin) redirect('/admin');
+  if (!studios.data.length) throw new Error('Your studio is not ready. Sign out and sign in again.');
   const workspace = studios.data.find(item => item.id === preference)
     ?? studios.data.find(item => item.owner_id === user.id)
     ?? studios.data[0];
   const access = workspace.owner_id === user.id ? 'owner' : (await db.rpc('studio_role', { studio: workspace.id })).data;
   if (access !== 'owner' && (typeof access !== 'string' || !Object.hasOwn(teamRoles, access))) throw new Error('You do not have access to this studio.');
-  return { db, user, workspace, studios: studios.data, role: access as StudioRole };
+  return { db, user, workspace, studios: studios.data, role: access as StudioRole, platformAdmin };
 }
 
 export async function requireStudioAccess(level: 'owner' | 'admin' | 'edit' | 'social' | 'calendar') {

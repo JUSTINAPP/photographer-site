@@ -25,5 +25,6 @@ export async function confirmEmail(_previous: { message: string }, form: FormDat
     path: '/', httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production',
   });
   jar.set(invitationCookie, '', { path: '/auth/callback', maxAge: 0 });
-  redirect('/studio');
+  const platformAdmin = (await db.rpc('is_platform_admin')).data === true;
+  redirect(platformAdmin ? '/admin' : '/studio');
 }

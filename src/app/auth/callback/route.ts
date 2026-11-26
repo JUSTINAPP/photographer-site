@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
   const result = await completeSignIn(db, target);
   if (result.error) return signInError(result.error);
 
-  const response = NextResponse.redirect(new URL('/studio', url.origin));
+  const platformAdmin = (await db.rpc('is_platform_admin')).data === true;
+  const response = NextResponse.redirect(new URL(platformAdmin ? '/admin' : '/studio', url.origin));
   const active = result.studio;
   if (active) response.cookies.set(studioCookie, active, { path: '/', httpOnly: true, sameSite: 'lax', secure: url.protocol === 'https:' });
   response.cookies.set(invitationCookie, '', { path: '/auth/callback', maxAge: 0 });

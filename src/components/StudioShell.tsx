@@ -3,6 +3,7 @@ import FresnelMark from '@/components/FresnelMark';
 import Link from 'next/link';
 import StudioNavLoading from '@/components/StudioNavLoading';
 import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal, CircleHelp } from 'lucide-react';
+import { endSupport } from '@/app/admin/actions';
 import { switchStudio } from '@/app/studio/settings/team/actions';
 import { canEditWebsite, isStudioAdmin, teamRoles, type StudioRole } from '@/lib/studio-access';
 import { requireStudio } from '@/lib/supabase';
@@ -25,6 +26,8 @@ const helpTopics: Record<string, string> = {
 export default async function StudioShell({ children, active = 'Overview', demo = false, email }: {
   children: React.ReactNode; active?: string; demo?: boolean; email?: string;
 }) {
+  let platformAdmin = false;
+  let support: { reason: string; ends_at: string } | null = null;
   let role: StudioRole = 'owner';
   let studios: { id: string; name: string }[] = [];
   let studioId = '';
@@ -34,6 +37,13 @@ export default async function StudioShell({ children, active = 'Overview', demo 
     const session = await requireStudio();
     const { db, workspace } = session;
     role = session.role;
+    platformAdmin = session.platformAdmin;
+    if (platformAdmin) {
+      const { data: activeSupport } = await db.from('platform_support_sessions').select('reason,ends_at')
+        .eq('workspace_id', workspace.id).eq('admin_id', session.user.id).is('ended_at', null)
+        .gt('ends_at', new Date().toISOString()).order('started_at', { ascending: false }).limit(1).maybeSingle();
+      support = activeSupport;
+    }
     studioId = workspace.id;
     studios = session.studios;
     const { data } = await db.from('studio_websites').select('draft, published, public_id').eq('workspace_id', workspace.id).maybeSingle();
@@ -82,6 +92,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
         <Link className="studio-help-link" href={helpTopics[active] ? '/help/' + helpTopics[active] : '/help'} target="_blank" rel="noopener noreferrer">
           <CircleHelp size={16} />{helpTopics[active] ? 'Help with this page' : 'Help centre'}
         </Link>
+        {platformAdmin && <Link className="studio-help-link" href="/admin">Fresnel master admin →</Link>}
         {email && <span>{email}</span>}
         {demo ? <Link href="/login">Private account sign-in ↗</Link> : <form action="/auth/signout" method="post"><button>Sign out</button></form>}
         <Link href="/" className="studio-credit"><FresnelMark /> Fresnel Studios</Link>
@@ -89,6 +100,10 @@ export default async function StudioShell({ children, active = 'Overview', demo 
     </aside>
     <div className="studio-body">
       {demo && <div className="demo-notice">Fictional studio preview · explore freely, no login needed · example content only</div>}
+      {support && <div className="platform-support-banner">
+        <div><strong>Fresnel support · {name}</strong><span>{support.reason} · access ends {new Date(support.ends_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', timeZone: 'Australia/Sydney' })} Sydney time</span></div>
+        <form action={endSupport}><SubmitButton className="secondary-button">Finish support & return to Admin</SubmitButton></form>
+      </div>}
       <main className="studio-main">{children}</main>
     </div>
   </div>;
