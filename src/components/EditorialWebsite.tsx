@@ -1,6 +1,8 @@
+'use client';
 import HomepageMotion from './HomepageMotion';
 import './portfolio-builder.css';
 
+import {usePortfolioHeader} from './usePortfolioHeader';
 import WebsiteIdentity from './WebsiteIdentity';
 import MobilePortfolioMenu from './MobilePortfolioMenu';
 import SmartImage from '@/components/SmartImage';
@@ -16,12 +18,13 @@ import { websiteImage, type Website, type WebsiteProject } from '@/lib/website';
 export default function EditorialWebsite({ site, projects, preview = false, base, onProject, allProjects = projects }: {
   site: Website; projects: WebsiteProject[]; preview?: boolean; base?: string; onProject?: (id: string) => void; allProjects?: WebsiteProject[];
 }) {
+  const {root,look:headerLook}=usePortfolioHeader(site.theme,preview);
   const social = site.instagram && (preview ? <span>Instagram</span> : <a href={site.instagram} rel="noreferrer">Instagram ↗</a>);
   const name = site.name || 'Your portfolio';
   return (
-    <div className="editorial-site" style={themeVars(site.theme) as CSSProperties}>
-      <WebsiteIdentity site={site} preview={preview}/><header className={'editorial-header editorial-header-' + site.theme.header}>
-        <strong><PortfolioLogo site={site} /></strong>
+    <div ref={root} className="editorial-site" style={themeVars(site.theme) as CSSProperties}>
+      <WebsiteIdentity site={site} preview={preview}/><header style={{color:headerLook.color,background:headerLook.background,borderBottom:headerLook.borderBottom}} className={'editorial-header editorial-header-' + site.theme.header}>
+        <strong><PortfolioLogo site={site} light={headerLook.lightLogo} /></strong>
         <nav aria-label="Portfolio">
           {preview ? <><button onClick={()=>onProject?.('home')}>Work</button><a href="#about">About + Services</a><a href="#contact">Contact</a></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
           {site.theme.social !== 'footer' && social}

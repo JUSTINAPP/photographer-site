@@ -1,15 +1,16 @@
 .campaign-site {
   --campaign-screen: 100svh;
-  color: #161616;
-  background: #fff;
+  color: var(--color-ink, #161616);
+  background: var(--color-site, #fff);
   font-family: var(--campaign-font);
   position: relative;
 }
 .campaign-site :is(h1,h2,p,ul) { margin: 0; }
 .campaign-site :is(h1,h2) { font-family: var(--campaign-display); font-weight: 400; letter-spacing: -.045em; line-height: .98; overflow-wrap: anywhere; }
 .campaign-site button { color: inherit; font: inherit; border: 0; background: transparent; cursor: pointer; padding: 0; text-align: left; }
+.campaign-header-anchor { position: sticky; top: 0; height: 0; z-index: 4; }
 .campaign-header {
-  position: sticky;
+  position: relative;
   top: 0;
   z-index: 4;
   display: flex;
@@ -18,7 +19,8 @@
   gap: 16px;
   padding: 18px 4%;
   min-height: 62px;
-  margin-bottom: -62px;
+  margin-bottom: 0;
+  backdrop-filter: blur(12px);
   color: #fff;
   background-color: #0003;
   transition: background-color .35s ease, color .35s ease;

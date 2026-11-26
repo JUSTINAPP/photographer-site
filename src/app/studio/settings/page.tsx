@@ -68,7 +68,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         <WebsiteBuilder key={id} studioId={id} initial={preloadWebsiteDraft(draft, media.data ?? [])} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} isPublished={live} />}
     </SettingsDesignPanel>
 
-    <StudioLogoSettings key={draft.logoSize + ':' + (draft.logo ? 'logo' : 'none')} id={id} name={name} logo={draft.logo} size={draft.logoSize} />
+    <StudioLogoSettings key={draft.logoSize + ':' + (draft.logo ? 'logo' : 'none')} id={id} name={name} logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Your browser icon should show a clear, complete mark. Choose a separate square icon if you prefer.'}:undefined} />
 
     <section className="studio-panel studio-setting-row">
       <div><h2>Website homepage</h2><p>Set the cover, choose a showreel and put campaigns in order.</p></div>

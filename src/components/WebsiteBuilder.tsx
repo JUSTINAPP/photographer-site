@@ -5,7 +5,10 @@ import SmartImage from '@/components/SmartImage';
 import { ActionButton } from '@/components/ActionFeedback';
 
 import Link from 'next/link';
-import { useEffect, useState, useTransition, type CSSProperties } from 'react';
+import {useRouter} from 'next/navigation';
+import {websiteVersion} from '@/lib/website-version';
+import {motionReady,type HomeMotion} from '@/lib/home-motion';
+import { useEffect, useRef, useMemo, useState, useTransition, type CSSProperties } from 'react';
 import { saveWebsite } from '@/app/studio/website/actions';
 import { FONT_PAIRS, HEADERS, PALETTES, PRESETS, normaliseTheme, themeVars, type SiteTheme } from '@/lib/website-theme';
 import { homepageWork, normaliseWebsite, type Website, type WebsiteMedia, type WebsiteProject } from '@/lib/website';
@@ -26,9 +29,15 @@ const contentFields = [
   ['email', 'Public enquiry email'],
 ] as const;
 
-export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design', initialPage }: {
-  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;
+export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design', initialPage,publishedInitial,initialMotionPreview }: {
+  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:{key:string;desktop:string;mobile:string};
 }) {
+  const router=useRouter();const controls=useRef<HTMLElement>(null);
+  const [agentBusy,setAgentBusy]=useState(false),[motionBusy,setMotionBusy]=useState(false),[previewBusy,setPreviewBusy]=useState(false);
+  const [motionPreview,setMotionPreview]=useState(initialMotionPreview);
+  const [savedVersion,setSavedVersion]=useState(websiteVersion(initial));
+  const [publishedVersion,setPublishedVersion]=useState(publishedInitial?websiteVersion(publishedInitial):'');
+  const [publishedRevision,setPublishedRevision]=useState('');
   const [sampleImage, setSampleImage] = useState<string>(PRESETS.editorial.image);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [panel, setPanel] = useState<'design' | 'pages' | 'publish' | 'brand' | 'motion'>(initialPanel);
@@ -49,7 +58,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   async function saveLook(name:string,references:string[]){
     const look={id:crypto.randomUUID(),name,theme:draft.theme,logoSize:draft.logoSize,homepageLayout:draft.homepageLayout,references};
     const next=normaliseWebsite({...draft,savedLooks:[...draft.savedLooks,look]});
-    const result=await saveWebsite(studioId,next,'draft');if(result.error)throw Error(result.error);setDraft(next);setId(result.id);setNotice('Template and draft saved.');
+    const result=await saveWebsite(studioId,next,'draft');if(result.error)throw Error(result.error);setDraft(result.draft??next);setSavedVersion(websiteVersion(result.draft??next));setId(result.id);setNotice('Template and draft saved.');
   }
   const [live, setLive] = useState(isPublished);
   const [id, setId] = useState(publicId);
@@ -68,6 +77,8 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
       try {
         const result = await saveWebsite(studioId, draft, mode);
         if (result.error) { setNotice(result.error); return; }
+        const saved=result.draft??draft;setDraft(saved);setSavedVersion(websiteVersion(saved));
+        if(mode==='publish'){setPublishedVersion(websiteVersion(saved));setPublishedRevision(String(Date.now()));}
         setLive(!!result.published);
         setId(result.id);
         setConfirmed(false);
@@ -78,7 +89,25 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
     });
   }
 
-  const previewSite = normaliseWebsite(draft);
+  async function saveOpening(motion:HomeMotion){
+    const next=normaliseWebsite({...draft,motion:{...motion,enabled:true}});
+    setDraft(next);const result=await saveWebsite(studioId,next,'draft');
+    if(result.error)throw Error('Video files are ready, but the draft could not be saved: '+result.error);
+    setDraft(result.draft??next);setSavedVersion(websiteVersion(result.draft??next));setId(result.id);setNotice('Opening saved in your draft. Publish changes to update the live site.');
+  }
+  async function openLatestPreview(){
+    if(agentBusy||motionBusy||pending||previewBusy)return;
+    setPreviewBusy(true);setNotice('Saving your latest changes before opening the draft…');
+    try{const result=await saveWebsite(studioId,draft,'draft');if(result.error){setNotice(result.error);return;}
+      setSavedVersion(websiteVersion(result.draft??draft));router.push('/studio/website/preview?revision='+Date.now());
+    }catch{setNotice('Could not save the latest draft. Please try again.');}finally{setPreviewBusy(false)}
+  }
+  const currentVersion=useMemo(()=>websiteVersion(draft),[draft]);
+  const unsaved=currentVersion!==savedVersion;
+  const unpublished=live&&currentVersion!==publishedVersion;
+  const busy=pending||agentBusy||motionBusy||previewBusy;
+  const videoNeedsGeneration=draft.motion.enabled&&!motionReady(draft.motion);
+  const previewSite = normaliseWebsite({...draft,motion:motionPreview?.key===draft.motion.renderKey?{...draft.motion,desktopUrl:motionPreview.desktop,mobileUrl:motionPreview.mobile}:draft.motion});
   const campaign = draft.theme.layout === 'campaign';
   const work = homepageWork(previewSite, editableProjects);
   const editingProject = editableProjects.find(project => project.id === page);
@@ -86,18 +115,18 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
     <div className="website-builder">
       {readOnly && <p className="studio-panel">You have view-only access to this portfolio. Use the preview to review the draft.</p>}
       {!readOnly &&
-      <section className="studio-panel website-controls">
+      <section ref={controls} className="studio-panel website-controls">
         <div className="website-editor-tabs design-switch" aria-label="Editor section">
           {(['design', 'brand', 'pages', 'motion', 'publish'] as const).map((section,index) =>
-            <button key={section} type="button" aria-pressed={panel === section} onClick={() => {
+            <button key={section} type="button" disabled={busy} aria-pressed={panel === section} onClick={() => {
               setPanel(section);
               if (section === 'design') setPage('home');
             }}><span>{index+1}</span> {({design:'Create',brand:'Logo',pages:'Pages',motion:'Opening',publish:'Publish'})[section]}</button>
           )}
         </div>
         <div hidden={panel !== 'design'} className="website-design-options">
-        <DesignConversation draft={draft} onApply={applyDesign} canUndo={undo.length>0} onUndo={()=>{setDraft(undo[undo.length-1]);setUndo(h=>h.slice(0,-1));}} onSaveLook={saveLook}/>
-        <details className="builder-manual" open={false}><summary>Choose a template or adjust the design yourself</summary>
+        <DesignConversation draft={draft} onApply={applyDesign} canUndo={undo.length>0} onUndo={()=>{setDraft(undo[undo.length-1]);setUndo(h=>h.slice(0,-1));}} onSaveLook={saveLook} onBusyChange={setAgentBusy}/>
+        <fieldset className="builder-manual-fieldset" disabled={busy}><details className="builder-manual"><summary>Choose a template or adjust the design yourself</summary>
         <h3>My saved templates</h3>
         {draft.savedLooks.length===0&&<p>Apply a design above, give it a name, then save it here.</p>}
         <div className="saved-look-options">{draft.savedLooks.map(look=><div key={look.id}><button type="button" onClick={()=>applyDesign({theme:look.theme,logoSize:look.logoSize,homepageLayout:look.homepageLayout})}><strong>{look.name}</strong><small>{look.theme.layout||'editorial'} · {look.theme.palette}</small></button><button type="button" aria-label={'Delete template '+look.name} onClick={()=>setDraft(d=>({...d,savedLooks:d.savedLooks.filter(l=>l.id!==look.id)}))}>×</button></div>)}</div>
@@ -150,6 +179,11 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           )}</div>
         </fieldset>
         </>}
+        <fieldset className="design-options"><legend>Header colours</legend>
+          <label>Background at the top</label><div className="design-switch">{(['tinted','transparent','solid'] as const).map(headerAppearance=><button key={headerAppearance} aria-pressed={draft.theme.headerAppearance===headerAppearance} onClick={()=>updateTheme({headerAppearance})}>{headerAppearance==='tinted'?'Soft tint':headerAppearance==='transparent'?'Clear':'Solid'}</button>)}</div>
+          {(['headerLogo','scrolledHeaderLogo'] as const).map(key=><div key={key}><label>{key==='headerLogo'?'Logo at the top':'Logo after scrolling'}</label><div className="design-switch">{(['auto','dark','light'] as const).map(tone=><button key={tone} aria-pressed={draft.theme[key]===tone} onClick={()=>updateTheme({[key]:tone})}>{tone==='auto'?'Automatic':tone==='dark'?'Black':'White'}</button>)}</div></div>)}
+          <label className="rights-check"><input type="checkbox" checked={draft.theme.headerBorder} onChange={e=>updateTheme({headerBorder:e.target.checked})}/> Show a line under the header</label>
+        </fieldset>
         <fieldset className="design-options"><legend>Image layout</legend>
           <label>Grid columns · {draft.theme.columns}<input type="range" min="1" max="4" value={draft.theme.columns} onChange={e=>updateTheme({columns:Number(e.target.value)})}/></label>
           <label>Space between images · {draft.theme.gap}px<input type="range" min="0" max="80" value={draft.theme.gap} onChange={e=>updateTheme({gap:Number(e.target.value)})}/></label>
@@ -162,10 +196,10 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           )}</div>
           <label>Instagram profile URL<input type="url" value={draft.instagram} onChange={e => setDraft({ ...draft, instagram: e.target.value })} /></label>
         </fieldset>
-        </details>
+        </details></fieldset>
         </div>
-        <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
-        <div hidden={panel !== 'motion'}><MotionEditor studioId={studioId} motion={draft.motion} media={media} onChange={motion=>{setDraft(current=>({...current,motion}));setPage('home');}}/></div>
+        <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
+        <div hidden={panel !== 'motion'}><MotionEditor studioId={studioId} motion={draft.motion} media={media} initialPreview={initialMotionPreview} onGenerated={saveOpening} onPreviewReady={(urls,key)=>setMotionPreview({...urls,key})} onBusyChange={setMotionBusy} onPublish={()=>{setPanel('publish');controls.current?.scrollIntoView({behavior:'smooth',block:'start'});}} onChange={motion=>{setDraft(current=>({...current,motion}));setPage('home');}}/></div>
         <div hidden={panel !== 'pages'}>
         <WebsitePages studioId={studioId} draft={draft} setDraft={setDraft} projects={editableProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
@@ -184,18 +218,21 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </details>
         </div>
         <div hidden={panel !== 'publish'}>
-        <h2>Publishing</h2>
+        <h2>Publish your latest draft</h2>
+        <div className="publish-version-notice"><strong>{unpublished?'Your live site has an earlier version.':'Ready to review your website.'}</strong><p>Saving a draft keeps your edits private. Publish changes below to put this exact design and opening video on the live website.</p></div>
+        {draft.motion.enabled&&<p className={videoNeedsGeneration?'agent-error':'opening-ready'}>{videoNeedsGeneration?'Your opening has changed. Generate the video in Opening before publishing.':'✓ Opening video ready · desktop and mobile'}</p>}
+        {videoNeedsGeneration&&<button type="button" className="secondary-button" onClick={()=>setPanel('motion')}>Finish my opening video →</button>}
         <p>Review your desktop and mobile preview, then save or publish. AI edits stay in your draft until you publish.</p><ul className="builder-checklist"><li>{draft.name?'✓':'○'} Portfolio name</li><li>{draft.homeGallery?.length||work.length?'✓':'○'} Homepage photographs or projects</li><li>{draft.logo?'✓':'○'} Logo (optional)</li></ul>
         <p>Add or import work from <Link href="/studio/projects">Projects</Link>. Use Pages to choose and order the work visitors will see.</p>
         <label className="rights-check"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I have permission to publish this content.</label>
-        <ActionButton busy={pending && operation === 'publish'} className="primary-button" disabled={pending || !confirmed} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</ActionButton>
+        <ActionButton busy={pending && operation === 'publish'} className="primary-button" disabled={busy || !confirmed || videoNeedsGeneration} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</ActionButton>
         {pending && operation === 'publish' && <progress className="website-publish-progress" aria-label="Publishing website" />}
-        {live && id && <p><Link href={'/sites/' + id}>Open published website ↗</Link></p>}
-        {live && <ActionButton busy={pending && operation === 'unpublish'} className="secondary-button" disabled={pending} onClick={() => save('unpublish')}>Take website offline</ActionButton>}
+        {live && id && <p><Link prefetch={false} href={'/sites/' + id+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link></p>}
+        {live && <ActionButton busy={pending && operation === 'unpublish'} className="secondary-button" disabled={busy} onClick={() => save('unpublish')}>Take website offline</ActionButton>}
         </div>
-        <div className="website-save-strip">
-          <ActionButton busy={pending && operation === 'draft'} className="secondary-button" disabled={pending} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save draft'}</ActionButton>
-          {panel !== 'publish' && <button className="primary-button" onClick={() => setPanel('publish')}>Publishing options</button>}
+        <div className="website-save-strip"><small className="builder-save-status" role="status">{agentBusy?'Updating preview…':motionBusy?'Preparing your opening…':unsaved?'Unsaved draft changes':'Draft saved'}</small>
+          <ActionButton busy={pending && operation === 'draft'} className="secondary-button" disabled={busy} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save draft'}</ActionButton>
+          {panel !== 'publish' && <button className="primary-button" disabled={busy} onClick={() => setPanel('publish')}>Review & publish</button>}
         </div>
         <p role="status">{pending ? operation === 'publish' ? 'Publishing your website…' : 'Saving…' : notice}</p>
       </section>}
@@ -205,9 +242,10 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
             <button aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>Desktop</button>
             <button aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>Mobile</button>
           </div>
-          <Link href="/studio/website/preview" target="_blank" rel="noopener noreferrer">Open saved draft ↗</Link>
-          {live && id && <Link href={'/sites/' + id}>Open website ↗</Link>}
+          {readOnly?<Link prefetch={false} href="/studio/website/preview">Preview saved draft ↗</Link>:<ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & preview latest draft ↗</ActionButton>}
+          {live && id && <Link prefetch={false} href={'/sites/' + id+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link>}
         </div>
+        {unpublished&&<p className="builder-version-hint">You are editing the draft. Publish changes to update the live site.</p>}
         {!campaign && draft.theme.layout !== 'gallery' && !draft.image && !draft.motion.enabled && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <div className={'design-preview-frame ' + device}>
           {draft.theme.layout === 'gallery' ? <GalleryWebsite site={previewSite} projects={work} allProjects={editableProjects} preview view={{campaign:page!=='home'&&page!=='about'?page:undefined,about:page==='about'?'1':undefined}} onPreviewPage={next=>setPage(next)}/> : campaign || editingProject || page === 'about' ? <CampaignWebsite site={previewSite} projects={work} allProjects={editableProjects} preview previewProject={editingProject}

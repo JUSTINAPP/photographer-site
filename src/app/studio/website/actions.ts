@@ -15,6 +15,8 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   if (current.error) return { error: 'The website settings could not be loaded.' };
   const { logo, logoDark, logoLight, favicon, faviconLight, currentWebsite } = normaliseWebsite(current.data?.draft);
   const draft = { ...normaliseWebsite(input), logo, logoDark, logoLight, favicon, faviconLight, currentWebsite };
+  // Signed preview links are short-lived UI data, never saved in a draft.
+  draft.motion={...draft.motion,desktopUrl:'',mobileUrl:''};
   if (mode === 'publish' && !draft.name) return { error: 'Add a portfolio name before publishing.' };
   const values: { workspace_id: string; draft: typeof draft; published?: (typeof draft & { projectSnapshot?: WebsiteProject[] }) | null } = {
     workspace_id: workspace.id, draft,
@@ -51,7 +53,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   revalidatePath('/studio/settings');
   revalidatePath('/studio/website/preview');
   revalidatePath('/sites/' + data.public_id);
-  return { id: data.public_id as string, published: !!data.published };
+  return { id: data.public_id as string, published: !!data.published, draft };
 }
 
 export async function addWebsiteProject(form: FormData) {

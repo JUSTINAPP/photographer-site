@@ -1,3 +1,4 @@
+import {draftMotionPreview} from '@/lib/draft-motion-preview';
 import GalleryWebsite from '@/components/GalleryWebsite';
 import Link from 'next/link';
 import { CornerUpLeft } from 'lucide-react';
@@ -20,10 +21,8 @@ export default async function DraftPreview({ searchParams }: { searchParams: Pro
   ]);
   if (website.error || projects.error || media.error) throw new Error('The draft preview could not load.');
   let site = preloadWebsiteDraft(normaliseWebsite(website.data?.draft), media.data ?? []);
-  if(site.motion.desktopPath.startsWith(workspace.id+'/motion/')){
-    const [desktop,mobile]=await Promise.all([db.storage.from('studio-originals').createSignedUrl(site.motion.desktopPath,3600),db.storage.from('studio-originals').createSignedUrl(site.motion.mobilePath,3600)]);
-    site={...site,motion:{...site.motion,desktopUrl:desktop.data?.signedUrl||'',mobileUrl:mobile.data?.signedUrl||''}};
-  }
+  const motionPreview=await draftMotionPreview(db,workspace.id,site.motion);
+  if(motionPreview)site={...site,motion:{...site.motion,desktopUrl:motionPreview.desktop,mobileUrl:motionPreview.mobile}};
   const view = await searchParams;
   const work = homepageWork(site, projects.data ?? []);
   const previewProject = projects.data?.find(project => project.id === view.campaign);

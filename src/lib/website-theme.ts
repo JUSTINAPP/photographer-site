@@ -63,6 +63,10 @@ export type SiteTheme = {
   header: HeaderStyle;
   hero: HeroStyle;
   social: SocialPlacement;
+  headerAppearance: 'tinted' | 'transparent' | 'solid';
+  headerLogo: 'auto' | 'dark' | 'light';
+  scrolledHeaderLogo: 'auto' | 'dark' | 'light';
+  headerBorder: boolean;
   columns: number;
   gap: number;
   heroFit: "cover" | "contain";
@@ -80,7 +84,7 @@ export const PRESETS = {
   darkroom: { label: "Motion", image: "/images/sports.jpg", description: "Dark, full-width opening for sport and action", theme: { fonts: "contemporary", palette: "dark", header: "left", hero: "full" } },
 } as const;
 
-export const DEFAULT_THEME: SiteTheme = { fonts: "classic", palette: "white", bg: "#ffffff", ink: "#1c1b19", header: "left", hero: "full", social: "footer", columns: 2, gap: 24, heroFit: "cover" };
+export const DEFAULT_THEME: SiteTheme = { fonts: "classic", palette: "white", bg: "#ffffff", ink: "#1c1b19", header: "left", hero: "full", social: "footer", headerAppearance: "tinted", headerLogo: "auto", scrolledHeaderLogo: "auto", headerBorder: false, columns: 2, gap: 24, heroFit: "cover" };
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const oneOf = <T extends string>(v: unknown, list: readonly T[], fallback: T): T => (typeof v === "string" && (list as readonly string[]).includes(v) ? (v as T) : fallback);
@@ -94,6 +98,10 @@ export function normaliseTheme(input: unknown): SiteTheme {
   if (palette === "custom" && contrast(bg, ink) < 4.5) palette = "white";
   return {
     ...((x.layout === "campaign" || x.layout === "gallery") ? { layout: x.layout as "campaign" | "gallery" } : {}),
+    headerAppearance: oneOf(x.headerAppearance, ['tinted','transparent','solid'] as const, 'tinted'),
+    headerLogo: oneOf(x.headerLogo, ['auto','dark','light'] as const, 'auto'),
+    scrolledHeaderLogo: oneOf(x.scrolledHeaderLogo, ['auto','dark','light'] as const, 'auto'),
+    headerBorder: x.headerBorder === true,
     columns: typeof x.columns === "number" && Number.isFinite(x.columns) ? Math.round(Math.max(1, Math.min(4, x.columns))) : 2,
     gap: typeof x.gap === "number" && Number.isFinite(x.gap) ? Math.round(Math.max(0, Math.min(80, x.gap))) : 24,
     heroFit: x.heroFit === "contain" ? "contain" : "cover",

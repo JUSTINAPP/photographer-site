@@ -1,4 +1,5 @@
 'use client';
+import {headerPresentation} from '@/lib/website-header';
 import HomepageMotion from './HomepageMotion';
 import './portfolio-builder.css';
 import WebsiteIdentity from './WebsiteIdentity';
@@ -51,6 +52,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   const targets = allProjects?.length ? allProjects : work;
   const selected = targets.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
   const illustrative = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject);
+  const headerLook = headerPresentation(site.theme,scrolled||!!current.about,true);
   const name = site.name || 'Your studio';
   const social = site.instagram && <a href={site.instagram} rel="noreferrer">Instagram ↗</a>;
 
@@ -124,8 +126,8 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   return <div className={'campaign-site' + (preview ? ' campaign-preview' : '')} ref={root}
     style={{ ...themeVars(site.theme), '--campaign-font': colours.text, '--campaign-display': colours.display } as CSSProperties}>
     <WebsiteIdentity site={site} preview={preview}/>
-    <header className={'campaign-header' + (scrolled || current.about ? ' is-solid' : '')}>
-      {navigation({}, <PortfolioLogo site={site} light={!scrolled&&!current.about} />, 'campaign-wordmark')}
+    <div className="campaign-header-anchor"><header style={{color:headerLook.color,background:headerLook.background,borderBottom:headerLook.borderBottom}} className={'campaign-header' + (scrolled || current.about ? ' is-solid' : '')}>
+      {navigation({}, <PortfolioLogo site={site} light={headerLook.lightLogo} />, 'campaign-wordmark')}
       <nav aria-label="Portfolio">
         {groups.length ? groups.map(group => <span key={group.name}>{navigation({}, group.name, undefined, collectionAnchor(group.name))}</span>) : navigation({}, 'Work', undefined, 'work')}
         {navigation({ about: '1' }, 'About + Services')}
@@ -137,7 +139,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
         {navigation({ about: '1' }, 'Contact', undefined, 'contact')}
         {(groups.length > 0 || site.theme.social !== 'footer') && social}
       </MobilePortfolioMenu>
-    </header>
+    </header></div>
 
     {current.about ? <>
       <section className="campaign-about campaign-copy">
@@ -195,7 +197,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     </>}
 
     <footer className="campaign-copy campaign-footer" id={preview ? undefined : 'contact'} data-anchor="contact">
-      <div>{site.logo && <PortfolioLogo site={site} light={!scrolled&&!current.about} />}<p className="campaign-kicker">Contact</p><h2>Let’s make something.</h2>
+      <div>{site.logo && <PortfolioLogo site={site} light={headerLook.lightLogo} />}<p className="campaign-kicker">Contact</p><h2>Let’s make something.</h2>
         {site.email && <a href={'mailto:' + site.email}>{site.email}</a>}
       </div>
       {site.theme.social !== 'header' && social}
