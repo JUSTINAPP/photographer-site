@@ -45,11 +45,12 @@ export default function StudioTeamSettings({ id, owner, email, members, error }:
   }
   const pending = members.filter(member => !member.user_id);
   return <section id="team" className="studio-panel studio-setting-form settings-team">
-    <h2>Team</h2><p>Manage the people who can work in this studio.</p>
+    <h2>Additional teammates</h2><p>Invite assistants, social managers or website editors. These roles are separate from the photographer’s studio-owner account.</p>
 
     {error && <p role="alert">Could not load the team.</p>}
     <h3>People with access</h3>
     {owner && <p>{email} (you) · Owner</p>}
+    {!owner && members.every(member => !member.user_id) && <p>No additional teammates yet.</p>}
     {members.filter(member => member.user_id).map(memberRow)}
     <h3>Pending invitations</h3>
     {pending.length ? pending.map(memberRow) : <p>No pending invitations.</p>}

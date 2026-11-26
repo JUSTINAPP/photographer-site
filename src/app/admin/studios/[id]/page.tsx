@@ -20,7 +20,7 @@ export default async function AdminStudio({ params }: { params: Promise<{ id: st
     </div>
     <section className="studio-panel"><h2>Help set up this studio</h2><p>Use Open backend above for immediate access to this studio for one hour. You can manage media, campaigns and website pages. For a longer session, choose a duration below. Your access is recorded in Admin support activity.</p>{studio.website && <p>Current website <a href={studio.website} target="_blank" rel="noreferrer">{studio.website}</a></p>}<SupportForm studio={id} /></section>
     <section className="studio-panel"><h2>{studio.claimed ? 'Photographer access' : 'Invite the photographer'}</h2>
-      {studio.claimed ? <p>This photographer has claimed their account. They can sign in at <a href="/login">fresnelstudio.com/login</a>.</p> : <InviteStudioLink id={id} email={studio.email} />}
+      <InviteStudioLink id={id} email={studio.email} name={studio.name} claimed={studio.claimed} />
     </section>
     <section className="studio-panel"><h2>Plan and account notes</h2><p>Record the agreed plan, trial and onboarding notes here. Payments are managed separately while Fresnel pricing is being prepared for launch.</p><StudioAccountForm studio={studio} /></section>
   </>;

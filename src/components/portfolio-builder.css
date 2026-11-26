@@ -17,3 +17,4 @@
 @media(max-width:600px){.logo-upload-card{align-items:flex-start;padding:16px;flex-wrap:wrap}.logo-current{max-width:100%;width:135px}.logo-approval-bar>button{width:100%;justify-content:center}}
 .editorial-header,.journal-header{position:sticky;top:0;z-index:5;backdrop-filter:blur(12px)}
 .logo-kit-editor .logo-size-control{align-content:start;align-self:start}
+.settings-owner-details{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.5rem;padding:1.25rem;background:#f7f5f0;border:1px solid #e1ddd5;border-radius:12px;margin:1rem 0}.settings-owner-details strong{font-size:1.15rem}.settings-owner-details span:last-child{font-size:.85rem;border-radius:30px;background:#eae7df;padding:.35rem .65rem}.photographer-invitation details{margin-top:1.25rem}.photographer-invitation form{margin:1rem 0}

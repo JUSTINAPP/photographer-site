@@ -51,3 +51,9 @@ test('setup and invitation failures stop onboarding', async () => {
   assert.deepEqual(await completeSignIn(db), { error: 'signin' });
   assert.deepEqual(calls, ['accept_studio_invitations']);
 });
+
+test('a prepared photographer claims the existing studio without creating another one', async () => {
+  const { db, calls } = client({ joined: 'prepared-toby-studio' });
+  assert.deepEqual(await completeSignIn(db), { studio: 'prepared-toby-studio' });
+  assert.deepEqual(calls, ['accept_studio_invitations']);
+});

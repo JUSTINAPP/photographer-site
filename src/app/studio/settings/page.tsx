@@ -1,3 +1,5 @@
+import InviteStudioLink from '@/components/admin/InviteStudioLink';
+import { platformStudios } from '@/lib/platform-admin';
 import { ActionLink, SubmitButton } from '@/components/ActionFeedback';
 import Link from 'next/link';
 import StudioShell from '@/components/StudioShell';
@@ -21,8 +23,9 @@ const messages: Record<string, string> = {
 };
 
 export default async function Settings({ searchParams }: { searchParams: Promise<{ settings?: string }> }) {
-  const { db, workspace, user, role } = await requireStudioAccess('admin');
+  const { db, workspace, user, role, platformAdmin } = await requireStudioAccess('admin');
   const id = workspace.id;
+  const photographer = platformAdmin ? (await platformStudios()).find(item => item.id === id) : undefined;
   const [site, team, domain, projects, media] = await Promise.all([
     db.from('studio_websites').select('draft,published,public_id').eq('workspace_id', id).maybeSingle(),
     db.from('studio_team').select('email,role,user_id').eq('workspace_id', id).order('created_at'),
@@ -43,7 +46,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
   return <StudioShell active="Settings" email={user.email}>
     <div className="studio-page-heading"><div><h1>Settings</h1><p>{name}</p></div></div>
     <nav className="settings-links settings-section-links" aria-label="Settings sections">
-      <a href="#studio">Studio</a><a href="#design">Design</a><a href="#logo">Logo</a><a href="#domain">Domain</a><a href="#team">Team</a>
+      <a href="#studio">Studio</a><a href="#design">Design</a><a href="#logo">Logo</a><a href="#domain">Domain</a>{photographer && <a href="#photographer">Photographer access</a>}<a href="#team">Team</a>
     </nav>
     {settings && Object.hasOwn(messages, settings) && <p className="tool-message" role="status">{messages[settings]}</p>}
     <section id="website" className="studio-panel settings-status">
@@ -107,6 +110,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
       <div className="settings-links"><Link href="/studio/tools/contacts">Contacts</Link><Link href="/studio/tools/newsletters">Newsletters</Link><Link href="/studio/tools/invoices">Invoices</Link></div>
     </section>
 
+    {photographer && <section id="photographer" className="studio-panel studio-setting-form"><h2>Photographer &amp; studio owner</h2><InviteStudioLink id={id} email={photographer.email} name={photographer.name} claimed={photographer.claimed} /></section>}
     <StudioTeamSettings id={id} owner={role === 'owner'} email={user.email} members={team.data ?? []} error={!!team.error} />
   </StudioShell>;
 }

@@ -19,7 +19,7 @@ export default async function ConfirmEmail({ searchParams }: {
     <div className="account-card login-content">
       <Link href="/" className="account-brand"><FresnelMark /> Fresnel Studios</Link>
       <h1>{valid ? 'Your studio is one step away' : 'Sign in to your studio'}</h1>
-      <p>{valid ? 'Continue to verify your email and open your private photography studio. New accounts get their own studio automatically.' : 'This email link is incomplete. You can sign in with your email and password, or set a password for your existing account.'}</p>
+      <p>{valid ? 'Continue to verify your email. If Fresnel has prepared a studio for you, you will choose a password and open that existing studio.' : 'This email link is incomplete. You can sign in with your email and password, or set a password for your existing account.'}</p>
       {valid && <ConfirmEmailForm token={token} />}
       <Link href="/login">Sign in with email and password</Link>
     <p><Link href="/forgot-password">Set or reset password</Link></p></div>

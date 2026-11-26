@@ -25,6 +25,9 @@ export async function confirmEmail(_previous: { message: string }, form: FormDat
     path: '/', httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production',
   });
   jar.set(invitationCookie, '', { path: '/auth/callback', maxAge: 0 });
+  const verifiedUser = (await db.auth.getUser()).data.user;
+  const prepared = verifiedUser?.email ? await db.from('workspaces').select('id').eq('owner_id', verifiedUser.id).eq('onboarding_email', verifiedUser.email.toLowerCase()).maybeSingle() : null;
+  if (prepared?.data) redirect('/reset-password');
   const platformAdmin = (await db.rpc('is_platform_admin')).data === true;
   redirect(platformAdmin ? '/admin' : '/studio');
 }

@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
     target ? '/join/' + target + '?error=' + reason : '/login?error=signin', url.origin,
   ));
 
-  if (!code) return signInError('signin');
+  // Default Supabase email links carry the verified session in the URL fragment.
+  // Redirects preserve that fragment; the welcome screen installs it in this browser.
+  if (!code) return NextResponse.redirect(new URL('/auth/welcome', url.origin));
   const db = await database();
   const { error } = await db.auth.exchangeCodeForSession(code);
   if (error) return signInError('signin');

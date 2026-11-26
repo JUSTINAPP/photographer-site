@@ -3,6 +3,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { emailStudioInvitation } from '@/lib/studio-invitation';
+import { platformStudios } from '@/lib/platform-admin';
 import { requirePlatformAdmin } from '@/lib/platform-admin';
 import { accountStatuses, planOptions } from '@/lib/platform-types';
 import { studioCookie, workspaceIdPattern } from '@/lib/studio-access';
@@ -63,4 +65,15 @@ export async function saveStudioAccount(studio: string, _previous: { message: st
   revalidatePath('/admin');
   revalidatePath('/admin/studios/' + studio);
   return { message: 'Account details saved.' };
+}
+
+export async function sendPhotographerInvitation(studio: string, _previous: { message: string; sent: boolean }) {
+  await requirePlatformAdmin();
+  if (!workspaceIdPattern.test(studio)) return { message: 'Choose a valid studio.', sent: false };
+  // Resolve the recipient on the server. A submitted email must never reassign a studio.
+  const customer = (await platformStudios()).find(item => item.id === studio);
+  if (!customer?.email) return { message: 'This studio has no photographer email. Review its onboarding details in Admin.', sent: false };
+  const result = await emailStudioInvitation(customer.email);
+  if (result.error) return { message: result.error === 'over_email_send_rate_limit' ? 'An email was requested recently. Wait a minute before trying again.' : 'The email provider could not send the invitation. No access was changed. Try again or share the invitation link below.', sent: false };
+  return { message: 'Invitation email requested for ' + customer.email + '. Ask them to check their inbox and spam folder. Their existing studio and website are preserved.', sent: true };
 }
