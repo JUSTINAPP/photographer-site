@@ -6,7 +6,11 @@ export interface SocialPost { id: string; channel: SocialChannel; format?: PostF
 export interface Media { id: string; name: string; kind: string; source_url: string; }
 export const cn = (...values: (string | false | null | undefined)[]) => values.filter(Boolean).join(' ');
 export const formatDate = (date: string) => date ? new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date + 'T12:00:00')) : 'Unscheduled';
-export const formatTime = (time: string) => time || 'Time not set';
+export function formatTime(time: string) {
+ const [h,m]=time.split(':').map(Number);
+ if(!Number.isFinite(h)||!Number.isFinite(m))return 'Time not set';
+ return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
 export const SUGGESTION_DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as const;
 export interface PostingSuggestion { day: typeof SUGGESTION_DAY_LABELS[number]; time: string; contentType: PostFormat; contentSuggestion: string; reason: string; }
 export const CHANNEL_COLORS: Record<SocialChannel, { bg: string; border: string; text: string; dot: string }> = {

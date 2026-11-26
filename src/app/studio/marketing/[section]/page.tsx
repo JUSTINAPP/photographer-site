@@ -2,13 +2,13 @@ import {notFound} from 'next/navigation';
 import StudioShell from '@/components/StudioShell';
 import { ActionLink } from '@/components/ActionFeedback';
 import { ConnectionForm, GrowthForm } from '@/components/GrowthForms';
-import { socialWorkspace } from '@/lib/social-workspace';
+import { growthWorkspace } from '@/lib/social-workspace';
 import { fetchSearchConsoleServerData } from '@/lib/marketing/search-console-server';
 import { fetchWebsiteAnalyticsServerData } from '@/lib/marketing/website-analytics-server';
 const titles:Record<string,string>={campaigns:'Campaigns','search-console':'Search & Visibility','google-business':'Google Business','google-ads':'Google Ads','website-analytics':'Website Analytics',reviews:'Reviews'};
 const external:Record<string,string>={'search-console':'https://search.google.com/search-console','google-business':'https://business.google.com/','google-ads':'https://ads.google.com/','website-analytics':'https://analytics.google.com/'};
 export default async function MarketingSection({params}:{params:Promise<{section:string}>}){
- const {section}=await params;if(!titles[section])notFound();const d=await socialWorkspace();const connection=d.records.find(r=>r.kind==='connection'&&r.title===section);
+ const {section}=await params;if(!titles[section])notFound();const d=await growthWorkspace();const connection=d.records.find(r=>r.kind==='connection'&&r.title===section);
  let report:Awaited<ReturnType<typeof fetchSearchConsoleServerData>>|Awaited<ReturnType<typeof fetchWebsiteAnalyticsServerData>>|null=null;
  try{if(section==='search-console'&&connection)report=await fetchSearchConsoleServerData({property:connection.data.property});if(section==='website-analytics'&&connection)report=await fetchWebsiteAnalyticsServerData({propertyId:connection.data.property});}catch{report=null;}
  return <StudioShell active={'Marketing '+section} email={d.user.email}><div className="studio-page-heading"><div><h1>{titles[section]}</h1><p>Marketing tools and account connections for {d.workspace.name}.</p></div>{external[section]&&<a className="secondary-button" href={external[section]} target="_blank" rel="noreferrer">Open Google dashboard ↗</a>}</div>
