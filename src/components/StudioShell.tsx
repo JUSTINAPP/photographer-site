@@ -2,7 +2,7 @@ import { SubmitButton } from '@/components/ActionFeedback';
 import FresnelMark from '@/components/FresnelMark';
 import Link from 'next/link';
 import StudioNavLoading from '@/components/StudioNavLoading';
-import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal, CircleHelp } from 'lucide-react';
+import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, ArrowDownToLine, ArrowUpRight, Mail, Palette, ShoppingBag, Instagram, SlidersHorizontal, CircleHelp, Lightbulb, Megaphone, BarChart3, Search, MapPin, Target, TrendingUp, Star, FolderOpen, Sparkles } from 'lucide-react';
 import { endSupport } from '@/app/admin/actions';
 import { switchStudio } from '@/app/studio/settings/team/actions';
 import { canEditWebsite, isStudioAdmin, teamRoles, type StudioRole } from '@/lib/studio-access';
@@ -13,7 +13,8 @@ const groups = [
   ['Portfolio', [['Projects', '/studio/projects', Images], ['Media', '/studio/media', Images], ['Edit website', '/studio/website', Globe]]],
   ['Production', [['Contacts', '/studio/tools/contacts', Users], ['Equipment', '/studio/tools/equipment', Camera], ['Moodboards', '/studio/tools/moodboards', Palette]]],
   ['Sales', [['Proposals', '/studio/tools/proposals', FileText], ['Invoices', '/studio/tools/invoices', FileText], ['Shop', '/studio/shop', ShoppingBag]]],
-  ['Outreach', [['Newsletters', '/studio/tools/newsletters', Mail], ['Social', '/studio/social', Instagram]]],
+  ['Social Calendar', [['Social calendar', '/studio/social', CalendarDays], ['Ideas', '/studio/social/ideas', Lightbulb], ["What’s on", '/studio/social/whats-on', Megaphone], ['Guidelines', '/studio/social/guidelines', Palette], ['Content', '/studio/social/content', FolderOpen], ['Analytics', '/studio/social/analytics', BarChart3]]],
+  ['Marketing', [['Campaigns', '/studio/marketing/campaigns', Mail], ['Search & Visibility', '/studio/marketing/search-console', Search], ['Google Business', '/studio/marketing/google-business', MapPin], ['Google Ads', '/studio/marketing/google-ads', Target], ['Website Analytics', '/studio/marketing/website-analytics', TrendingUp], ['Reviews', '/studio/marketing/reviews', Star]]],
   ['Studio', [['Import website', '/studio/import', ArrowDownToLine], ['Settings', '/studio/settings', SlidersHorizontal]]],
 ] as const;
 
@@ -61,14 +62,14 @@ export default async function StudioShell({ children, active = 'Overview', demo 
         )}</select></label><SubmitButton className="secondary-button">Open</SubmitButton>
       </form>}
       <nav aria-label="Studio navigation">
-        {groups.map(([heading, links]) => <div key={heading} className="studio-nav-group">
+        {groups.map(([heading, links]) => <div key={heading} className={"studio-nav-group" + (["Social Calendar","Marketing"].includes(heading)?" growth-nav-group":"")}>
           {heading && <p className="nav-heading">{heading}</p>}
           {links.filter(([label]) => demo ? !['Calendar', 'Media', 'Edit website', 'Shop', 'Social', 'Settings'].includes(label)
             : isStudioAdmin(role) || ['Overview', 'Projects', 'Media',
-              ...(role === 'social' ? ['Social'] : ['Edit website']),
+              ...(role === 'social' ? ['Social calendar', 'Ideas', 'What’s on', 'Guidelines', 'Content', 'Analytics', 'Search & Visibility', 'Google Business', 'Google Ads', 'Website Analytics', 'Reviews'] : ['Edit website']),
               ...(role === 'assistant' ? ['Calendar'] : []),
               ...(role === 'editor' ? ['Import website'] : [])].includes(label)).map(([label, path, Icon]) => {
-            const selected = active === label || (active === 'Website' && label === 'Edit website');
+            const selected = active === label || active === 'Social '+path.split('/').pop() || active === 'Marketing '+path.split('/').pop() || (active === 'Website' && label === 'Edit website');
             return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
               aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
               <Icon size={17} />{label}<StudioNavLoading />
