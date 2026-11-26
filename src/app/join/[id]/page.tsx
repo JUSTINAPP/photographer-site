@@ -4,9 +4,10 @@ import { workspaceIdPattern } from '@/lib/studio-access';
 
 export default async function JoinStudio({ params, searchParams }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; mode?: string }>;
 }) {
   const { id } = await params;
   if (!workspaceIdPattern.test(id)) notFound();
-  return <AccountPage signup studio={id} error={(await searchParams).error} />;
+  const query = await searchParams;
+  return <AccountPage signup={query.mode !== 'login'} studio={id} error={query.error} />;
 }

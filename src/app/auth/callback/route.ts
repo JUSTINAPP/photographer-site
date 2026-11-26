@@ -16,6 +16,11 @@ export async function GET(request: NextRequest) {
   const db = await database();
   const { error } = await db.auth.exchangeCodeForSession(code);
   if (error) return signInError('signin');
+  if (request.cookies.get('fresnel-password-recovery')?.value === '1' || url.searchParams.get('next') === 'reset-password') {
+    const response = NextResponse.redirect(new URL('/reset-password', url.origin));
+    response.cookies.set('fresnel-password-recovery', '', { path: '/', maxAge: 0 });
+    return response;
+  }
   const result = await completeSignIn(db, target);
   if (result.error) return signInError(result.error);
 

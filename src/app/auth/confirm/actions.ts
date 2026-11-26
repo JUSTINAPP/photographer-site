@@ -8,11 +8,11 @@ import { invitationCookie, studioCookie, workspaceIdPattern } from '@/lib/studio
 
 export async function confirmEmail(_previous: { message: string }, form: FormData) {
   const token = String(form.get('token_hash') ?? '');
-  if (!/^[a-f0-9]{32,128}$/i.test(token)) return { message: 'This link is incomplete. Request a fresh sign-in email below.' };
+  if (!/^[A-Za-z0-9_-]{32,256}$/i.test(token)) return { message: 'This link is incomplete. Sign in with your password or set one below.' };
 
   const db = await database();
   const { error } = await db.auth.verifyOtp({ token_hash: token, type: 'email' });
-  if (error) return { message: 'This link has expired or has already been used. Request a fresh sign-in email below.' };
+  if (error) return { message: 'This link has expired or has already been used. Sign in with your password or set one below.' };
 
   const jar = await cookies();
   const invitation = jar.get(invitationCookie)?.value;
