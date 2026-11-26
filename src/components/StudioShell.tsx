@@ -69,7 +69,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
               ...(role === 'social' ? ['Social calendar', 'Ideas', 'What’s on', 'Guidelines', 'Content', 'Analytics', 'Search & Visibility', 'Google Business', 'Google Ads', 'Website Analytics', 'Reviews'] : ['Edit website']),
               ...(role === 'assistant' ? ['Calendar'] : []),
               ...(role === 'editor' ? ['Import website'] : [])].includes(label)).map(([label, path, Icon]) => {
-            const selected = active === label || active === 'Social '+path.split('/').pop() || active === 'Marketing '+path.split('/').pop() || (active === 'Website' && label === 'Edit website');
+            const selected = active === label || (path.startsWith('/studio/social/') && active === 'Social '+path.split('/').pop()) || (path.startsWith('/studio/marketing/') && active === 'Marketing '+path.split('/').pop()) || (active === 'Website' && label === 'Edit website');
             return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
               aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
               <Icon size={17} />{label}<StudioNavLoading />

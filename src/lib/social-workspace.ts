@@ -28,5 +28,6 @@ export async function growthWorkspace() {
  const session=await requireStudioAccess('social');
  const {data,error}=await session.db.from('studio_growth_records').select('*').eq('workspace_id',session.workspace.id).eq('archived',false).order('created_at',{ascending:false});
  if(error)throw Error('Marketing settings could not be loaded. Please refresh.');
- return {...session,records:data as GrowthRecord[]};
+ const website=await session.db.from('studio_websites').select('draft').eq('workspace_id',session.workspace.id).maybeSingle();
+ return {...session,studioName:website.data?.draft?.name || session.workspace.name,records:data as GrowthRecord[]};
 }
