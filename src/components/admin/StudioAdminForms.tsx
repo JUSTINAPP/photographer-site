@@ -38,3 +38,14 @@ export function StudioAccountForm({ studio }: { studio: PlatformStudio }) {
     <SubmitButton className="primary-button">Save account</SubmitButton><p role="status">{state.message}</p>
   </form>;
 }
+
+export function OpenBackendButton({ studio }: { studio: string }) {
+  const [state, action, pending] = useActionState(openSupport.bind(null, studio), { message: '' });
+  return <form action={action}>
+    <input type="hidden" name="reason" value="Open studio backend from Fresnel master admin" />
+    <input type="hidden" name="minutes" value="60" />
+    <input type="hidden" name="destination" value="overview" />
+    <SubmitButton className="primary-button">{pending ? 'Opening backend…' : 'Open backend →'}</SubmitButton>
+    {state.message && <p role="alert">{state.message}</p>}
+  </form>;
+}

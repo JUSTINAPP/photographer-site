@@ -37,7 +37,7 @@ export async function openSupport(studio: string, _previous: { message: string }
   if (error) return { message: 'Support access could not be opened. Please try again.' };
   (await cookies()).set(studioCookie, studio, { path: '/', httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
   revalidatePath('/admin/support');
-  redirect('/studio/import');
+  redirect(form.get('destination') === 'overview' ? '/studio' : '/studio/import');
 }
 
 export async function endSupport() {
