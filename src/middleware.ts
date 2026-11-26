@@ -13,6 +13,6 @@ export async function middleware(request:NextRequest){
  let response=NextResponse.next({request});
   if(!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)return response;
   const db=createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{cookies:{getAll:()=>request.cookies.getAll(),setAll:values=>{values.forEach(({name,value})=>request.cookies.set(name,value));response=NextResponse.next({request});values.forEach(({name,value,options})=>response.cookies.set(name,value,options));}}});
-  await db.auth.getUser();return response;
+  await db.auth.getClaims();return response;
 }
 export const config={matcher:['/','/studio/:path*','/admin/:path*','/login','/reset-password','/forgot-password','/auth/:path*']};

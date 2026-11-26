@@ -1,3 +1,4 @@
+import SmartImage from '@/components/SmartImage';
 import Link from 'next/link';
 import { campaignHref, type WebsiteSection } from '@/lib/website-sections';
 import type { WebsiteProject } from '@/lib/website';
@@ -13,7 +14,7 @@ export default function WebsiteSections({ sections, projects, base, onProject }:
         : <Link className="website-section-link" href={campaignHref(base!, target.id)} aria-label={label}>{content}</Link>
       : content;
     const image = section.image && section.layout !== 'text'
-      ? <img src={section.image} alt={section.alt} loading="lazy" referrerPolicy="no-referrer" /> : null;
+      ? <SmartImage src={section.image} alt={section.alt} loading="lazy" referrerPolicy="no-referrer" /> : null;
     return <section key={section.id} className={'portfolio-section portfolio-section-' + section.layout}>
       {image && <div className="portfolio-section-image">{link(image, target ? 'View ' + target.title : undefined)}</div>}
       {(section.heading || section.text || target) && <div className="portfolio-section-copy">

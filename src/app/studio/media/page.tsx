@@ -1,3 +1,4 @@
+import SmartImage from '@/components/SmartImage';
 import MediaYearFilter from '@/components/MediaYearFilter';
 import MediaOrganisation from '@/components/MediaOrganisation';
 import { portfolioCollections } from '@/lib/portfolio-collections';
@@ -18,15 +19,14 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
   const kind = view === 'videos' ? 'video' : 'photo';
   async function loadAssets() {
     const batchSize = 500;
-    const assets = [];
-    for (let start = 0; ; start += batchSize) {
-      const { data, error } = await db.from('studio_media').select('id,name,source_url,kind,website_selected,category_ids,capture_year')
-        .eq('workspace_id', workspace.id).eq('kind', kind).order('created_at', { ascending: false }).order('id')
-        .range(start, start + batchSize - 1);
-      if (error) return { data: [], error };
-      assets.push(...data);
-      if (data.length < batchSize) return { data: assets, error: null };
-    }
+    const query = (count = false) => db.from('studio_media').select('id,name,source_url,kind,website_selected,category_ids,capture_year', count ? {count:'exact'} : undefined)
+      .eq('workspace_id', workspace.id).eq('kind',kind).order('created_at',{ascending:false}).order('id');
+    const first = await query(true).range(0,batchSize-1);
+    if(first.error)return {data:[],error:first.error};
+    const remaining=await Promise.all(Array.from({length:Math.max(0,Math.ceil((first.count??first.data.length)/batchSize)-1)},(_,i)=>query().range((i+1)*batchSize,(i+2)*batchSize-1)));
+    const failed=remaining.find(batch=>batch.error);
+    if(failed?.error)return {data:[],error:failed.error};
+    return {data:[...first.data,...remaining.flatMap(batch=>batch.data??[])],error:null};
   }
   const [{ data, error }, { data: website }, { data: customCategories, error: categoryError }] = await Promise.all([
     loadAssets(),
@@ -125,7 +125,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
         </div>
         {browseGalleries && galleries.length > 0 && <div className="media-gallery-grid">{galleries.map(group =>
           <ActionLink className="media-gallery-card" prefetch={false} key={group.id} href={filterLink(activeCollection, 1, group.id)}>
-            {group.cover && <img src={group.cover} alt="" loading="lazy" referrerPolicy="no-referrer" />}
+            {group.cover && <SmartImage variant="thumb" src={group.cover} alt="" loading="lazy" referrerPolicy="no-referrer" />}
             <span><strong>{group.title}</strong><small>{group.items.length} {kind === 'photo' ? (group.items.length === 1 ? 'photo' : 'photos') : (group.items.length === 1 ? 'video' : 'videos')}</small></span>
           </ActionLink>
         )}</div>}
@@ -144,7 +144,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
             {(item.capture_year || item.category_ids.length > 0) && <p className="media-tags">
               {[item.capture_year, ...item.category_ids.map((id: string) => categoryNames.get(id))].filter(Boolean).join(' · ')}
             </p>}
-            {kind === 'photo' && websiteImage(item.source_url) && <img className="media-thumb" src={item.source_url} alt={item.name} loading="lazy" referrerPolicy="no-referrer" />}
+            {kind === 'photo' && websiteImage(item.source_url) && <SmartImage variant="thumb" className="media-thumb" src={item.source_url} alt={item.name} loading="lazy" referrerPolicy="no-referrer" />}
             {embed && <p><a href={embed} target="_blank" rel="noreferrer">Watch Vimeo film ↗</a> · Hosted on Vimeo</p>}
             {kind === 'video' && !embed && websiteImage(item.source_url) && <video className="media-thumb" src={item.source_url} controls preload="none" />}
             {inDraft

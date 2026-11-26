@@ -1,4 +1,6 @@
 'use client';
+import SmartImage from '@/components/SmartImage';
+
 
 import { normaliseTheme, PRESETS } from '@/lib/website-theme';
 import { mediaIdentity, vimeoEmbed } from '@/lib/import-identity';
@@ -166,7 +168,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
     </> : <>
       {!project && <label>Homepage headline<input maxLength={220} value={draft.headline} onChange={event => setDraft({ ...draft, headline: event.target.value })} /></label>}
       <h3>{project ? 'Project cover' : 'Homepage cover'}</h3>
-      {cover && <img className="page-editor-cover" src={cover} alt="" referrerPolicy="no-referrer" />}
+      {cover && <SmartImage variant="thumb" className="page-editor-cover" src={cover} alt="" referrerPolicy="no-referrer" />}
       <div className="page-editor-actions">
         <button className="secondary-button" onClick={() => setPicker('cover')}>Choose photo</button>
         {project && draft.covers[project.id] && <button className="secondary-button" onClick={() => setDraft({ ...draft, covers: { ...draft.covers, [project.id]: '' } })}>Use project cover</button>}
@@ -180,7 +182,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
         <label className="rights-check"><input type="checkbox" checked={allMedia} onChange={event => setAllMedia(event.target.checked)} /> Show all library items</label>
         <div className="page-media-options">
           {visible.map(asset => <button type="button" key={asset.id} disabled={picker === 'gallery' && (gallery.length >= galleryLimit || gallery.some(item => item.url === asset.source_url))} onClick={() => choose(asset)}>
-            {asset.kind === 'photo' && <img src={asset.source_url} alt="" loading="lazy" referrerPolicy="no-referrer" />}
+            {asset.kind === 'photo' && <SmartImage variant="thumb" src={asset.source_url} alt="" loading="lazy" referrerPolicy="no-referrer" />}
             <span>{asset.name}</span>
           </button>)}
         </div>
@@ -196,7 +198,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
         <ol className="page-gallery-order">{gallery.map((image, index) => <li key={image.url + index}
           onDragOver={event => { if (dragging !== null) event.preventDefault(); }}
           onDrop={event => { event.preventDefault(); if (dragging !== null) updateGallery(moveItem(gallery, dragging, index)); setDragging(null); }}>
-          <img src={image.url} alt="" draggable onDragStart={event => { event.dataTransfer.setData('text/plain', String(index)); setDragging(index); }} onDragEnd={() => setDragging(null)} referrerPolicy="no-referrer" />
+          <SmartImage variant="thumb" src={image.url} alt="" draggable onDragStart={event => { event.dataTransfer.setData('text/plain', String(index)); setDragging(index); }} onDragEnd={() => setDragging(null)} referrerPolicy="no-referrer" />
           <div><strong>Frame {index + 1}</strong>
           <div className="design-switch frame-size-options" aria-label={'Size of frame ' + (index + 1)}>
             {([['grid', 'Grid'], ['wide', 'Full width'], ['screen', 'Full screen']] as const).map(([size, label]) =>
@@ -244,7 +246,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
             if (event.target.checked) next.add(item.id); else next.delete(item.id);
             setDraft({ ...draft, homepageProjects: [...next] });
           }} />
-          {(draft.covers[item.id] || item.image_url) && <img className="homepage-project-thumb" src={draft.covers[item.id] || item.image_url!} alt="" loading="lazy" referrerPolicy="no-referrer" />}
+          {(draft.covers[item.id] || item.image_url) && <SmartImage variant="thumb" className="homepage-project-thumb" src={draft.covers[item.id] || item.image_url!} alt="" loading="lazy" referrerPolicy="no-referrer" />}
           <button className="page-edit-link" onClick={() => { onPage(item.id); setPicker(null); }}>{item.title}</button>
           <button className="secondary-button" aria-label={'Move ' + item.title + ' up'} disabled={index === 0} onClick={() => setDraft({ ...draft, projectOrder: moveItem(ordered, index, index - 1).map(entry => entry.id) })}>↑</button>
           <button className="secondary-button" aria-label={'Move ' + item.title + ' down'} disabled={index === ordered.length - 1} onClick={() => setDraft({ ...draft, projectOrder: moveItem(ordered, index, index + 1).map(entry => entry.id) })}>↓</button>

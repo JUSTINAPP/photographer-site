@@ -1,4 +1,8 @@
 'use client';
+import { imageDisplayUrl } from '@/lib/image-display';
+
+import SmartImage from '@/components/SmartImage';
+
 
 import Link from 'next/link';
 import WebsiteSections from './WebsiteSections';
@@ -20,7 +24,7 @@ type View = { about?: string; campaign?: string };
 
 function Media({ url, label, eager = false }: { url?: string | null; label: string; eager?: boolean }) {
   return url
-    ? <img className="campaign-media" src={url} alt={label} loading={eager ? 'eager' : 'lazy'} referrerPolicy="no-referrer" />
+    ? <SmartImage className="campaign-media" src={url} alt={label} priority={eager} variant={eager ? 'hero' : 'card'} loading={eager ? 'eager' : 'lazy'} referrerPolicy="no-referrer" />
     : <div className="campaign-media campaign-placeholder"><span>{label}</span></div>;
 }
 
@@ -158,7 +162,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     </> : <>
       <section className="campaign-screen">
         {site.video && playVideo
-          ? <video ref={video} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} className="campaign-media" src={site.video} poster={site.image || undefined} muted autoPlay loop playsInline aria-label="Studio showreel" />
+          ? <video ref={video} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} className="campaign-media" src={site.video} poster={site.image ? imageDisplayUrl(site.image,1280) : undefined} preload="metadata" muted autoPlay loop playsInline aria-label="Studio showreel" />
           : <Media url={site.image} label="Full-screen showreel" eager />}
         <div className="campaign-caption"><p>Photography &amp; film</p><h1>{site.headline || name}</h1>
           {navigation({}, 'Scroll to explore ↓', undefined, 'work')}

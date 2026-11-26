@@ -1,4 +1,6 @@
 'use client';
+import SmartImage from '@/components/SmartImage';
+
 
 import { useState } from 'react';
 import { sectionLayouts, type WebsiteSection } from '@/lib/website-sections';
@@ -36,7 +38,7 @@ export default function WebsiteSectionEditor({ sections, media, projects, page, 
       <label>Heading<input value={section.heading} maxLength={140} onChange={event => update(section.id, { heading: event.target.value })} /></label>
       <label>Text<textarea rows={3} value={section.text} maxLength={1800} onChange={event => update(section.id, { text: event.target.value })} /></label>
       {section.layout !== 'text' && <>
-        {section.image && <img className="page-editor-cover" src={section.image} alt="" referrerPolicy="no-referrer" />}
+        {section.image && <SmartImage variant="thumb" className="page-editor-cover" src={section.image} alt="" referrerPolicy="no-referrer" />}
         <div className="page-editor-actions">
           <button type="button" className="secondary-button" onClick={() => { setQuery(''); setPicker(picker === section.id ? '' : section.id); }}>{section.image ? 'Replace photo' : 'Choose photo'}</button>
           {section.image && <button type="button" className="secondary-button" onClick={() => update(section.id, { image: '', alt: '' })}>Clear photo</button>}
@@ -46,7 +48,7 @@ export default function WebsiteSectionEditor({ sections, media, projects, page, 
           <div className="page-media-options">{photos.map(asset => <button type="button" key={asset.id} onClick={() => {
             update(section.id, { image: asset.source_url, alt: '' });
             setPicker('');
-          }}><img src={asset.source_url} alt="" loading="lazy" referrerPolicy="no-referrer" /><span>{asset.name}</span></button>)}</div>
+          }}><SmartImage variant="thumb" src={asset.source_url} alt="" loading="lazy" referrerPolicy="no-referrer" /><span>{asset.name}</span></button>)}</div>
           {!photos.length && <p>No matching photos.</p>}
         </div>}
         {section.image && <label>Image description<input value={section.alt} maxLength={220} onChange={event => update(section.id, { alt: event.target.value })} /></label>}

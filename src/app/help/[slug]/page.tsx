@@ -1,3 +1,4 @@
+import SmartImage from '@/components/SmartImage';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { helpArticles } from '@/content/help';
@@ -38,7 +39,7 @@ export default async function HelpArticle({ params }: Props) {
             {step.instructions.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
             {step.shot && <figure>
               <a href={'/help/' + step.shot.file} aria-label={'Open full-size screenshot for ' + step.title}>
-                <img src={'/help/' + step.shot.file} width={step.shot.width} height={step.shot.height} alt={step.caption ?? ''} loading="lazy" />
+                <SmartImage src={'/help/' + step.shot.file} width={step.shot.width} height={step.shot.height} alt={step.caption ?? ''} loading="lazy" />
               </a>
               <figcaption>{step.caption} <span>Select to enlarge.</span></figcaption>
             </figure>}

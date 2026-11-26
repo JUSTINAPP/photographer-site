@@ -1,4 +1,6 @@
 'use client';
+import SmartImage from '@/components/SmartImage';
+
 
 import { SubmitButton } from '@/components/ActionFeedback';
 
@@ -20,7 +22,7 @@ export default function StudioLogoSettings({ id, name, logo, size }: { id: strin
   return <form id="logo" action={saveStudioSettings.bind(null, id, 'logo')} className="studio-panel studio-setting-form settings-wide">
     <h2>Website logo</h2><p>Preview the logo used in your portfolio header and footer. Publish the website to apply the change.</p>
     <div className="settings-logo-preview">
-      {preview || logo ? <img className="portfolio-logo" src={preview || logo} alt={name} style={{ height }} /> : <strong>{name}</strong>}
+      {preview || logo ? <SmartImage variant="thumb" className="portfolio-logo" src={preview || logo} alt={name} style={{ height }} /> : <strong>{name}</strong>}
       <span>Work &nbsp; About &nbsp; Contact</span>
     </div>
     <label className="settings-logo-upload"><Upload size={20} />{file?.name || (logo ? 'Replace logo' : 'Upload logo')}

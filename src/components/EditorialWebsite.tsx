@@ -1,3 +1,4 @@
+import SmartImage from '@/components/SmartImage';
 import Link from 'next/link';
 import WebsiteSections from './WebsiteSections';
 import WebsiteGallery from './WebsiteGallery';
@@ -23,7 +24,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
       </header>
       <section className={'editorial-intro editorial-intro-' + site.theme.hero}>
         <h1>{site.headline || name}</h1>
-        {site.image && site.theme.hero !== 'text' && <img src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
+        {site.image && site.theme.hero !== 'text' && <SmartImage variant="hero" priority src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
       </section>
       <WebsiteSections sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
       <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={allProjects} base={base} onProject={onProject} />
@@ -32,7 +33,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
         {projects.length === 0 && !site.homeGallery?.length && <p>{preview ? 'Publish a project to include it here.' : 'New work coming soon.'}</p>}
         {projects.map(project => (
           <article key={project.id}>
-            {websiteImage(site.covers[project.id] || project.image_url || '') && <img src={site.covers[project.id] || project.image_url!} alt={project.title} loading="lazy" referrerPolicy="no-referrer" />}
+            {websiteImage(site.covers[project.id] || project.image_url || '') && <SmartImage src={site.covers[project.id] || project.image_url!} alt={project.title} loading="lazy" referrerPolicy="no-referrer" />}
             <p className="eyebrow">{project.category}</p>
             <h3>{onProject ? <button type="button" className="editorial-project-link" onClick={() => onProject(project.id)}>{project.title} ↗</button>
               : base ? <Link href={base + '?campaign=' + encodeURIComponent(project.id)}>{project.title} ↗</Link> : project.title}</h3>

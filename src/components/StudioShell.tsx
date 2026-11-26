@@ -6,7 +6,8 @@ import { LayoutGrid, CalendarDays, Images, Users, Camera, FileText, Globe, Arrow
 import { endSupport } from '@/app/admin/actions';
 import { switchStudio } from '@/app/studio/settings/team/actions';
 import { canEditWebsite, isStudioAdmin, teamRoles, type StudioRole } from '@/lib/studio-access';
-import { requireStudio } from '@/lib/supabase';
+import IntentLink from '@/components/IntentLink';
+import { requireStudio, studioBrand } from '@/lib/supabase';
 
 const groups = [
   ['', [['Overview', '/studio', LayoutGrid], ['Calendar', '/studio/calendar', CalendarDays]]],
@@ -15,7 +16,7 @@ const groups = [
   ['Sales', [['Proposals', '/studio/tools/proposals', FileText], ['Invoices', '/studio/tools/invoices', FileText], ['Shop', '/studio/shop', ShoppingBag]]],
   ['Social Calendar', [['Social calendar', '/studio/social', CalendarDays], ['Ideas', '/studio/social/ideas', Lightbulb], ["What’s on", '/studio/social/whats-on', Megaphone], ['Guidelines', '/studio/social/guidelines', Palette], ['Content', '/studio/social/content', FolderOpen], ['Analytics', '/studio/social/analytics', BarChart3]]],
   ['Marketing', [['Campaigns', '/studio/marketing/campaigns', Mail], ['Search & Visibility', '/studio/marketing/search-console', Search], ['Google Business', '/studio/marketing/google-business', MapPin], ['Google Ads', '/studio/marketing/google-ads', Target], ['Website Analytics', '/studio/marketing/website-analytics', TrendingUp], ['Reviews', '/studio/marketing/reviews', Star]]],
-  ['Studio', [['Import website', '/studio/import', ArrowDownToLine], ['Settings', '/studio/settings', SlidersHorizontal]]],
+  ['Studio', [['Import website', '/studio/import', ArrowDownToLine], ['Settings', '/studio/settings', SlidersHorizontal], ['Site speed', '/studio/performance', TrendingUp]]],
 ] as const;
 
 const helpTopics: Record<string, string> = {
@@ -39,17 +40,17 @@ export default async function StudioShell({ children, active = 'Overview', demo 
     const { db, workspace } = session;
     role = session.role;
     platformAdmin = session.platformAdmin;
-    if (platformAdmin) {
-      const { data: activeSupport } = await db.from('platform_support_sessions').select('reason,ends_at')
+    const [brand, activeSupport] = await Promise.all([
+      studioBrand(workspace.id),
+      platformAdmin ? db.from('platform_support_sessions').select('reason,ends_at')
         .eq('workspace_id', workspace.id).eq('admin_id', session.user.id).is('ended_at', null)
-        .gt('ends_at', new Date().toISOString()).order('started_at', { ascending: false }).limit(1).maybeSingle();
-      support = activeSupport;
-    }
+        .gt('ends_at', new Date().toISOString()).order('started_at', { ascending: false }).limit(1).maybeSingle() : null,
+    ]);
+    support = activeSupport?.data ?? null;
     studioId = workspace.id;
     studios = session.studios;
-    const { data } = await db.from('studio_websites').select('draft, published, public_id').eq('workspace_id', workspace.id).maybeSingle();
-    name = data?.draft?.name || workspace.name || name;
-    if (data?.published) publicPath = '/sites/' + data.public_id;
+    name = brand.data?.draft_name || workspace.name || name;
+    if (brand.data?.published_name !== null && brand.data?.published_name !== undefined) publicPath = '/sites/' + brand.data.public_id;
   }
 
   return <div className="studio-shell">
@@ -70,10 +71,10 @@ export default async function StudioShell({ children, active = 'Overview', demo 
               ...(role === 'assistant' ? ['Calendar'] : []),
               ...(role === 'editor' ? ['Import website'] : [])].includes(label)).map(([label, path, Icon]) => {
             const selected = active === label || (path.startsWith('/studio/social/') && active === 'Social '+path.split('/').pop()) || (path.startsWith('/studio/marketing/') && active === 'Marketing '+path.split('/').pop()) || (active === 'Website' && label === 'Edit website');
-            return <Link key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
+            return <IntentLink key={label} href={demo ? '/demo?view=' + encodeURIComponent(label) : path}
               aria-current={selected ? 'page' : undefined} className={'studio-nav ' + (selected ? 'is-active' : '')}>
               <Icon size={17} />{label}<StudioNavLoading />
-            </Link>;
+            </IntentLink>;
           })}
         </div>)}
       </nav>

@@ -1,4 +1,6 @@
 'use client';
+import SmartImage from '@/components/SmartImage';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Plus, X, Lightbulb } from 'lucide-react';
@@ -7,11 +9,13 @@ import { MonthView } from './month-view';
 import { ListView } from './list-view';
 import { today, todayISO, weekDatesFor, addDays, addMonths, CHANNEL_LABELS, FORMAT_META, type SocialPost, type Media, type PostingSuggestion } from './model';
 import { saveSocialPost, archiveSocialPost } from '@/app/studio/social/actions';
-import { ActionButton } from '@/components/ActionFeedback';
+import { ActionSpinner, ActionButton } from '@/components/ActionFeedback';
 import TeamAccessSelect from '@/components/TeamAccessSelect';
 import type { GrowthRecord } from '@/lib/social-workspace';
 
-export default function SocialCalendar({ initial, media, ideas, prefill, idea, postId }: { initial: SocialPost[]; media: Media[]; ideas: GrowthRecord[]; prefill?: string; idea?: string; postId?: string }) {
+const mediaCache=new Map<string,{media:Media[];at:number}>();
+export default function SocialCalendar({ initial, media:initialMedia, ideas, prefill, idea, postId, libraryScope }: { initial: SocialPost[]; media: Media[]; ideas: GrowthRecord[]; prefill?: string; idea?: string; postId?: string; libraryScope:string }) {
+ const [media,setMedia]=useState(initialMedia);const [loadingMedia,setLoadingMedia]=useState(false);const [mediaError,setMediaError]=useState('');
  const router=useRouter();const [posts,setPosts]=useState(initial);const [view,setView]=useState<'week'|'month'|'list'>('week');
  const [anchor,setAnchor]=useState(today);const [editing,setEditing]=useState<SocialPost|null>(null);const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const [suggestions,setSuggestions]=useState(false);
  const dialog=useRef<HTMLDialogElement>(null);const [selected,setSelected]=useState<string[]>([]);const [search,setSearch]=useState('');
@@ -21,8 +25,16 @@ export default function SocialCalendar({ initial, media, ideas, prefill, idea, p
  function create(date=todayISO(),time='12:00',idea?:string,mediaId?:string){setMessage('');setSearch('');setSelected(mediaId?[mediaId]:[]);setEditing({id:'',title:idea??'',caption:idea??'',channel:'instagram',format:'grid',status:'draft',scheduledDate:date,scheduledTime:time,imageUrl:null});}
  function edit(post:SocialPost){setMessage('');setSearch('');setSelected(post.mediaIds??[]);setEditing(post);}
  useEffect(()=>{if(editing&&!dialog.current?.open)dialog.current?.showModal();if(!editing&&dialog.current?.open)dialog.current?.close();},[editing]);
- useEffect(()=>{if(prefill&&media.some(m=>m.id===prefill))create(todayISO(),'12:00',undefined,prefill);},[prefill]); // Open selected library media directly in a draft.
+ useEffect(()=>{if(prefill)create(todayISO(),'12:00',undefined,prefill);},[prefill]); // Open selected library media directly in a draft.
  useEffect(()=>{if(idea)create(todayISO(),'12:00',idea.slice(0,150));else if(postId){const post=initial.find(p=>p.id===postId);if(post)edit(post)}},[idea,postId]);
+ useEffect(()=>{
+  if(!editing)return;
+  const cached=mediaCache.get(libraryScope);
+  if(cached&&Date.now()-cached.at<30000){setMedia(cached.media);return;}
+  const controller=new AbortController();setLoadingMedia(true);setMediaError('');
+  fetch('/api/studio/media?studio='+encodeURIComponent(libraryScope),{cache:'no-store',signal:controller.signal}).then(async response=>{const result=await response.json();if(!response.ok||!Array.isArray(result.media))throw Error();setMedia(result.media);mediaCache.set(libraryScope,{media:result.media,at:Date.now()});if(mediaCache.size>5)mediaCache.delete(mediaCache.keys().next().value!);}).catch(error=>{if(error.name!=='AbortError')setMediaError('The library could not load. Close and reopen this editor to try again.');}).finally(()=>{if(!controller.signal.aborted)setLoadingMedia(false)});
+  return()=>controller.abort();
+ },[!!editing,libraryScope]);
  const ideaSlots=ideas.filter(i=>i.kind==='idea').slice(0,7).map((idea,i)=>({date:week[i],suggestion:{day:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i],time:'12:00',contentType:'grid',contentSuggestion:idea.title,reason:idea.data.notes||'From your Ideas board'} as PostingSuggestion}));
  async function submit(form:FormData){if(!editing||busy)return;setBusy(true);setMessage('');try{
  const draft={...editing,title:String(form.get('title')),caption:String(form.get('caption')),contentBrief:String(form.get('brief')),channel:String(form.get('channel')) as SocialPost['channel'],format:String(form.get('format')) as SocialPost['format'],status:String(form.get('status')) as SocialPost['status'],scheduledDate:String(form.get('date')),scheduledTime:String(form.get('time')),mediaIds:selected};
@@ -39,14 +51,14 @@ export default function SocialCalendar({ initial, media, ideas, prefill, idea, p
  <p role="status" aria-live="polite">{!editing&&message}</p>
  {view==='week'?<WeekView weekDates={week} posts={scheduled} onSlotClick={create} onPostClick={edit} suggestionSlots={suggestions?ideaSlots:[]} accent="#14162b" onScheduleSuggestion={(idea,date)=>create(date,idea.time,idea.contentSuggestion)}/>:view==='month'?<MonthView reference={anchor} posts={scheduled} onDayClick={date=>create(date)} onPostClick={edit}/>:<ListView posts={scheduled} onPostClick={edit}/>}
  {drafts.length>0&&<section className="studio-panel"><h2>Unscheduled drafts</h2><div className="growth-cards">{drafts.map(p=><button key={p.id} className="secondary-button" onClick={()=>edit(p)}>{p.title}</button>)}</div></section>}
- <section className="studio-panel"><h2>Feed preview</h2><p>Preview the visual order of your next posts. This shows your saved plan.</p><div className="growth-feed">{posts.filter(p=>p.status==='scheduled').sort((a,b)=>(a.scheduledDate+a.scheduledTime).localeCompare(b.scheduledDate+b.scheduledTime)).slice(0,9).map(p=><button key={p.id} onClick={()=>edit(p)}>{p.imageUrl?<img src={p.imageUrl} alt={p.title}/>:<span>{p.title}</span>}<small>{p.format?FORMAT_META[p.format].label:'Photo'} · {p.scheduledDate}</small></button>)}{!posts.some(p=>p.status==='scheduled')&&<p>Schedule a post to start your feed preview.</p>}</div></section>
+ <section className="studio-panel"><h2>Feed preview</h2><p>Preview the visual order of your next posts. This shows your saved plan.</p><div className="growth-feed">{posts.filter(p=>p.status==='scheduled').sort((a,b)=>(a.scheduledDate+a.scheduledTime).localeCompare(b.scheduledDate+b.scheduledTime)).slice(0,9).map(p=><button key={p.id} onClick={()=>edit(p)}>{p.imageUrl?<SmartImage variant="thumb" src={p.imageUrl} alt={p.title}/>:<span>{p.title}</span>}<small>{p.format?FORMAT_META[p.format].label:'Photo'} · {p.scheduledDate}</small></button>)}{!posts.some(p=>p.status==='scheduled')&&<p>Schedule a post to start your feed preview.</p>}</div></section>
  <dialog ref={dialog} className="growth-dialog" onCancel={e=>{e.preventDefault();if(!busy)setEditing(null)}} onClick={e=>{if(e.target===e.currentTarget&&!busy)setEditing(null)}} aria-labelledby="post-title">
  {editing&&<div><div className="growth-toolbar"><h2 id="post-title">{editing.id?'Edit post':'New post'}</h2><button className="secondary-button" aria-label="Close post editor" disabled={busy} onClick={()=>setEditing(null)}><X size={18}/></button></div>
  <form onSubmit={event=>{event.preventDefault();void submit(new FormData(event.currentTarget))}} className="growth-form"><label>Title<input name="title" required maxLength={150} defaultValue={editing.title}/></label><div className="growth-columns"><label>Channel<TeamAccessSelect name="channel" label="Channel" initial={editing.channel} options={Object.entries(CHANNEL_LABELS)}/></label><label>Format<TeamAccessSelect name="format" label="Format" initial={editing.format??'grid'} options={Object.entries(FORMAT_META).map(([key,value])=>[key,value.label])}/></label></div>
  <label>Caption<textarea name="caption" rows={4} maxLength={3000} defaultValue={editing.caption}/></label><label>Creative brief<textarea name="brief" rows={2} maxLength={3000} defaultValue={editing.contentBrief}/></label>
  <div className="growth-columns"><label>Date<input name="date" type="date" defaultValue={editing.scheduledDate}/></label><label>Time<input name="time" type="time" defaultValue={editing.scheduledTime}/></label></div>
  <label>Status<TeamAccessSelect name="status" label="Post status" initial={editing.status==='failed'?'draft':editing.status} options={[["draft","Draft"],["scheduled","Scheduled · manual posting"],["published","Posted · confirmed by you"]]}/></label>
- <fieldset><legend>Choose media · {selected.length}/10</legend><input aria-label="Search media" placeholder="Search your media library" value={search} onChange={e=>setSearch(e.target.value)}/><div className="growth-media-picker">{media.filter(m=>m.name.toLowerCase().includes(search.toLowerCase())).slice(0,60).map(m=><label key={m.id}><input type="checkbox" checked={selected.includes(m.id)} disabled={!selected.includes(m.id)&&selected.length>=10} onChange={e=>setSelected(ids=>e.target.checked?[...ids,m.id]:ids.filter(id=>id!==m.id))}/>{m.kind==='photo'?<img src={m.source_url} alt="" loading="lazy"/>:<span>Video</span>}<small>{m.name}</small></label>)}</div><p>Files appear in the order selected. Untick and reselect a file to move it to the end.</p></fieldset>
+ <fieldset>{loadingMedia&&<p role="status"><ActionSpinner/> Loading your media library…</p>}{mediaError&&<p role="alert">{mediaError}</p>}<legend>Choose media · {selected.length}/10</legend><input aria-label="Search media" placeholder="Search your media library" value={search} onChange={e=>setSearch(e.target.value)}/><div className="growth-media-picker">{media.filter(m=>m.name.toLowerCase().includes(search.toLowerCase())).slice(0,60).map(m=><label key={m.id}><input type="checkbox" checked={selected.includes(m.id)} disabled={!selected.includes(m.id)&&selected.length>=10} onChange={e=>setSelected(ids=>e.target.checked?[...ids,m.id]:ids.filter(id=>id!==m.id))}/>{m.kind==='photo'?<SmartImage variant="thumb" src={m.source_url} alt="" loading="lazy"/>:<span>Video</span>}<small>{m.name}</small></label>)}</div><p>Files appear in the order selected. Untick and reselect a file to move it to the end.</p></fieldset>
  {selected.length>0&&<ol>{selected.map((id,index)=><li key={id}>{media.find(m=>m.id===id)?.name}<button type="button" disabled={index===0} onClick={()=>setSelected(ids=>{const copy=[...ids];[copy[index-1],copy[index]]=[copy[index],copy[index-1]];return copy})}>↑ Move earlier</button></li>)}</ol>}
  <p role="alert">{message}</p><div className="growth-toolbar"><ActionButton busy={busy} type="submit" className="primary-button">Save post</ActionButton>{editing.id&&<ActionButton busy={busy} type="button" className="secondary-button" onClick={unschedule}>Return to unscheduled drafts</ActionButton>}</div></form></div>}
  </dialog></div>;

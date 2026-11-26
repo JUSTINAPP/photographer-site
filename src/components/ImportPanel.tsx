@@ -1,4 +1,6 @@
 'use client';
+import SmartImage from '@/components/SmartImage';
+
 
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
@@ -167,7 +169,7 @@ export default function ImportPanel({ demo = false }: { demo?: boolean }) {
           <div className="import-results">{scan.candidates.map((item, index) => <label className="import-result" key={item.source_url}>
             <input type="checkbox" disabled={!!busy} checked={selected.includes(index)}
               onChange={() => setSelected(current => current.includes(index) ? current.filter(value => value !== index) : [...current, index])} />
-            {item.image_url && <img src={item.image_url} alt="" referrerPolicy="no-referrer" />}
+            {item.image_url && <SmartImage variant="thumb" src={item.image_url} alt="" referrerPolicy="no-referrer" />}
             <div><strong>{item.title}</strong><p>{item.description || 'No description found.'}</p><small>{new URL(item.source_url).pathname}</small></div>
           </label>)}</div>
         </>}

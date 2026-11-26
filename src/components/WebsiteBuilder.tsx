@@ -1,4 +1,6 @@
 'use client';
+import SmartImage from '@/components/SmartImage';
+
 
 import { ActionButton } from '@/components/ActionFeedback';
 
@@ -90,7 +92,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
               style={{ ...themeVars(theme), background: 'var(--color-site)', color: 'var(--color-ink)', fontFamily: 'var(--font-serif)' } as CSSProperties}
               onClick={() => { setSampleImage(preset.image); setDraft(current => ({ ...current, theme })); }}>
               {preset.label}
-              {preset.image ? <img src={preset.image} alt="" /> : <div className="campaign-template-tile" aria-hidden="true" />}
+              {preset.image ? <SmartImage variant="thumb" src={preset.image} alt="" /> : <div className="campaign-template-tile" aria-hidden="true" />}
               <small>{preset.description}</small>
             </button>;
           })}
