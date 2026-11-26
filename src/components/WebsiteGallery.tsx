@@ -4,15 +4,15 @@ import {useWebsiteEditing} from './WebsiteEditing';
 import SmartImage from '@/components/SmartImage';
 import Link from 'next/link';
 import { campaignHref } from '@/lib/website-sections';
-import type { GalleryImage, WebsiteProject } from '@/lib/website';
+import type { GalleryImage, WebsiteProject, Website } from '@/lib/website';
 
-export default function WebsiteGallery({ images, label, projects = [], base, onProject, pageId = 'home' }: {
-  pageId?: string; images: GalleryImage[]; label: string; projects?: WebsiteProject[]; base?: string; onProject?: (id: string) => void;
+export default function WebsiteGallery({ site, images, label, projects = [], base, onProject, pageId = 'home' }: {
+  site:Website; pageId?: string; images: GalleryImage[]; label: string; projects?: WebsiteProject[]; base?: string; onProject?: (id: string) => void;
 }) {
   const edit=useWebsiteEditing();const [dragged,setDragged]=useState<number|null>(null);
   function move(from:number,to:number){if(to<0||to>=images.length||from===to)return;const next=[...images];const [item]=next.splice(from,1);next.splice(to,0,item);edit?.gallery(pageId,next);}
   if (!images.length) return null;
-  return <section className="campaign-gallery website-photo-gallery" aria-label={label}>
+  return <section className={"campaign-gallery website-photo-gallery"+(site.galleryLayouts[pageId]==='natural'?' gallery-natural':'')} aria-label={label}>
     {images.map((image, index) => {
       const target = projects.find(project => project.id === image.link);
       const photo = <SmartImage className="campaign-media" src={image.url} alt={image.alt} loading="lazy" referrerPolicy="no-referrer" />;

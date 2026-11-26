@@ -1,5 +1,6 @@
 'use client';
 import HomepageMotion from './HomepageMotion';
+import PageOpeningEditor from './PageOpeningEditor';
 import {motionSeconds} from '@/lib/home-motion';
 import ImportNavigation from './ImportNavigation';
 import SmartImage from '@/components/SmartImage';
@@ -190,6 +191,8 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       {!project && draft.motion.enabled && draft.motion.clips.length>0 && <div className="opening-selection"><h3>Selected homepage opening · video edit</h3><p>{draft.motion.clips.length} shots · {motionSeconds(draft.motion)} seconds. {draft.hiddenBlocks.includes('home:opening')?'The opening section is currently removed. Restore it above to show this video.':'This is the opening playing in your page preview.'}</p>{openingPreview?.desktopUrl?<video src={openingPreview.desktopUrl} controls muted playsInline preload="metadata"/>:<div style={{height:180,position:'relative',overflow:'hidden'}}><HomepageMotion motion={openingPreview||draft.motion} poster={draft.image} preview/></div>}<div className="page-editor-actions"><button type="button" className="primary-button" onClick={onOpening}>Edit this opening</button><button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,motion:{...current.motion,enabled:false},video:''}))}>Use a still photo instead</button></div></div>}
       {!project && !draft.motion.enabled && draft.video && <div className="opening-selection"><h3>Selected homepage opening · showreel</h3><video controls muted playsInline src={draft.video} preload="metadata"/><button type="button" className="secondary-button" onClick={()=>setPicker('video')}>Replace showreel</button><button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,video:''}))}>Use a still photo instead</button></div>}
       {!project && !draft.motion.enabled && !draft.video && draft.motion.clips.length>0 && <button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,motion:{...current.motion,enabled:true}}))}>Use my saved opening video</button>}
+      {project&&<PageOpeningEditor site={draft} page={project.id} media={media} onChange={setDraft}/>}
+      <label>Gallery layout<select value={draft.galleryLayouts[page]||'grid'} onChange={e=>setDraft(current=>({...current,galleryLayouts:{...current.galleryLayouts,[page]:e.target.value as 'grid'|'natural'}}))}><option value="grid">Uniform cropped grid</option><option value="natural">Original proportions · masonry</option></select></label>
       <h3>{project ? 'Project cover' : draft.motion.enabled || draft.video ? 'Loading poster · shown before your video starts' : 'Homepage opening · still photo'}</h3>
       {(project || (!draft.motion.enabled && !draft.video)) && cover && <SmartImage variant="thumb" className="page-editor-cover" src={cover} alt="" referrerPolicy="no-referrer" />}
       <div className="page-editor-actions">

@@ -127,7 +127,12 @@ export function normaliseWebsite(input: unknown) {
   }
   const filmGalleries:Record<string,string[]>={};
   if(data.filmGalleries&&typeof data.filmGalleries==='object')for(const [id,items] of Object.entries(data.filmGalleries).slice(0,150))if(projectId.test(id)&&Array.isArray(items))filmGalleries[id]=[...new Set(items.slice(0,30).flatMap(url=>typeof url==='string'&&websiteImage(url)?[vimeoEmbed(url)||websiteImage(url)]:[]))];
+  const galleryLayouts:Record<string,'grid'|'natural'>={};
+  if(data.galleryLayouts&&typeof data.galleryLayouts==='object')for(const [id,value] of Object.entries(data.galleryLayouts).slice(0,150))if((id==='home'||projectId.test(id))&&(value==='grid'||value==='natural'))galleryLayouts[id]=value;
+  const pageMotion:Record<string,ReturnType<typeof normaliseMotion>>={};
+  if(data.pageMotion&&typeof data.pageMotion==='object')for(const [id,value] of Object.entries(data.pageMotion).slice(0,150))if(projectId.test(id)){const motion=normaliseMotion(value);pageMotion[id]={...motion,renderKey:'',desktopPath:'',mobilePath:'',desktopUrl:'',mobileUrl:''};}
   return {
+    galleryLayouts,pageMotion,
     filmGalleries, navigation, hiddenBlocks, blockStyles, pageCopy,
     placements, covers, projectOrder, sections, related, collections, films,
     savedLooks: cleanSavedLooks(data.savedLooks),
@@ -243,6 +248,8 @@ export function publishWebsiteSnapshot(site: Website, projects: WebsiteProject[]
     sections:Object.fromEntries(Object.entries(keepPages(site.sections)).map(([page,sections])=>[page,sections.filter(section=>!site.hiddenBlocks.includes('section:'+section.id))])),
     related: keepPages(site.related),
     placements: keepPages(site.placements),
+    galleryLayouts:keepPages(site.galleryLayouts),
+    pageMotion:Object.fromEntries(Object.entries(keepPages(site.pageMotion)).filter(([id])=>!site.hiddenBlocks.includes(id+':opening'))),
     galleries: keepPages(site.galleries),
     covers: keepPages(site.covers),
     collections: keepPages(site.collections),

@@ -145,17 +145,17 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
       <WebsiteAboutContent site={site} illustrative={illustrative} onChange={onAboutChange} />
       <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={targets} base={base} onProject={openProject} />
     </> : selected ? <>
-      <section className="campaign-screen">
-        <Media url={site.covers[selected.id] || selected.image_url} label="Campaign cover image" eager />
+      <EditableRegion site={site} id={selected.id+':opening'}><section className="campaign-screen">
+        {site.pageMotion[selected.id]?.enabled&&site.pageMotion[selected.id].clips.length?<HomepageMotion motion={site.pageMotion[selected.id]} preview={preview}/>:<Media url={site.covers[selected.id] || selected.image_url} label="Campaign cover image" eager />}
         <div className="campaign-caption"><InlineWebsiteText value={selected.category} label="Page cover label" maxLength={80} onChange={edit?value=>edit.project(selected.id,{category:value}):undefined}/><InlineWebsiteText as="h1" value={selected.title} label="Page cover title" maxLength={180} onChange={edit?value=>edit.project(selected.id,{title:value}):undefined}/></div>
-      </section>
+      </section></EditableRegion>
       <EditableRegion site={site} id={selected.id+':copy'}><section className="campaign-copy"><InlineWebsiteText className="campaign-kicker" value={selected.category} label="Page label" maxLength={80} onChange={edit?value=>edit.project(selected.id,{category:value}):undefined}/><InlineWebsiteText as="h2" value={selected.title} label="Page heading" maxLength={180} onChange={edit?value=>edit.project(selected.id,{title:value}):undefined}/><InlineWebsiteText value={selected.description||''} label="Page description" multiline maxLength={2000} onChange={edit?value=>edit.project(selected.id,{description:value}):undefined}/></section></EditableRegion>
       <WebsiteFilms site={site} page={selected.id}/>
       <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange(selected.id, id, field, text) : undefined} sections={site.sections[selected.id]} projects={targets} base={base} onProject={openProject} />
       {illustrative && gallery.length > 0 && <section className="campaign-gallery" aria-label="Campaign gallery">
         {gallery.map(({ url, size, alt }, i) => <div key={i} className={'campaign-frame-' + size}><Media url={url} label={alt || (size === 'grid' ? 'Campaign grid image' : 'Full-size campaign image')} /></div>)}
       </section>}
-      {!illustrative && <WebsiteGallery pageId={selected.id} images={gallery} label="Campaign gallery" projects={targets} base={base} onProject={openProject} />}
+      {!illustrative && <WebsiteGallery site={site} pageId={selected.id} images={gallery} label="Campaign gallery" projects={targets} base={base} onProject={openProject} />}
       {related.length > 0 && <section className="campaign-more campaign-copy"><h2>More work</h2><div className="campaign-squares">
         {related.map(project => <div key={project.id}>
           {navigation({ campaign: project.id }, <><Media url={site.covers[project.id] || project.image_url} label="Campaign image" /><strong>{project.title}</strong></>, 'campaign-square')}
@@ -176,7 +176,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
         {navigation({ about: '1' }, 'About the studio ↗', 'campaign-text-link')}
       </section></EditableRegion> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
       <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={targets} base={base} onProject={openProject} />
-      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={targets} base={base} onProject={openProject} />
+      <WebsiteGallery site={site} images={site.homeGallery ?? []} label="Homepage photo gallery" projects={targets} base={base} onProject={openProject} />
       {groups.map(group => <section className="campaign-collection" key={group.name}
         id={preview ? undefined : collectionAnchor(group.name)} data-anchor={collectionAnchor(group.name)}>
         <h2>{group.name}</h2>

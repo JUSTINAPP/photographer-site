@@ -45,7 +45,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
         {site.image && site.theme.hero !== 'text' && <SmartImage variant="hero" priority src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
       </section>}</EditableRegion>
       <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
-      <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={allProjects} base={base} onProject={onProject} />
+      <WebsiteGallery site={site} images={site.homeGallery ?? []} label="Homepage photo gallery" projects={allProjects} base={base} onProject={onProject} />
       <section className={'editorial-work' + (site.homepageLayout === 'grid' ? ' editorial-work-grid' : '')} id={preview ? undefined : 'work'}>
         <h2>Selected work</h2>
         {projects.length === 0 && !site.homeGallery?.length && <p>{preview ? 'Publish a project to include it here.' : 'New work coming soon.'}</p>}
