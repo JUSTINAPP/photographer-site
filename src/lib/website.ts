@@ -107,7 +107,28 @@ export function normaliseWebsite(input: unknown) {
       if (film) films[id] = film;
     }
   }
+  const navigation: {label:string;page:string;href:string}[] = Array.isArray(data.navigation) ? data.navigation.slice(0,30).flatMap(item=> {
+    if(!item || typeof item.label!=='string')return [];
+    const page=typeof item.page==='string' && (['home','about','contact'].includes(item.page)||projectId.test(item.page))?item.page:'';
+    const href=typeof item.href==='string'?(item.href.startsWith('mailto:')&&/^[^\s<>]+$/.test(item.href)?item.href:websiteImage(item.href)):'';
+    return page||href?[{label:item.label.slice(0,80),page,href}]:[];
+  }) : [];
+  const hiddenBlocks=Array.isArray(data.hiddenBlocks)?data.hiddenBlocks.filter((key):key is string=>typeof key==='string'&&/^[a-zA-Z0-9:-]{1,100}$/.test(key)).slice(0,200):[];
+  const blockStyles:Record<string,{heading?:number;body?:number}>={};
+  if(data.blockStyles&&typeof data.blockStyles==='object')for(const [key,value] of Object.entries(data.blockStyles).slice(0,200)){
+    if(!/^[a-zA-Z0-9:-]{1,100}$/.test(key)||!value||typeof value!=='object')continue;
+    const sizes=value as Record<string,unknown>;const size=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)?Math.round(Math.max(0,Math.min(120,v))):0;
+    blockStyles[key]={heading:size(sizes.heading),body:size(sizes.body)};
+  }
+  const pageCopy:Record<string,{title?:string;category?:string;description?:string}>={};
+  if(data.pageCopy&&typeof data.pageCopy==='object')for(const [id,value] of Object.entries(data.pageCopy).slice(0,150)){
+    if(!projectId.test(id)||!value||typeof value!=='object')continue;
+    const copy=value as Record<string,unknown>;pageCopy[id]=Object.fromEntries(['title','category','description'].flatMap(key=>typeof copy[key]==='string'?[[key,(copy[key] as string).slice(0,key==='description'?2000:180)]]:[]));
+  }
+  const filmGalleries:Record<string,string[]>={};
+  if(data.filmGalleries&&typeof data.filmGalleries==='object')for(const [id,items] of Object.entries(data.filmGalleries).slice(0,150))if(projectId.test(id)&&Array.isArray(items))filmGalleries[id]=[...new Set(items.slice(0,30).flatMap(url=>typeof url==='string'&&websiteImage(url)?[vimeoEmbed(url)||websiteImage(url)]:[]))];
   return {
+    filmGalleries, navigation, hiddenBlocks, blockStyles, pageCopy,
     placements, covers, projectOrder, sections, related, collections, films,
     savedLooks: cleanSavedLooks(data.savedLooks),
     motion: normaliseMotion(data.motion),
@@ -123,6 +144,11 @@ export function normaliseWebsite(input: unknown) {
     currentWebsite: websiteImage(field('currentWebsite', 2048)),
     name: field('name', 100),
     headline: field('headline', 220),
+    heroLabel: typeof data.heroLabel==='string'?field('heroLabel',100):'Photography & film',
+    introLabel: typeof data.introLabel==='string'?field('introLabel',100):'Selected work',
+    introText: typeof data.introText==='string'?field('introText',2500):field('about',2500),
+    contactLabel: typeof data.contactLabel==='string'?field('contactLabel',100):'Contact',
+    contactTitle: typeof data.contactTitle==='string'?field('contactTitle',220):'Let’s make something.',
     about: field('about', 2500),
     aboutTitle: field('aboutTitle', 140),
     aboutLabel: typeof data.aboutLabel === 'string' ? field('aboutLabel', 100) : 'About the studio',
@@ -159,7 +185,7 @@ export function websiteGallery(site: Website, project: string): GalleryImage[] {
 
 export function homepageWork(site: Website, projects: WebsiteProject[]) {
   const selected = site.homepageProjects && new Set(site.homepageProjects);
-  return orderWebsiteProjects(projects.filter(project => selected ? selected.has(project.id) : project.published !== false), site.projectOrder);
+  return orderWebsiteProjects(projects.map(project=>({...project,...site.pageCopy[project.id]})).filter(project => selected ? selected.has(project.id) : project.published !== false), site.projectOrder);
 }
 
 export function publishedWebsiteWork(settings: unknown, fallback: WebsiteProject[]) {
@@ -195,7 +221,7 @@ export function preloadWebsiteDraft(draft: Website, media: WebsiteMedia[]): Webs
 export function reachableWebsiteWork(site: Website, projects: WebsiteProject[]) {
   const byId = new Map(projects.map(project => [project.id, project]));
   const selected = new Set<string>();
-  const pending = ['home', 'about', ...homepageWork(site, projects).map(project => project.id)];
+  const pending = ['home', 'about', ...site.navigation.map(item=>item.page).filter(id=>projectId.test(id)), ...homepageWork(site, projects).map(project => project.id)];
   for (let index = 0; index < pending.length; index++) {
     const page = pending[index];
     if (selected.has(page) || (page !== 'home' && page !== 'about' && !byId.has(page))) continue;
@@ -214,13 +240,21 @@ export function publishWebsiteSnapshot(site: Website, projects: WebsiteProject[]
     Object.fromEntries(Object.entries(entries).filter(([page]) => publicPages.has(page)));
   return {
     ...site,
-    sections: keepPages(site.sections),
+    sections:Object.fromEntries(Object.entries(keepPages(site.sections)).map(([page,sections])=>[page,sections.filter(section=>!site.hiddenBlocks.includes('section:'+section.id))])),
     related: keepPages(site.related),
     placements: keepPages(site.placements),
     galleries: keepPages(site.galleries),
     covers: keepPages(site.covers),
     collections: keepPages(site.collections),
     films: keepPages(site.films),
-    projectSnapshot,
+    filmGalleries:keepPages(site.filmGalleries),
+    ...(site.hiddenBlocks.includes('home:introduction')?{introText:'',introLabel:'',showIntro:false}:{}),
+    ...(site.hiddenBlocks.includes('home:opening')?{headline:'',heroLabel:'',image:'',video:'',motion:normaliseMotion({})}:{}),
+    ...(site.hiddenBlocks.includes('about:biography')?{about:'',aboutTitle:'',aboutLabel:'',clients:'',clientsHeading:''}:{}),
+    ...(site.hiddenBlocks.includes('about:services')?{services:'',servicesHeading:'',servicesLabel:''}:{}),
+    ...(site.hiddenBlocks.includes('contact:footer')?{email:'',contactLabel:'',contactTitle:''}:{}),
+    projectSnapshot: projectSnapshot.map(project=>({...project,...site.pageCopy[project.id]})),
   };
 }
+
+export function websiteFilms(site:Website,page:string){return site.filmGalleries[page]??(site.films[page]?[site.films[page]]:[]);}

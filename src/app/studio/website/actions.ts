@@ -22,7 +22,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
     workspace_id: workspace.id, draft,
   };
   if (mode === 'publish') {
-    if(draft.motion.enabled){
+    if(draft.motion.enabled&&!draft.hiddenBlocks.includes('home:opening')){
       if(!motionReady(draft.motion))return {error:'Generate your opening video after your latest timing changes before publishing.'};
       for(const shape of ['desktop','mobile'] as const){
         const path=draft.motion[shape+'Path' as 'desktopPath'|'mobilePath'];
@@ -35,7 +35,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
       }
     }
     values.published = draft;
-    if (draft.homepageProjects !== null || Object.keys(draft.sections).length || Object.keys(draft.related).length || draft.homeGallery?.some(image => image.link) || Object.values(draft.placements).some(frames => frames.some(image => image.link))) {
+    {
       const projects = await db.from('projects').select('id,title,category,description,image_url,published')
         .eq('workspace_id', workspace.id).order('created_at', { ascending: false });
       if (projects.error) return { error: 'The linked pages could not be loaded. Please try again.' };
@@ -221,4 +221,30 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
     console.warn('Portfolio recovery failed', { stage, type: error instanceof Error ? error.name : 'unknown' });
     return { error: messages[stage] };
   }
+}
+
+export async function importWebsiteNavigation(studioId:string,input:string){
+ const {db,workspace}=await requireStudioAccess('edit');
+ if(workspace.id!==studioId)return {error:'The active studio changed. Reopen the editor.'};
+ const {data:allowed}=await db.rpc('claim_import_preview',{workspace:studioId});if(!allowed)return {error:'Please wait one minute before scanning again.'};
+ try{
+  const {previewWebsite}=await import('@/lib/importer');const scan=await previewWebsite(input);
+  if(!scan.navigation.length)return {error:'No readable source menu was found. You can add and reorder navigation links below.'};
+  const internal=scan.navigation.filter(item=>item.kind==='page');
+  const canonical=(source:string)=>scan.pages.find(page=>page.requestedSource===source)?.source||source;
+  const imported=await saveImportedMedia(scan.media,studioId);
+  const rows=internal.flatMap(item=>{const candidate=scan.candidates.find(page=>new URL(page.source_url).pathname===new URL(canonical(item.source)).pathname);return candidate?[{...candidate,title:item.label,workspace_id:studioId,published:false}]:[];});
+  if(rows.length){const saved=await db.from('projects').upsert(rows,{onConflict:'workspace_id,source_url',ignoreDuplicates:true});if(saved.error)return {error:'Could not prepare the source pages.'};}
+  const {data:projects,error}=await db.from('projects').select('id,title,category,description,image_url,published,source_url').eq('workspace_id',studioId);if(error)return {error:'Could not read the studio pages.'};
+  const navigation=scan.navigation.flatMap(item=>{
+   if(item.kind==='external')return [{label:item.label,page:'',href:item.source}];
+   if(item.kind!=='page')return [{label:item.label,page:item.kind,href:''}];
+   const project=projects.find(project=>project.source_url&&new URL(project.source_url).pathname===new URL(canonical(item.source)).pathname);return project?[{label:item.label,page:project.id,href:''}]:[];
+  });
+  const media=[];for(let offset=0;offset<3000;offset+=500){const batch=await db.from('studio_media').select('id,source_url,kind').eq('workspace_id',studioId).range(offset,offset+499);if(batch.error)return {error:'Could not match the media library.'};media.push(...batch.data);if(batch.data.length<500)break;}
+  const byUrl=new Map(media.map(item=>[mediaIdentity(item.source_url),item]));
+  const {vimeoEmbed:vimeoSource}=await import('@/lib/import-identity');
+  const pages=internal.flatMap(item=>{const project=projects.find(project=>project.source_url===canonical(item.source));const source=scan.pages.find(page=>page.source===canonical(item.source));if(!project||!source)return [];return [{id:project.id,film:source.media.map(item=>vimeoSource(item.url)).find(Boolean)||'',films:[...new Set(source.media.filter(item=>item.kind==='video').map(item=>vimeoSource(item.url)||websiteImage(item.url)).filter(Boolean))],photos:[...new Set(source.media.filter(item=>item.kind==='photo').flatMap(item=>byUrl.get(mediaIdentity(item.url))?.source_url??[]))]}];});
+  revalidatePath('/studio/projects');return {source:scan.source,added:imported.added,navigation,pages,projects:projects as WebsiteProject[],warnings:[...scan.warnings,...internal.filter(item=>!navigation.some(link=>link.label===item.label)).map(item=>'Could not match menu page: '+item.label)]};
+ }catch{return {error:'Could not read the source menu. Check the website address and try again.'};}
 }

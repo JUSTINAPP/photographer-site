@@ -1,4 +1,7 @@
 'use client';
+import HomepageMotion from './HomepageMotion';
+import {motionSeconds} from '@/lib/home-motion';
+import ImportNavigation from './ImportNavigation';
 import SmartImage from '@/components/SmartImage';
 
 
@@ -22,7 +25,8 @@ function moveItem<T>(items: T[], from: number, to: number) {
   return next;
 }
 
-export default function WebsitePages({ studioId, draft, setDraft, projects, onProjects, media, page, onPage }: {
+export default function WebsitePages({ studioId, draft, setDraft, projects, onProjects, media, page, onPage, onOpening, openingPreview }: {
+  onOpening:()=>void; openingPreview?:import('@/lib/home-motion').HomeMotion;
   studioId: string; onProjects: (projects: WebsiteProject[]) => void;
   draft: Website; setDraft: Dispatch<SetStateAction<Website>>; projects: WebsiteProject[];
   media: WebsiteMedia[]; page: string; onPage: (page: string) => void;
@@ -127,7 +131,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   return <section className="website-pages" id="page-editor">
     <h2>Edit website pages</h2>
     <p>Choose a page to edit and see the changes in the preview. Save a draft to keep your edits, then publish when ready.</p>
-    <button type="button" className="primary-button" aria-expanded={creating} onClick={() => { setCreating(!creating); setMessage(''); }}>+ Add campaign page</button>
+    <button type="button" className="primary-button" aria-expanded={creating} onClick={() => { setCreating(!creating); setMessage(''); }}>+ Add page</button>
     {creating && <form className="website-section-card" onSubmit={event => {
       event.preventDefault();
       const fields = new FormData(event.currentTarget);
@@ -137,32 +141,35 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
           const result = await createCampaignPage(studioId, {
             title: String(fields.get('title')), category: String(fields.get('category')), description: String(fields.get('description')),
           });
-          if (!result.project) { setMessage(result.error || 'Could not create the campaign.'); return; }
-          onProjects([...projects, result.project]);
+          if (!result.project) { setMessage(result.error || 'Could not create the page.'); return; }
+          const added=result.project;onProjects([...projects,added]);
+          setDraft(current=>({...current,projectOrder:[...current.projectOrder,added.id],homepageProjects:[...new Set([...homepageWork(current,projects).map(project=>project.id),added.id])],navigation:current.navigation.length?[...current.navigation,{label:added.title,page:added.id,href:''}]:current.navigation}));
           onPage(result.project.id);
           setPicker(null);
           setCreating(false);
-        } catch { setMessage('Could not create the campaign. Please try again.'); }
+        } catch { setMessage('Could not create the page. Please try again.'); }
       });
     }}>
-      <label>Campaign name<input name="title" required maxLength={180} /></label>
+      <label>Page name<input name="title" required maxLength={180} /></label>
       <label>Category<input name="category" placeholder="Fashion, nautical or lifestyle" maxLength={80} /></label>
-      <label>Campaign introduction<textarea name="description" rows={3} maxLength={2000} /></label>
-      <ActionButton busy={pending} className="secondary-button" disabled={pending}>{pending ? 'Creating…' : 'Create campaign'}</ActionButton>
+      <label>Page introduction<textarea name="description" rows={3} maxLength={2000} /></label>
+      <ActionButton busy={pending} className="secondary-button" disabled={pending}>{pending ? 'Creating…' : 'Create page'}</ActionButton>
       {message && <p role="status">{message}</p>}
     </form>}
     <nav className="website-page-list" aria-label="Pages">
       {[{ id: 'home', title: 'Homepage' }, { id: 'about', title: 'About + Services' }, ...ordered].map(item =>
         <button type="button" key={item.id} aria-current={page === item.id ? 'page' : undefined}
-          onClick={() => { onPage(item.id); setPicker(null); }}>{draft.collections[item.id] ? draft.collections[item.id] + ' · ' : ''}{item.title}</button>)}
+          onClick={() => { onPage(item.id); setPicker(null); }}>{draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}
     </nav>
+    <ImportNavigation projects={projects} studioId={studioId} draft={draft} onChange={patch=>setDraft(current=>({...current,...patch}))} onProjects={onProjects}/>
+    {draft.hiddenBlocks.length>0&&<details><summary>Removed sections ({draft.hiddenBlocks.length})</summary><p>Removed from this website only. Restore any section below.</p>{draft.hiddenBlocks.map(id=><button type="button" className="secondary-button" key={id} onClick={()=>setDraft(current=>({...current,hiddenBlocks:current.hiddenBlocks.filter(key=>key!==id)}))}>Restore {id.split(':').pop()?.replaceAll('-',' ')}</button>)}</details>}
     <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} onRebuild={rebuild} />
     <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
 
-    {page !== 'about' && <>
+    {page !== 'about' && <details><summary>Extra sections and layouts</summary>
     <WebsiteSectionEditor key={page} page={page} sections={draft.sections[page] ?? []} media={media} projects={projects}
       onChange={sections => setDraft(current => ({ ...current, sections: { ...current.sections, [page]: sections } }))} />
-    </>}
+    </details>}
     {page === 'about' ? <>
       <div className="about-page-fields"><h3>About page text</h3><p>Click and type directly in the preview, or use these matching fields. Each heading and label is editable.</p>
       <label>Small label above the title<input maxLength={100} value={draft.aboutLabel} onChange={e=>setDraft(current=>({...current,aboutLabel:e.target.value}))}/></label>
@@ -179,15 +186,18 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       onChange={sections => setDraft(current => ({ ...current, sections: { ...current.sections, [page]: sections } }))} />
       </details>
     </> : <>
-      {!project && <label>Homepage headline<input maxLength={220} value={draft.headline} onChange={event => setDraft({ ...draft, headline: event.target.value })} /></label>}
-      <h3>{project ? 'Project cover' : 'Homepage cover'}</h3>
-      {cover && <SmartImage variant="thumb" className="page-editor-cover" src={cover} alt="" referrerPolicy="no-referrer" />}
+      {!project && <><label>Opening label<input value={draft.heroLabel} maxLength={100} onChange={e=>setDraft(current=>({...current,heroLabel:e.target.value}))}/></label><label>Introduction label<input value={draft.introLabel} maxLength={100} onChange={e=>setDraft(current=>({...current,introLabel:e.target.value}))}/></label><label>Homepage introduction<textarea value={draft.introText} maxLength={2500} onChange={e=>setDraft(current=>({...current,introText:e.target.value}))}/></label><label>Homepage headline<input maxLength={220} value={draft.headline} onChange={event => setDraft({ ...draft, headline: event.target.value })} /></label></>}
+      {!project && draft.motion.enabled && draft.motion.clips.length>0 && <div className="opening-selection"><h3>Selected homepage opening · video edit</h3><p>{draft.motion.clips.length} shots · {motionSeconds(draft.motion)} seconds. {draft.hiddenBlocks.includes('home:opening')?'The opening section is currently removed. Restore it above to show this video.':'This is the opening playing in your page preview.'}</p>{openingPreview?.desktopUrl?<video src={openingPreview.desktopUrl} controls muted playsInline preload="metadata"/>:<div style={{height:180,position:'relative',overflow:'hidden'}}><HomepageMotion motion={openingPreview||draft.motion} poster={draft.image} preview/></div>}<div className="page-editor-actions"><button type="button" className="primary-button" onClick={onOpening}>Edit this opening</button><button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,motion:{...current.motion,enabled:false},video:''}))}>Use a still photo instead</button></div></div>}
+      {!project && !draft.motion.enabled && draft.video && <div className="opening-selection"><h3>Selected homepage opening · showreel</h3><video controls muted playsInline src={draft.video} preload="metadata"/><button type="button" className="secondary-button" onClick={()=>setPicker('video')}>Replace showreel</button><button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,video:''}))}>Use a still photo instead</button></div>}
+      {!project && !draft.motion.enabled && !draft.video && draft.motion.clips.length>0 && <button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,motion:{...current.motion,enabled:true}}))}>Use my saved opening video</button>}
+      <h3>{project ? 'Project cover' : draft.motion.enabled || draft.video ? 'Loading poster · shown before your video starts' : 'Homepage opening · still photo'}</h3>
+      {(project || (!draft.motion.enabled && !draft.video)) && cover && <SmartImage variant="thumb" className="page-editor-cover" src={cover} alt="" referrerPolicy="no-referrer" />}
       <div className="page-editor-actions">
-        <button className="secondary-button" onClick={() => setPicker('cover')}>Choose photo</button>
+        <button className="secondary-button" onClick={() => setPicker('cover')}>{!project&&(draft.motion.enabled||draft.video)?'Change loading poster':'Choose photo'}</button>
         {project && draft.covers[project.id] && <button className="secondary-button" onClick={() => setDraft({ ...draft, covers: { ...draft.covers, [project.id]: '' } })}>Use project cover</button>}
-        {!project && cover && <button className="secondary-button" onClick={() => setDraft({ ...draft, image: '', imageAlt: '' })}>Clear photo</button>}
-        {campaign && !project && <button className="secondary-button" onClick={() => setPicker('video')}>Choose showreel</button>}
-        {campaign && !project && draft.video && <button className="secondary-button" onClick={() => setDraft({ ...draft, video: '' })}>Clear showreel</button>}
+        {!project && cover && <button className="secondary-button" onClick={() => setDraft({ ...draft, image: '', imageAlt: '' })}>{draft.motion.enabled||draft.video?'Clear loading poster':'Clear photo'}</button>}
+        {!draft.motion.enabled && !project && <button className="secondary-button" onClick={() => setPicker('video')}>Choose showreel</button>}
+        {!draft.motion.enabled && !project && draft.video && <button className="secondary-button" onClick={() => setDraft({ ...draft, video: '' })}>Clear showreel</button>}
       </div>
       {picker && <div ref={pickerRef} className="page-media-picker">
         <h3>{picker === 'video' ? 'Choose a video' : 'Choose photos'}</h3>

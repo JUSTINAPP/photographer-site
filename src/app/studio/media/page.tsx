@@ -10,12 +10,14 @@ import StudioShell from '@/components/StudioShell';
 import WebsiteMediaCheckbox from '@/components/WebsiteMediaCheckbox';
 import MediaExports from '@/components/MediaExports';
 import { requireStudio } from '@/lib/supabase';
-import { normaliseWebsite, websiteGallery, websiteImage } from '@/lib/website';
+import { normaliseWebsite, websiteGallery, websiteFilms, websiteImage } from '@/lib/website';
 import { renameMedia } from './actions';
 
-export default async function MediaLibrary({ searchParams }: { searchParams: Promise<{ view?: string; collection?: string; year?: string; page?: string; gallery?: string }> }) {
+export const maxDuration = 60;
+
+export default async function MediaLibrary({ searchParams }: { searchParams: Promise<{ view?: string; collection?: string; year?: string; page?: string; gallery?: string; section?:string }> }) {
   const { db, user, workspace, role } = await requireStudio();
-  const { view, collection, year, page, gallery } = await searchParams;
+  const { view, collection, year, page, gallery, section } = await searchParams;
   const kind = view === 'videos' ? 'video' : 'photo';
   async function loadAssets() {
     const batchSize = 500;
@@ -34,6 +36,8 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
     db.from('studio_media_categories').select('id,name').eq('workspace_id', workspace.id).order('name'),
   ]);
   const draft = normaliseWebsite(website?.draft);
+  const sectionLinks=draft.navigation.filter(item=>/^[a-f0-9-]{36}$/i.test(item.page));
+  const sectionIds=new Set(kind==='video'?websiteFilms(draft,section??'').map(mediaIdentity):(section==='home'?draft.homeGallery??[]:websiteGallery(draft,section??'')).map(frame=>mediaIdentity(frame.url)));
   const derived = portfolioCollections.filter(({ name }) => Object.values(draft.collections).includes(name));
   const custom = customCategories ?? [];
   const categoryNames = new Map(custom.map(category => [category.id, category.name]));
@@ -44,19 +48,18 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
     .filter(id => draft.collections[id] === selected?.name);
   const draftGalleryIds = [...new Set([...Object.keys(draft.placements), ...Object.keys(draft.galleries)])];
   const draftProjectIds = [...new Set([
-    ...draftGalleryIds, ...Object.keys(draft.sections), ...Object.keys(draft.films), ...(draft.homepageProjects ?? []),
+    ...sectionLinks.map(item=>item.page), ...draftGalleryIds, ...Object.keys(draft.sections), ...Object.keys(draft.films), ...Object.keys(draft.filmGalleries), ...(draft.homepageProjects ?? []),
   ])];
   const mediaProjectIds = [...new Set([...projectIds, ...draftProjectIds])];
-  const projectBatches = await Promise.all(Array.from({ length: Math.ceil(mediaProjectIds.length / 100) }, (_, index) =>
-    db.from('projects').select('id,title,image_url').eq('workspace_id', workspace.id)
-      .in('id', mediaProjectIds.slice(index * 100, (index + 1) * 100))));
+  const projectBatches = [await db.from('projects').select('id,title,image_url').eq('workspace_id',workspace.id).order('created_at').limit(150)];
   const projectError = projectBatches.some(batch => batch.error);
   const projectById = new Map(projectBatches.flatMap(batch => batch.data ?? []).map(project => [project.id, project]));
   const draftMedia = new Set([
     draft.image,
     draft.video,
     ...Object.values(draft.covers),
-    ...Object.values(draft.films),
+    ...Object.keys({...draft.films,...draft.filmGalleries}).flatMap(id=>websiteFilms(draft,id)),
+    ...draft.motion.clips.map(clip=>clip.url),
     ...Object.values(draft.sections).flatMap(sections => sections.map(section => section.image)),
     ...(draft.homeGallery ?? []).map(frame => frame.url),
     ...draftGalleryIds.flatMap(id => websiteGallery(draft, id).map(frame => frame.url)),
@@ -84,7 +87,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
   });
   const galleryFilter = selected && (gallery === 'all' || projectById.has(gallery ?? '')) ? gallery : undefined;
   const browseGalleries = Boolean(selected && !galleryFilter);
-  const filtered = selected
+  const filtered = section?data.filter(item=>sectionIds.has(mediaIdentity(item.source_url))&&matchesYear(item)):selected
     ? galleryFilter === 'all' || browseGalleries
       ? [...new Map(galleries.flatMap(group => group.items.map(item => [item.id, item] as const))).values()]
       : galleries.find(group => group.id === galleryFilter)?.items ?? []
@@ -93,9 +96,10 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = page && /^\d+$/.test(page) ? Math.min(pages, Math.max(1, Number(page))) : 1;
   const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const filterLink = (name?: string, targetPage = 1, galleryId?: string) => {
+  const filterLink = (name?: string, targetPage = 1, galleryId?: string, keepSection = true) => {
     const query = new URLSearchParams();
     if (kind === 'video') query.set('view', 'videos');
+    if(section&&keepSection)query.set('section',section);
     if (name) query.set('collection', name);
     if (galleryId) query.set('gallery', galleryId);
     if (activeYear) query.set('year', activeYear);
@@ -110,12 +114,13 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
         <ActionLink aria-current={kind === 'photo' ? 'page' : undefined} href="/studio/media">Photos</ActionLink>
         <ActionLink aria-current={kind === 'video' ? 'page' : undefined} href="/studio/media?view=videos">Videos</ActionLink>
       </nav>
+      {sectionLinks.length>0&&<nav className="media-tabs" aria-label="Website sections"><strong>Website sections</strong><ActionLink href="/studio/media">All files</ActionLink><ActionLink href={'/studio/media?'+(kind==='video'?'view=videos&':'')+'section=home'}>Intro</ActionLink>{sectionLinks.map((item,index)=><ActionLink key={index} aria-current={section===item.page?'page':undefined} href={'/studio/media?'+(kind==='video'?'view=videos&':'')+'section='+item.page}>{item.label}</ActionLink>)}</nav>}
       {(derived.length > 0 || custom.length > 0) && <nav className="media-tabs" aria-label="Media categories">
-        <ActionLink href={filterLink()} aria-current={!activeCollection ? 'page' : undefined}>All categories</ActionLink>
-        {derived.map(({ name }) => <ActionLink key={name} href={filterLink(name.toLowerCase())} aria-current={selected?.name === name ? 'page' : undefined}>{name}</ActionLink>)}
-        {custom.map(({ id, name }) => <ActionLink key={id} href={filterLink(id)} aria-current={customSelected?.id === id ? 'page' : undefined}>{name}</ActionLink>)}
+        <ActionLink href={filterLink(undefined,1,undefined,false)} aria-current={!activeCollection ? 'page' : undefined}>All categories</ActionLink>
+        {derived.map(({ name }) => <ActionLink key={name} href={filterLink(name.toLowerCase(),1,undefined,false)} aria-current={selected?.name === name ? 'page' : undefined}>{name}</ActionLink>)}
+        {custom.map(({ id, name }) => <ActionLink key={id} href={filterLink(id,1,undefined,false)} aria-current={customSelected?.id === id ? 'page' : undefined}>{name}</ActionLink>)}
       </nav>}
-      <MediaYearFilter key={filterLink(activeCollection, 1, galleryFilter)} kind={kind} collection={activeCollection} gallery={galleryFilter} year={activeYear || ''} years={years} count={filtered.length} />
+      <MediaYearFilter section={section} key={filterLink(activeCollection, 1, galleryFilter)} kind={kind} collection={activeCollection} gallery={galleryFilter} year={activeYear || ''} years={years} count={filtered.length} />
       {selected && <section className="media-gallery-browser" aria-label={selected.name + ' galleries'}>
         <div className="media-gallery-heading">
           <h2>{galleries.find(group => group.id === galleryFilter)?.title ?? projectById.get(galleryFilter ?? '')?.title ?? (galleryFilter === 'all' ? 'All ' + selected.name + ' media' : selected.name + ' galleries')}</h2>
@@ -131,7 +136,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
         )}</div>}
       </section>}
       {projectError && <p role="alert">Gallery names could not be loaded. Try refreshing Media.</p>}
-      {!browseGalleries && editable && !categoryError && <MediaOrganisation key={filterLink(activeCollection, currentPage, galleryFilter)} studioId={workspace.id} categories={custom} hasFiles={visible.length > 0} />}
+      {!browseGalleries && editable && !categoryError && <MediaOrganisation key={filterLink(activeCollection, currentPage, galleryFilter)} studioId={workspace.id} pages={Array.from(projectById.values()).map(project=>({id:project.id,title:sectionLinks.find(item=>item.page===project.id)?.label||project.title}))} categories={custom} hasFiles={visible.length > 0} />}
       {categoryError && <p role="alert">Custom categories could not be loaded.</p>}
       {error ? <p role="alert">The library could not load. Please try again later.</p>
         : browseGalleries && galleries.length > 0 ? null

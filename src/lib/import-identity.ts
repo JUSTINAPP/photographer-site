@@ -1,4 +1,5 @@
 export function mediaIdentity(input: string) {
+  const film=vimeoEmbed(input);if(film)return film;
   const url = new URL(input);
   if (['images.squarespace-cdn.com', 'static1.squarespace.com'].includes(url.hostname)) {
     if (/^\d+w$/i.test(url.searchParams.get('format') ?? '')) url.searchParams.delete('format');

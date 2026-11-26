@@ -1,4 +1,5 @@
 'use client';
+import {WebsiteEditing} from './WebsiteEditing';
 import type {AboutTextField} from './WebsiteAboutContent';
 import SmartImage from '@/components/SmartImage';
 
@@ -113,11 +114,12 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const unsaved=currentVersion!==savedVersion;
   const unpublished=live&&currentVersion!==publishedVersion;
   const busy=pending||agentBusy||motionBusy||previewBusy;
-  const videoNeedsGeneration=draft.motion.enabled&&!motionReady(draft.motion);
+  const videoNeedsGeneration=draft.motion.enabled&&!draft.hiddenBlocks.includes('home:opening')&&!motionReady(draft.motion);
   const previewSite = normaliseWebsite({...draft,motion:motionPreview?.key===draft.motion.renderKey?{...draft.motion,desktopUrl:motionPreview.desktop,mobileUrl:motionPreview.mobile}:draft.motion});
   const campaign = draft.theme.layout === 'campaign';
-  const work = homepageWork(previewSite, editableProjects);
-  const editingProject = editableProjects.find(project => project.id === page);
+  const displayProjects=editableProjects.map(project=>({...project,...draft.pageCopy[project.id]}));
+  const work = homepageWork(previewSite, displayProjects);
+  const editingProject = displayProjects.find(project => project.id === page);
   return (
     <div className="website-builder">
       {readOnly && <p className="studio-panel">You have view-only access to this portfolio. Use the preview to review the draft.</p>}
@@ -208,7 +210,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
         <div hidden={panel !== 'motion'}><MotionEditor studioId={studioId} motion={draft.motion} media={media} initialPreview={initialMotionPreview} onGenerated={saveOpening} onPreviewReady={(urls,key)=>setMotionPreview({...urls,key})} onBusyChange={setMotionBusy} onPublish={()=>{setPanel('publish');controls.current?.scrollIntoView({behavior:'smooth',block:'start'});}} onChange={motion=>{setDraft(current=>({...current,motion}));setPage('home');}}/></div>
         <div hidden={panel !== 'pages'}>
-        <WebsitePages studioId={studioId} draft={draft} setDraft={setDraft} projects={editableProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
+        <WebsitePages openingPreview={previewSite.motion} onOpening={()=>setPanel('motion')} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
         <summary>Portfolio content</summary>
         {contentFields.map(([key, label]) => (
@@ -252,15 +254,17 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           {readOnly?<Link prefetch={false} href="/studio/website/preview">Preview saved draft ↗</Link>:<ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & preview latest draft ↗</ActionButton>}
           {live && id && <Link prefetch={false} href={'/sites/' + id+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link>}
         </div>
-        {!readOnly && panel === 'pages' && <div className="inline-edit-guide"><p><strong>{inlineEditing ? 'Click outlined text in the page to edit it.' : 'Preview mode'}</strong><br/>{inlineEditing ? 'Type directly where it appears. Escape cancels the current text edit. Save your draft below.' : 'Turn on text editing to change the About page and your added page sections.'}</p><button type="button" className="secondary-button" disabled={busy} aria-pressed={inlineEditing} onClick={()=>setInlineEditing(value=>!value)}>{inlineEditing ? 'Preview without edit outlines' : 'Edit text on page'}</button></div>}
+        {!readOnly && panel === 'pages' && <div className="inline-edit-guide"><p><strong>{inlineEditing ? 'Edit this page directly.' : 'Preview mode'}</strong><br/>{inlineEditing ? 'Type in outlined text. Use section controls to resize or remove blocks, and photo arrows or drag to reorder. Save your draft below.' : 'Turn on text editing to change the About page and your added page sections.'}</p><button type="button" className="secondary-button" disabled={busy} aria-pressed={inlineEditing} onClick={()=>setInlineEditing(value=>!value)}>{inlineEditing ? 'Preview without edit outlines' : 'Edit text on page'}</button></div>}
         {unpublished&&<p className="builder-version-hint">You are editing the draft. Publish changes to update the live site.</p>}
         {!campaign && draft.theme.layout !== 'gallery' && !draft.image && !draft.motion.enabled && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
-        <div className={'design-preview-frame ' + device}>
-          {draft.theme.layout === 'gallery' ? <GalleryWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={previewSite} projects={work} allProjects={editableProjects} preview view={{campaign:page!=='home'&&page!=='about'?page:undefined,about:page==='about'?'1':undefined}} onPreviewPage={next=>setPage(next)}/> : campaign || editingProject || page === 'about' ? <CampaignWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={previewSite} projects={work} allProjects={editableProjects} preview previewProject={editingProject}
+        <WebsiteEditing.Provider value={inlineEnabled?{site:draft,page,update:patch=>setDraft(current=>({...current,...patch})),project:(id,patch)=>setDraft(current=>({...current,pageCopy:{...current.pageCopy,[id]:{...current.pageCopy[id],...patch}}})),gallery:(target,images)=>setDraft(current=>target==='home'?({...current,homeGallery:images??[]}):({...current,placements:{...current.placements,[target]:images??[]}})),sections:(target,sections)=>setDraft(current=>({...current,sections:{...current.sections,[target]:sections}}))}:null}>
+        <div className={'design-preview-frame ' + device+(inlineEnabled?' inline-editing-active':'')}>
+          {draft.theme.layout === 'gallery' ? <GalleryWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={previewSite} projects={work} allProjects={displayProjects} preview view={{campaign:page!=='home'&&page!=='about'?page:undefined,about:page==='about'?'1':undefined}} onPreviewPage={next=>setPage(next)}/> : campaign || editingProject || page === 'about' ? <CampaignWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={previewSite} projects={work} allProjects={displayProjects} preview previewProject={editingProject}
             view={editableProjects.length || page === 'about' ? { about: page === 'about' ? '1' : undefined, campaign: page !== 'home' && page !== 'about' ? page : undefined } : undefined}
             onPreviewPage={next => { setPage(next); if (panel === 'design') setPanel('pages'); }} /> :
-            <EditorialWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} allProjects={editableProjects} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
+            <EditorialWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} allProjects={displayProjects} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
         </div>
+        </WebsiteEditing.Provider>
         {!readOnly && panel === 'pages' && <div className="inline-preview-save"><p><strong>{unsaved ? 'You have unsaved text or page changes.' : 'Draft saved.'}</strong><br/>Saving keeps this private. Publish when you want visitors to see it.</p><ActionButton type="button" busy={pending && operation === 'draft'} className="primary-button" disabled={busy} onClick={()=>save('draft')}>{pending ? 'Saving…' : 'Save page draft'}</ActionButton><button type="button" className="secondary-button" disabled={busy} onClick={()=>setPanel('publish')}>Review &amp; publish</button><span role="status">{notice}</span></div>}
       </section>
     </div>

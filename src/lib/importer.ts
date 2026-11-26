@@ -1,3 +1,4 @@
+import {extractNavigation} from './import-navigation';
 import { mediaIdentity } from './import-identity';
 import { discoverMedia, discoverSitemapMedia, type FoundMedia } from './import-media';
 import {lookup} from 'node:dns/promises';
@@ -61,14 +62,14 @@ export function extractPage(html:string,url:string):{candidate:ImportCandidate;l
  let image=mediaUrl($('meta[property="og:image"]').attr('content'),url);
  if(!image){$('img').each((_,element)=>{if(image)return;image=mediaUrl($(element).attr('data-src')||$(element).attr('src'),url);});}
  const base=new URL(url);const links=new Set<string>();$('a[href]').each((_,el)=>{try{const next=websiteUrl(new URL($(el).attr('href')!,url).href);if(next.origin===base.origin&&next.pathname!=='/'&&!/\.(pdf|jpg|png|zip|mp4)$/i.test(next.pathname)&&!/(login|cart|checkout|search)/i.test(next.pathname))links.add(next.href)}catch{}});
- return {candidate:{source_url:url,title,description,image_url:image,category:'Imported'},links:[...links].slice(0,24)};
+ return {candidate:{source_url:url,title,description,image_url:image,category:'Imported'},links:[...new Set([...extractNavigation(html,url).filter(item=>item.kind==='page'||item.kind==='about').map(item=>item.source),...links])].slice(0,24)};
 }
 export async function previewWebsite(input: string, includeSitemap = false) {
   const first = await readPublicPage(importWebsiteUrl(input).href);
   const root = extractPage(first.html, first.url);
   const candidates: ImportCandidate[] = [];
   const homepageMedia = discoverMedia(first.html, first.url);
-  const pages: { source: string; media: FoundMedia[] }[] = [];
+  const pages: { source: string; requestedSource?:string; media: FoundMedia[] }[] = [];
   const media = new Map<string, FoundMedia>(homepageMedia.map(item => [mediaIdentity(item.url), item]));
   const warnings: string[] = [];
   const links = root.links.filter(link => !/(\/contact|\/clients|\/about|\/privacy)\/?$/i.test(link)).slice(0, 10);
@@ -81,9 +82,9 @@ export async function previewWebsite(input: string, includeSitemap = false) {
     const page = result.value;
     candidates.push(extractPage(page.html, page.url).candidate);
     const assets = discoverMedia(page.html, page.url);
-    pages.push({ source: page.url, media: assets });
+    pages.push({ source: page.url, requestedSource:links[index], media: assets });
     for (const item of assets) {
-      if (media.size >= 150 && item.kind === 'photo') continue;
+      if (media.size >= 2500) continue;
       const key = mediaIdentity(item.url);
       if (!media.has(key)) media.set(key, item);
     }
@@ -114,5 +115,5 @@ export async function previewWebsite(input: string, includeSitemap = false) {
     }
   }
   if (!candidates.length) candidates.push(root.candidate);
-  return { source: first.url, candidates, homepageMedia, pages, media: [...media.values()], warnings, limited: true };
+  return { navigation:extractNavigation(first.html,first.url), source: first.url, candidates, homepageMedia, pages, media: [...media.values()], warnings, limited: true };
 }

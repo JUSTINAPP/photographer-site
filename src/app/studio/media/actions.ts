@@ -104,3 +104,23 @@ export async function organiseMedia(studioId: string, _previous: string, form: F
   revalidatePath('/studio/media');
   return `Updated ${data} ${data === 1 ? 'file' : 'files'}.`;
 }
+
+export async function organiseWebsitePage(studioId:string,_previous:string,form:FormData){
+ const {db,workspace}=await requireStudioAccess('edit');if(workspace.id!==studioId)return 'The active studio changed. Refresh Media.';
+ const {workspaceIdPattern}=await import('@/lib/studio-access');const {normaliseWebsite,websiteGallery,websiteFilms}=await import('@/lib/website');const {vimeoEmbed}=await import('@/lib/import-identity');
+ const ids=[...new Set(form.getAll('media').map(String))];const page=String(form.get('page')||'');const remove=form.get('operation')==='remove-page';
+ if(!['add-page','remove-page'].includes(String(form.get('operation'))))return 'Choose a valid page action.';
+ if(!ids.length||ids.length>100||ids.some(id=>!workspaceIdPattern.test(id))||!(page==='home'||workspaceIdPattern.test(page)))return 'Choose a page and up to 100 files.';
+ if(page!=='home'&&!(await db.from('projects').select('id').eq('workspace_id',studioId).eq('id',page).maybeSingle()).data)return 'That page is not in this studio.';
+ const {data:stored,error}=await db.from('studio_websites').select('draft').eq('workspace_id',studioId).maybeSingle();if(error||!stored)return 'Save a website draft first.';
+ const assets=await db.from('studio_media').select('id,source_url,kind').eq('workspace_id',studioId).in('id',ids);if(assets.error||assets.data.length!==ids.length)return 'Some files could not be found.';
+ if(page==='home'&&assets.data.some(asset=>asset.kind==='video'))return 'Use Opening in the website editor to build the homepage video. Select a section such as Motion for a page film gallery.';
+ const site=normaliseWebsite(stored.draft);const current=page==='home'?site.homeGallery??[]:websiteGallery(site,page);const urls=new Set(assets.data.map(asset=>mediaIdentity(asset.source_url)));const seen=new Set(current.map(frame=>mediaIdentity(frame.url)));
+ const next=remove?current.filter(frame=>!urls.has(mediaIdentity(frame.url))):[...current,...assets.data.filter(asset=>asset.kind==='photo'&&!seen.has(mediaIdentity(asset.source_url))).map(asset=>({url:asset.source_url,size:'grid' as const,alt:''}))];
+ const limit=page==='home'?150:100;if(next.length>limit)return 'This gallery is limited to '+limit+' photos. Choose fewer files.';
+ const existingFilms=websiteFilms(site,page);const videoUrls=assets.data.filter(asset=>asset.kind==='video').map(asset=>vimeoEmbed(asset.source_url)||asset.source_url);const filmIds=new Set(videoUrls.map(mediaIdentity));const nextFilms=remove?existingFilms.filter(url=>!filmIds.has(mediaIdentity(url))):[...new Set([...existingFilms,...videoUrls])];if(nextFilms.length>30)return 'A page can have up to 30 films.';
+ const draft=normaliseWebsite(page==='home'?{...site,homeGallery:next}:{...site,placements:{...site.placements,[page]:next},filmGalleries:{...site.filmGalleries,[page]:nextFilms}});
+ const saved=await db.rpc('patch_studio_settings',{studio:studioId,patch:page==='home'?{homeGallery:draft.homeGallery}:{placements:draft.placements,filmGalleries:draft.filmGalleries}});
+ if(saved.error)return 'The page gallery could not be updated. Please try again.';
+ revalidatePath('/studio/media');revalidatePath('/studio/website');return (remove?'Removed from':'Added to')+' the saved page draft. Original files are kept. Refresh any open editor to see the changes; publish when ready.';
+}

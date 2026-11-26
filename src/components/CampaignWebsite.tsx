@@ -1,4 +1,8 @@
 'use client';
+import WebsiteFilms from './WebsiteFilms';
+import InlineWebsiteText from './InlineWebsiteText';
+import {EditableRegion,HomeProjectTools,useWebsiteEditing} from './WebsiteEditing';
+import WebsiteNavigation from './WebsiteNavigation';
 import WebsiteAboutContent, { type AboutTextChange } from './WebsiteAboutContent';
 import {headerPresentation} from '@/lib/website-header';
 import HomepageMotion from './HomepageMotion';
@@ -39,6 +43,8 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   onAboutChange?: AboutTextChange; onSectionChange?: (page: string, id: string, field: 'heading' | 'text', value: string) => void;
   site: Website; projects: WebsiteProject[]; base?: string; view?: View; preview?: boolean; sample?: boolean; onPreviewPage?: (page: string) => void; previewProject?: WebsiteProject; allProjects?: WebsiteProject[];
 }) {
+  const edit=useWebsiteEditing();
+  const text=(field:'heroLabel'|'headline'|'introLabel'|'introText'|'contactLabel'|'contactTitle')=>edit?(value:string)=>edit.update({[field]:value}):undefined;
   const [localView, setLocalView] = useState<View>({});
   const [scrolled, setScrolled] = useState(false);
   const [playVideo, setPlayVideo] = useState(false);
@@ -52,7 +58,8 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   })).filter(group => group.projects.length);
   const ungrouped = work.filter(project => !site.collections[project.id]);
   const targets = allProjects?.length ? allProjects : work;
-  const selected = targets.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
+  const selectedSource = targets.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
+  const selected=selectedSource?{...selectedSource,...site.pageCopy[selectedSource.id]}:undefined;
   const illustrative = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject);
   const headerLook = headerPresentation(site.theme,scrolled||!!current.about,true);
   const name = site.name || 'Your studio';
@@ -117,7 +124,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   const colours = FONT_PAIRS[site.theme.fonts];
 
   const tiles = (items: WebsiteProject[], grid: boolean) => <div className={grid ? 'campaign-home-grid' : undefined}>
-    {items.map(project => <div key={project.id}>
+    {items.map(project => <div key={project.id} style={{position:'relative'}}><HomeProjectTools id={project.id} ids={work.map(item=>item.id)}/>
       {navigation({ campaign: project.id }, <>
         <Media url={site.covers[project.id] || project.image_url} label="Campaign cover" />
         <div className="campaign-caption"><p>{site.collections[project.id] || project.category}</p><h2>{project.title}</h2><span>View campaign ↗</span></div>
@@ -125,61 +132,50 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     </div>)}
   </div>;
 
-  return <div className={'campaign-site' + (preview ? ' campaign-preview' : '')} ref={root}
+  return <div className={'campaign-site' + (preview ? ' campaign-preview' : '')+(site.navigation.length>6?' has-long-menu':'')} ref={root}
     style={{ ...themeVars(site.theme), '--campaign-font': colours.text, '--campaign-display': colours.display } as CSSProperties}>
     <WebsiteIdentity site={site} preview={preview}/>
     <div className="campaign-header-anchor"><header style={{color:headerLook.color,background:headerLook.background,borderBottom:headerLook.borderBottom}} className={'campaign-header' + (scrolled || current.about ? ' is-solid' : '')}>
       {navigation({}, <PortfolioLogo site={site} light={headerLook.lightLogo} />, 'campaign-wordmark')}
-      <nav aria-label="Portfolio">
-        {groups.length ? groups.map(group => <span key={group.name}>{navigation({}, group.name, undefined, collectionAnchor(group.name))}</span>) : navigation({}, 'Work', undefined, 'work')}
-        {navigation({ about: '1' }, 'About + Services')}
-        {navigation({ about: '1' }, 'Contact', undefined, 'contact')}
-        {(groups.length > 0 || site.theme.social !== 'footer') && social}
-      </nav><MobilePortfolioMenu>
-        {groups.length ? groups.map(group => <span key={group.name}>{navigation({}, group.name, undefined, collectionAnchor(group.name))}</span>) : navigation({}, 'Work', undefined, 'work')}
-        {navigation({ about: '1' }, 'About + Services')}
-        {navigation({ about: '1' }, 'Contact', undefined, 'contact')}
-        {(groups.length > 0 || site.theme.social !== 'footer') && social}
-      </MobilePortfolioMenu>
+      <nav aria-label="Portfolio">{site.navigation.length?<WebsiteNavigation site={site} base={base} onPage={preview?id=>go(id==='home'?{}:id==='about'||id==='contact'?{about:'1'}:{campaign:id},id==='contact'?'contact':undefined):undefined}/>:<>{groups.length ? groups.map(group => <span key={group.name}>{navigation({}, group.name, undefined, collectionAnchor(group.name))}</span>) : navigation({}, 'Work', undefined, 'work')}{navigation({about:'1'},'About + Services')}{navigation({about:'1'},'Contact',undefined,'contact')}{social}</>}</nav>
+      <MobilePortfolioMenu>{site.navigation.length?<WebsiteNavigation site={site} base={base} onPage={preview?id=>go(id==='home'?{}:id==='about'||id==='contact'?{about:'1'}:{campaign:id},id==='contact'?'contact':undefined):undefined}/>:<>{navigation({},'Work',undefined,'work')}{navigation({about:'1'},'About + Services')}{navigation({about:'1'},'Contact',undefined,'contact')}{social}</>}</MobilePortfolioMenu>
     </header></div>
 
     {current.about ? <>
       <WebsiteAboutContent site={site} illustrative={illustrative} onChange={onAboutChange} />
-      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={targets} base={base} onProject={openProject} />
+      <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={targets} base={base} onProject={openProject} />
     </> : selected ? <>
       <section className="campaign-screen">
         <Media url={site.covers[selected.id] || selected.image_url} label="Campaign cover image" eager />
-        <div className="campaign-caption"><p>{selected.category}</p><h1>{selected.title}</h1></div>
+        <div className="campaign-caption"><InlineWebsiteText value={selected.category} label="Page cover label" maxLength={80} onChange={edit?value=>edit.project(selected.id,{category:value}):undefined}/><InlineWebsiteText as="h1" value={selected.title} label="Page cover title" maxLength={180} onChange={edit?value=>edit.project(selected.id,{title:value}):undefined}/></div>
       </section>
-      <section className="campaign-copy"><p className="campaign-kicker">{selected.category}</p><h2>{selected.title}</h2><p>{selected.description}</p></section>
-      {site.films[selected.id] && <div className="campaign-film">
-        <iframe src={site.films[selected.id]} title={selected.title} loading="lazy" allow="fullscreen; picture-in-picture" allowFullScreen />
-      </div>}
-      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange(selected.id, id, field, text) : undefined} sections={site.sections[selected.id]} projects={targets} base={base} onProject={openProject} />
+      <EditableRegion site={site} id={selected.id+':copy'}><section className="campaign-copy"><InlineWebsiteText className="campaign-kicker" value={selected.category} label="Page label" maxLength={80} onChange={edit?value=>edit.project(selected.id,{category:value}):undefined}/><InlineWebsiteText as="h2" value={selected.title} label="Page heading" maxLength={180} onChange={edit?value=>edit.project(selected.id,{title:value}):undefined}/><InlineWebsiteText value={selected.description||''} label="Page description" multiline maxLength={2000} onChange={edit?value=>edit.project(selected.id,{description:value}):undefined}/></section></EditableRegion>
+      <WebsiteFilms site={site} page={selected.id}/>
+      <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange(selected.id, id, field, text) : undefined} sections={site.sections[selected.id]} projects={targets} base={base} onProject={openProject} />
       {illustrative && gallery.length > 0 && <section className="campaign-gallery" aria-label="Campaign gallery">
         {gallery.map(({ url, size, alt }, i) => <div key={i} className={'campaign-frame-' + size}><Media url={url} label={alt || (size === 'grid' ? 'Campaign grid image' : 'Full-size campaign image')} /></div>)}
       </section>}
-      {!illustrative && <WebsiteGallery images={gallery} label="Campaign gallery" projects={targets} base={base} onProject={openProject} />}
+      {!illustrative && <WebsiteGallery pageId={selected.id} images={gallery} label="Campaign gallery" projects={targets} base={base} onProject={openProject} />}
       {related.length > 0 && <section className="campaign-more campaign-copy"><h2>More work</h2><div className="campaign-squares">
         {related.map(project => <div key={project.id}>
           {navigation({ campaign: project.id }, <><Media url={site.covers[project.id] || project.image_url} label="Campaign image" /><strong>{project.title}</strong></>, 'campaign-square')}
         </div>)}
       </div></section>}
     </> : <>
-      <section className="campaign-screen">
+      <EditableRegion site={site} id="home:opening"><section className="campaign-screen">
         {site.motion.enabled && site.motion.clips.length ? <HomepageMotion motion={site.motion} poster={site.image} preview={preview}/> : site.video && playVideo
           ? <video ref={video} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} className="campaign-media" src={site.video} poster={site.image ? imageDisplayUrl(site.image,1280) : undefined} preload="metadata" muted autoPlay loop playsInline aria-label="Studio showreel" />
           : <Media url={site.image} label="Full-screen showreel" eager />}
-        <div className="campaign-caption"><p>Photography &amp; film</p><h1>{site.headline || name}</h1>
+        <div className="campaign-caption"><InlineWebsiteText value={site.heroLabel} label="Homepage opening label" maxLength={100} onChange={text('heroLabel')}/><InlineWebsiteText as="h1" value={site.headline||name} label="Homepage opening title" maxLength={220} onChange={text('headline')}/>
           {navigation({}, 'Scroll to explore ↓', undefined, 'work')}
           {site.video && playVideo && <button className="campaign-video-toggle" type="button" onClick={toggleVideo}>{paused ? 'Play film' : 'Pause film'}</button>}
         </div>
-      </section>
-      {site.showIntro ? <section className="campaign-copy" id={preview ? undefined : 'work'} data-anchor="work">
-        <p className="campaign-kicker">Selected work</p><h2>{site.about || (illustrative ? 'Photographs and films for stories worth spending time with.' : name)}</h2>
+      </section></EditableRegion>
+      {site.showIntro ? <EditableRegion site={site} id="home:introduction"><section className="campaign-copy" id={preview ? undefined : 'work'} data-anchor="work">
+        <InlineWebsiteText className="campaign-kicker" value={site.introLabel} label="Homepage introduction label" maxLength={100} onChange={text('introLabel')}/><InlineWebsiteText as="h2" value={site.introText} label="Homepage introduction text" multiline onChange={text('introText')} placeholder="Click to add a short introduction"/>
         {navigation({ about: '1' }, 'About the studio ↗', 'campaign-text-link')}
-      </section> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
-      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={targets} base={base} onProject={openProject} />
+      </section></EditableRegion> : <div id={preview ? undefined : 'work'} data-anchor="work" />}
+      <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={targets} base={base} onProject={openProject} />
       <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={targets} base={base} onProject={openProject} />
       {groups.map(group => <section className="campaign-collection" key={group.name}
         id={preview ? undefined : collectionAnchor(group.name)} data-anchor={collectionAnchor(group.name)}>
@@ -189,12 +185,12 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
       {tiles(ungrouped, site.homepageLayout === 'grid')}
     </>}
 
-    <footer className="campaign-copy campaign-footer" id={preview ? undefined : 'contact'} data-anchor="contact">
-      <div>{site.logo && <PortfolioLogo site={site} light={headerLook.lightLogo} />}<p className="campaign-kicker">Contact</p><h2>Let’s make something.</h2>
+    <EditableRegion site={site} id="contact:footer"><footer className="campaign-copy campaign-footer" id={preview ? undefined : 'contact'} data-anchor="contact">
+      <div>{site.logo && <PortfolioLogo site={site} light={headerLook.lightLogo} />}<InlineWebsiteText className="campaign-kicker" value={site.contactLabel} label="Contact label" maxLength={100} onChange={text('contactLabel')}/><InlineWebsiteText as="h2" value={site.contactTitle} label="Contact heading" maxLength={220} onChange={text('contactTitle')}/>
         {site.email && <a href={'mailto:' + site.email}>{site.email}</a>}
       </div>
       {site.theme.social !== 'header' && social}
       {navigation({}, 'Back to work ↑', 'campaign-text-link')}
-    </footer>
+    </footer></EditableRegion>
   </div>;
 }

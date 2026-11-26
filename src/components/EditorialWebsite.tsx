@@ -1,4 +1,7 @@
 'use client';
+import InlineWebsiteText from './InlineWebsiteText';
+import {EditableRegion,HomeProjectTools,useWebsiteEditing} from './WebsiteEditing';
+import WebsiteNavigation from './WebsiteNavigation';
 import WebsiteAboutContent, { type AboutTextChange } from './WebsiteAboutContent';
 import HomepageMotion from './HomepageMotion';
 import './portfolio-builder.css';
@@ -21,32 +24,33 @@ export default function EditorialWebsite({ site, projects, preview = false, base
   onSectionChange?: (page: string, id: string, field: 'heading' | 'text', value: string) => void;
   site: Website; projects: WebsiteProject[]; preview?: boolean; base?: string; onProject?: (id: string) => void; allProjects?: WebsiteProject[];
 }) {
+  const edit=useWebsiteEditing();
   const {root,look:headerLook}=usePortfolioHeader(site.theme,preview);
   const social = site.instagram && (preview ? <span>Instagram</span> : <a href={site.instagram} rel="noreferrer">Instagram ↗</a>);
   const name = site.name || 'Your portfolio';
   return (
-    <div ref={root} className="editorial-site" style={themeVars(site.theme) as CSSProperties}>
+    <div ref={root} className={'editorial-site'+(site.navigation.length>6?' has-long-menu':'')} style={themeVars(site.theme) as CSSProperties}>
       <WebsiteIdentity site={site} preview={preview}/><header style={{color:headerLook.color,background:headerLook.background,borderBottom:headerLook.borderBottom}} className={'editorial-header editorial-header-' + site.theme.header}>
         <strong><PortfolioLogo site={site} light={headerLook.lightLogo} /></strong>
         <nav aria-label="Portfolio">
-          {preview ? <><button onClick={()=>onProject?.('home')}>Work</button><a href="#about">About + Services</a><a href="#contact">Contact</a></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
-          {site.theme.social !== 'footer' && social}
+          {site.navigation.length?<WebsiteNavigation site={site} base={base} onPage={preview?onProject:undefined}/>:preview ? <><button onClick={()=>onProject?.('home')}>Work</button><a href="#about">About + Services</a><a href="#contact">Contact</a></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
+          {!site.navigation.length && site.theme.social !== 'footer' && social}
         </nav><MobilePortfolioMenu>
-          {preview ? <><button onClick={()=>onProject?.('home')}>Work</button><a href="#about">About + Services</a><a href="#contact">Contact</a></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
-          {site.theme.social !== 'footer' && social}
+          {site.navigation.length?<WebsiteNavigation site={site} base={base} onPage={preview?onProject:undefined}/>:preview ? <><button onClick={()=>onProject?.('home')}>Work</button><a href="#about">About + Services</a><a href="#contact">Contact</a></> : <><a href="#work">Work</a><a href="#about">About + Services</a><a href="#contact">Contact</a></>}
+          {!site.navigation.length && site.theme.social !== 'footer' && social}
         </MobilePortfolioMenu>
       </header>
-      {site.motion.enabled && site.motion.clips.length ? <HomepageMotion motion={site.motion} poster={site.image} preview={preview}/> : <section className={'editorial-intro editorial-intro-' + site.theme.hero}>
-        <h1>{site.headline || name}</h1>
+      <EditableRegion site={site} id="home:opening">{site.motion.enabled && site.motion.clips.length ? <HomepageMotion motion={site.motion} poster={site.image} preview={preview}/> : site.video?<div className="homepage-motion"><video src={site.video} poster={site.image} muted autoPlay loop playsInline preload="metadata" aria-label="Homepage showreel"/></div>: <section className={'editorial-intro editorial-intro-' + site.theme.hero}>
+        <InlineWebsiteText as="h1" value={site.headline||name} label="Homepage opening title" onChange={edit?value=>edit.update({headline:value}):undefined}/>
         {site.image && site.theme.hero !== 'text' && <SmartImage variant="hero" priority src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
-      </section>}
-      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
+      </section>}</EditableRegion>
+      <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />
       <WebsiteGallery images={site.homeGallery ?? []} label="Homepage photo gallery" projects={allProjects} base={base} onProject={onProject} />
       <section className={'editorial-work' + (site.homepageLayout === 'grid' ? ' editorial-work-grid' : '')} id={preview ? undefined : 'work'}>
         <h2>Selected work</h2>
         {projects.length === 0 && !site.homeGallery?.length && <p>{preview ? 'Publish a project to include it here.' : 'New work coming soon.'}</p>}
         {projects.map(project => (
-          <article key={project.id}>
+          <article key={project.id} style={{position:'relative'}}><HomeProjectTools id={project.id} ids={projects.map(item=>item.id)}/>
             {websiteImage(site.covers[project.id] || project.image_url || '') && <SmartImage src={site.covers[project.id] || project.image_url!} alt={project.title} loading="lazy" referrerPolicy="no-referrer" />}
             <p className="eyebrow">{project.category}</p>
             <h3>{onProject ? <button type="button" className="editorial-project-link" onClick={() => onProject(project.id)}>{project.title} ↗</button>
@@ -56,13 +60,13 @@ export default function EditorialWebsite({ site, projects, preview = false, base
         ))}
       </section>
       <div id={preview ? undefined : 'about'}><WebsiteAboutContent site={site} onChange={onAboutChange}/></div>
-      <WebsiteSections onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={allProjects} base={base} onProject={onProject} />
-      <footer className="editorial-about" id={preview ? undefined : 'contact'}>
+      <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={allProjects} base={base} onProject={onProject} />
+      <EditableRegion site={site} id="contact:footer"><footer className="editorial-about" id={preview ? undefined : 'contact'}>
         {site.logo && <PortfolioLogo site={site} />}
-        <h2>Contact</h2>
+        <InlineWebsiteText as="h2" value={site.contactTitle} label="Contact heading" maxLength={220} onChange={edit?value=>edit.update({contactTitle:value}):undefined}/>
         {site.theme.social !== 'header' && social}
         {site.email && (preview ? <p>{site.email}</p> : <a href={'mailto:' + site.email}>{site.email}</a>)}
-      </footer>
+      </footer></EditableRegion>
     </div>
   );
 }

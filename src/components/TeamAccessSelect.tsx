@@ -3,7 +3,8 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 
-export default function TeamAccessSelect({ label, initial, options, name = 'role' }: {
+export default function TeamAccessSelect({ label, initial, options, name = 'role', onChange }: {
+  onChange?: (value:string)=>void;
   label: string;
   name?: string;
   initial: string;
@@ -27,6 +28,7 @@ export default function TeamAccessSelect({ label, initial, options, name = 'role
 
   function choose(index: number) {
     setValue(options[index][0]);
+    onChange?.(options[index][0]);
     setActive(null);
     trigger.current?.focus();
   }

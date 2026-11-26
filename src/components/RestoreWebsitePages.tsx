@@ -17,7 +17,7 @@ export default function RestoreWebsitePages({ id, source, onRestore, onRebuild }
   const [operation, setOperation] = useState('rebuild');
 
   return <details className="restore-website-pages">
-    <summary>Rebuild from my existing site</summary>
+    <summary>Older Squarespace collection recovery</summary>
     <p>Match the original Squarespace galleries against your Media library and create a private draft organised into Portfolio, Advertising, Motion and Personal. Existing campaign galleries are kept. Review before saving the design.</p>
     <form onSubmit={event => {
       event.preventDefault();

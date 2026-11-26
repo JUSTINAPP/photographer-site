@@ -10,6 +10,6 @@ export async function POST(request:Request){
  const {data:allowed,error}=await db.rpc('claim_import_preview',{workspace:workspace.id});if(error||!allowed)return NextResponse.json({error:'Please wait one minute before another preview.'},{status:429});
  const [preview, existing] = await Promise.all([previewWebsite(address, true), existingMediaIdentities(db, workspace.id)]);
  const media = preview.media.filter(item => !existing.has(mediaIdentity(item.url)));
- return NextResponse.json({ candidates: preview.candidates, warnings: preview.warnings, media, alreadySaved: preview.media.length - media.length });
+ return NextResponse.json({ navigation:preview.navigation, pages:preview.pages.map(page=>({...page,media:page.media.slice(0,300)})), candidates: preview.candidates, warnings: preview.warnings, media, alreadySaved: preview.media.length - media.length });
  }catch(error){const message=error instanceof Error?error.message:'Import preview failed.';return NextResponse.json({error:message},{status:message.includes('sign in')?401:400})}
 }

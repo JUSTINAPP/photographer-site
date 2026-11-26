@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, Globe } from 'lucide-react';
 import { ActionButton } from '@/components/ActionFeedback';
-import { saveImported } from '@/app/studio/actions';
+import { saveImported,saveImportedNavigation } from '@/app/studio/actions';
 import { saveImportedMedia } from '@/app/studio/media/actions';
 import { vimeoEmbed } from '@/lib/import-identity';
 import type { FoundMedia } from '@/lib/import-media';
@@ -22,7 +22,7 @@ const exampleProjects = [
   source_url: 'https://example.com/' + category,
 }));
 
-type Preview = { candidates: ImportCandidate[]; media: FoundMedia[]; alreadySaved: number; warnings: string[] };
+type Preview = { navigation?: {label:string;source:string;kind:string}[]; pages?: {source:string;requestedSource?:string;media:FoundMedia[]}[]; candidates: ImportCandidate[]; media: FoundMedia[]; alreadySaved: number; warnings: string[] };
 type SaveResult = { message: string; saved?: boolean };
 
 function mediaCount(items: FoundMedia[]) {
@@ -90,7 +90,8 @@ export default function ImportPanel({ demo = false }: { demo?: boolean }) {
         return;
       }
       const { added, skipped } = await saveImportedMedia(selectedMedia);
-      setMediaResult({ message: `Added ${added.toLocaleString()} items to Media.${skipped ? ` Skipped ${skipped.toLocaleString()} already saved.` : ''}`, saved: true });
+      const structure=scan?.navigation?.length?await saveImportedNavigation(scan.navigation,scan.pages??[]):'';
+      setMediaResult({ message: `Added ${added.toLocaleString()} items to Media.${skipped ? ` Skipped ${skipped.toLocaleString()} already saved.` : ''} ${structure}`, saved: true });
     } catch (error) {
       setMediaResult({ message: error instanceof Error ? error.message : 'Media could not be saved. Please try again.' });
     } finally {

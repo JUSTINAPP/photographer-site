@@ -33,7 +33,7 @@ export default function InlineWebsiteText({ as: Tag = 'p', value, label, classNa
     role="textbox" aria-label={label} aria-multiline={multiline} tabIndex={0} data-placeholder={placeholder} title={'Edit ' + label}
     onFocus={() => { before.current = value; }}
     onInput={event => { const text = plainText(event.currentTarget).replace(/\r/g, '').slice(0, maxLength); onChange(multiline ? text : text.replace(/\n/g, ' ')); }}
-    onBlur={event => { const text = plainText(event.currentTarget).replace(/\r/g, '').slice(0, maxLength).trim(); event.currentTarget.textContent = text; onChange(text); }}
+    onBlur={event => { const text = plainText(event.currentTarget).replace(/\r/g, '').slice(0, maxLength).trim(); event.currentTarget.textContent = text; if(text!==value)onChange(text); }}
     onKeyDown={event => {
       if (event.key === 'Enter' && !multiline) { event.preventDefault(); event.currentTarget.blur(); }
       if (event.key === 'Escape') { event.preventDefault(); event.currentTarget.textContent = before.current; onChange(before.current); event.currentTarget.blur(); }
