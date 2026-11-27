@@ -1,4 +1,5 @@
 'use client';
+import {websiteGallery} from '@/lib/website';
 import InlineWebsiteText from './InlineWebsiteText';
 import {EditableRegion,HomeProjectTools,useWebsiteEditing} from './WebsiteEditing';
 import WebsiteNavigation from './WebsiteNavigation';
@@ -62,6 +63,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
       </section>
       <div id={preview ? undefined : 'about'}><WebsiteAboutContent site={site} onChange={onAboutChange}/></div>
       <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={allProjects} base={base} onProject={onProject} />
+      <WebsiteGallery site={site} pageId="about" images={websiteGallery(site,'about')} label="About photo gallery" projects={allProjects} base={base} onProject={onProject}/>
       <EditableRegion site={site} id="contact:footer"><footer className="editorial-about" id={preview ? undefined : 'contact'}>
         {site.logo && <PortfolioLogo site={site} />}
         <InlineWebsiteText as="h2" value={site.contactTitle} label="Contact heading" maxLength={220} onChange={edit?value=>edit.update({contactTitle:value}):undefined}/>

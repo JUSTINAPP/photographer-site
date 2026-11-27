@@ -49,13 +49,13 @@ export function normaliseWebsite(input: unknown) {
     return items.slice(0, limit).flatMap(item => {
       const url = typeof item?.url === 'string' ? websiteImage(item.url.slice(0, 2048)) : '';
       const size: GalleryImage['size'] = item?.size === 'wide' || item?.size === 'screen' ? item.size : 'grid';
-      return url ? [{ url, size, alt: typeof item.alt === 'string' ? item.alt.slice(0, 220) : '', ...(typeof item.link === 'string' && projectId.test(item.link) ? { link: item.link } : {}) }] : [];
+      return url ? [{ url, size, alt: typeof item.alt === 'string' ? item.alt.slice(0, 220) : '', ...(typeof item.link === 'string' && (projectId.test(item.link)||['home','about'].includes(item.link)) ? { link: item.link } : {}) }] : [];
     });
   }
   const placements: Record<string, GalleryImage[]> = {};
   if (data.placements && typeof data.placements === 'object') {
     for (const [id, items] of Object.entries(data.placements).slice(0, 150)) {
-      const frames = projectId.test(id) ? cleanFrames(items, 100) : null;
+      const frames = (projectId.test(id)||id==='about') ? cleanFrames(items, 100) : null;
       if (frames) placements[id] = frames;
     }
   }

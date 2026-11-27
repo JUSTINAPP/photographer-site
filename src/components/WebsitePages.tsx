@@ -1,4 +1,5 @@
 'use client';
+import PageImagesEditor from './PageImagesEditor';
 import MatchOriginalWebsite from './MatchOriginalWebsite';
 import {applySavedOpening,selectedSavedOpening} from '@/lib/saved-opening';
 import {PAGE_STARTERS,addWebsitePage,type PageStarter} from '@/lib/page-starters';
@@ -39,7 +40,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   const [starter,setStarter]=useState<PageStarter>('natural');
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
-  const [picker, setPicker] = useState<'cover' | 'video' | 'gallery' | null>(null);
+  const [picker, setPicker] = useState<'cover' | 'video' | null>(null);
   const [allMedia, setAllMedia] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -47,24 +48,15 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   }, [picker]);
   const [query, setQuery] = useState('');
   const [pageQuery,setPageQuery]=useState('');
-  const [dragging, setDragging] = useState<number | null>(null);
   const ordered = orderWebsiteProjects(projects.filter(project=>!draft.removedPages.includes(project.id)), draft.projectOrder);
   const campaign = draft.theme.layout === 'campaign';
   const included = new Set(homepageWork(draft, projects).map(item => item.id));
   const project = projects.find(item => item.id === page);
-  const gallery = project ? websiteGallery(draft, project.id) : draft.homeGallery ?? [];
-  const galleryLimit = project ? 100 : 150;
   const selectedOpening=selectedSavedOpening(draft,project?.id||'home');
   const cover = project ? draft.covers[project.id] || project.image_url : draft.image;
   const candidates = media.filter(item => picker === 'video' ? item.kind === 'video' && !vimeoEmbed(item.source_url) : item.kind === 'photo');
   const selectedOnly = !allMedia && candidates.some(item => item.website_selected);
   const visible = candidates.filter(item => (!selectedOnly || item.website_selected) && item.name.toLowerCase().includes(query.toLowerCase()));
-
-  function updateGallery(images: GalleryImage[]) {
-    setDraft(current => project
-      ? { ...current, placements: { ...current.placements, [project.id]: images } }
-      : { ...current, homeGallery: images });
-  }
 
   function restore(home: string[], pages: { id: string; photos: string[] }[], restored: WebsiteProject[]) {
     onProjects(restored);
@@ -128,11 +120,10 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   }
 
   function choose(asset: WebsiteMedia) {
-    if (picker === 'gallery') updateGallery([...gallery, { url: asset.source_url, size: 'grid', alt: '' }]);
-    else if (picker === 'video') setDraft(current => ({ ...current, video: asset.source_url }));
+    if (picker === 'video') setDraft(current => ({ ...current, video: asset.source_url }));
     else if (project) setDraft(current => ({ ...current, covers: { ...current.covers, [project.id]: asset.source_url } }));
     else setDraft(current => ({ ...current, image: asset.source_url, imageAlt: '' }));
-    if (picker !== 'gallery' || gallery.length >= galleryLimit - 1) setPicker(null);
+    setPicker(null);
   }
 
   return <section className="website-pages" id="page-editor">
@@ -168,21 +159,25 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       {message && <p role="status">{message}</p>}
     </form>}
     {!creating&&message&&<p role="status">{message}</p>}
-    <MatchOriginalWebsite studioId={studioId} site={draft} onApply={(update,matched)=>{onProjects(matched);setDraft(update);onPage('home');setPicker(null);}}/>
     <p>Menu pages are the main sections. Campaign pages hold each shoot’s expanded gallery.</p>
     <label>Find a page or campaign<input value={pageQuery} onChange={e=>setPageQuery(e.target.value)} placeholder="Search by name"/></label>
     <nav className="website-page-list" aria-label="Pages">
-      <strong>Menu pages</strong>
-      {[{id:'home',title:'Homepage'},{id:'about',title:'About + Services'},...ordered.filter(item=>draft.navigation.some(link=>link.page===item.id))].filter(item=>item.title.toLowerCase().includes(pageQuery.toLowerCase())).map(item=><button type="button" key={item.id} aria-current={page===item.id?'page':undefined} onClick={()=>{onPage(item.id);setPicker(null);}}>{draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}
+      <strong>Pages</strong>
+      <button type="button" aria-current={page==='home'?'page':undefined} onClick={()=>{onPage('home');setPicker(null);}}>Home page</button>
+      {[{id:'about',title:'About + Services'},...ordered.filter(item=>draft.navigation.some(link=>link.page===item.id))].filter(item=>item.title.toLowerCase().includes(pageQuery.toLowerCase())).map(item=><button type="button" key={item.id} aria-current={page===item.id?'page':undefined} onClick={()=>{onPage(item.id);setPicker(null);}}>{draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}
       <strong>Campaign galleries</strong>
       {['Portfolio','Advertising','Motion','Personal','Other campaigns'].map(group=>{const items=ordered.filter(item=>!draft.navigation.some(link=>link.page===item.id)&&(draft.collections[item.id]||'Other campaigns')===group&&item.title.toLowerCase().includes(pageQuery.toLowerCase()));return items.length?<details key={group} open={!!pageQuery||items.some(item=>item.id===page)}><summary>{group} · {items.length}</summary>{items.map(item=><button type="button" key={item.id} aria-current={page===item.id?'page':undefined} onClick={()=>{onPage(item.id);setPicker(null);}}>{item.title} · {websiteGallery(draft,item.id).length} photos</button>)}</details>:null;})}
     </nav>
+    <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Home page')}</h3>
+
+    <PageImagesEditor key={page} studioId={studioId} site={draft} page={page} projects={projects} media={media} setSite={setDraft} onPage={onPage}/>
+    <details className="page-advanced"><summary>Menu, import &amp; removed sections</summary>
+    <MatchOriginalWebsite studioId={studioId} site={draft} onApply={(update,matched)=>{onProjects(matched);setDraft(update);onPage('home');setPicker(null);}}/>
     {draft.removedPages.length>0&&<details><summary>Removed pages ({draft.removedPages.length})</summary><p>These pages are hidden from your website. Their content and media are kept so you can restore them.</p>{projects.filter(item=>draft.removedPages.includes(item.id)).map(item=><button type="button" className="secondary-button" key={item.id} onClick={()=>{setDraft(current=>({...current,removedPages:current.removedPages.filter(id=>id!==item.id)}));onPage(item.id);}}>Restore {draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}</details>}
     <ImportNavigation projects={projects} studioId={studioId} draft={draft} onChange={patch=>setDraft(current=>({...current,...patch}))} onProjects={onProjects}/>
     {draft.hiddenBlocks.length>0&&<details><summary>Removed sections ({draft.hiddenBlocks.length})</summary><p>Removed from this website only. Restore any section below.</p>{draft.hiddenBlocks.map(id=><button type="button" className="secondary-button" key={id} onClick={()=>setDraft(current=>({...current,hiddenBlocks:current.hiddenBlocks.filter(key=>key!==id)}))}>Restore {id.split(':').pop()?.replaceAll('-',' ')}</button>)}</details>}
     <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} onRebuild={rebuild} />
-    <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
-
+    </details>
     {project&&<label>Campaign collection<select value={draft.collections[project.id]||''} onChange={e=>setDraft(current=>({...current,collections:{...current.collections,[project.id]:e.target.value}}))}><option value="">Other campaigns</option>{['Portfolio','Advertising','Motion','Personal'].map(name=><option key={name} value={name}>{name}</option>)}</select></label>}
     {project&&<div className="page-remove-card"><p>Remove this whole page from the website, including its menu entry and homepage tile. Your media and project stay in the library. You can restore it from Removed pages.</p><button type="button" className="secondary-button" onClick={()=>{setDraft(current=>({...current,removedPages:[...new Set([...current.removedPages,project.id])]}));onPage('home');setPicker(null);}}>Remove this page</button></div>}
     {page !== 'about' && <details><summary>Extra sections and layouts</summary>
@@ -226,7 +221,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
         <label>Search media<input value={query} onChange={event => setQuery(event.target.value)} /></label>
         <label className="rights-check"><input type="checkbox" checked={allMedia} onChange={event => setAllMedia(event.target.checked)} /> Show all library items</label>
         <div className="page-media-options">
-          {visible.map(asset => <button type="button" key={asset.id} disabled={picker === 'gallery' && (gallery.length >= galleryLimit || gallery.some(item => item.url === asset.source_url))} onClick={() => choose(asset)}>
+          {visible.map(asset => <button type="button" key={asset.id} onClick={() => choose(asset)}>
             {asset.kind === 'photo' && <SmartImage variant="thumb" src={asset.source_url} alt="" loading="lazy" referrerPolicy="no-referrer" />}
             <span>{asset.name}</span>
           </button>)}
@@ -235,34 +230,6 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
         <button className="secondary-button" onClick={() => setPicker(null)}>Done</button>
       </div>}
 
-      <>
-        <h3>{draft.galleryLayouts[page]==='cards'?(project?'Collection campaign covers':'Homepage campaign covers'):project?'Project gallery':'Homepage photo gallery'}</h3>
-        <p>{gallery.length} photos. Drag photos or use the arrows to reorder them. Change the size of any frame.</p>
-        <button className="secondary-button" disabled={gallery.length >= galleryLimit} onClick={() => setPicker('gallery')}>Add photos from Media</button>
-        {!gallery.length && <p>No photos on this page yet.</p>}
-        <ol className="page-gallery-order">{gallery.map((image, index) => <li key={image.url + index}
-          onDragOver={event => { if (dragging !== null) event.preventDefault(); }}
-          onDrop={event => { event.preventDefault(); if (dragging !== null) updateGallery(moveItem(gallery, dragging, index)); setDragging(null); }}>
-          <SmartImage variant="thumb" src={image.url} alt="" draggable onDragStart={event => { event.dataTransfer.setData('text/plain', String(index)); setDragging(index); }} onDragEnd={() => setDragging(null)} referrerPolicy="no-referrer" />
-          <div><strong>Frame {index + 1}</strong>
-          <div className="design-switch frame-size-options" aria-label={'Size of frame ' + (index + 1)}>
-            {([['grid', 'Grid'], ['wide', 'Full width'], ['screen', 'Full screen']] as const).map(([size, label]) =>
-              <button type="button" key={size} aria-pressed={image.size === size}
-                onClick={() => updateGallery(gallery.map((item, i) => i === index ? { ...item, size } : item))}>{label}</button>
-            )}
-          </div>
-          <label>Alt text<input value={image.alt} maxLength={220} onChange={event => updateGallery(gallery.map((item, i) => i === index ? { ...item, alt: event.target.value } : item))} /></label>
-          <label>Link photo to a campaign<select value={image.link ?? ''} onChange={event => updateGallery(gallery.map((item, i) =>
-            i === index ? { ...item, link: event.target.value || undefined } : item))}>
-            <option value="">No link</option>{projects.filter(item => item.id !== page&&!draft.removedPages.includes(item.id)).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
-          </select></label>
-          <div className="page-editor-actions">
-            <button className="secondary-button" aria-label={'Move frame ' + (index + 1) + ' up'} disabled={index === 0} onClick={() => updateGallery(moveItem(gallery, index, index - 1))}>↑</button>
-            <button className="secondary-button" aria-label={'Move frame ' + (index + 1) + ' down'} disabled={index === gallery.length - 1} onClick={() => updateGallery(moveItem(gallery, index, index + 1))}>↓</button>
-            <button className="secondary-button" aria-label={'Remove frame ' + (index + 1)} onClick={() => updateGallery(gallery.filter((_, i) => i !== index))}>Remove</button>
-          </div></div>
-        </li>)}</ol>
-      </>
       {project && <section className="website-section-editor">
         <h3>More work</h3>
         <p>Choose which campaign squares appear at the bottom. Tick them in the order you want visitors to see them.</p>

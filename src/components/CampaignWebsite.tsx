@@ -120,7 +120,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   const gallery: GalleryImage[] = images.length || !illustrative ? images : ['wide', 'grid', 'grid', 'wide'].map(size => ({ url: '', alt: '', size: size as GalleryImage['size'] }));
   const related = selected ? (site.related[selected.id] ?? work.filter(project => project.id !== selected.id).map(project => project.id))
     .flatMap(id => targets.filter(project => project.id === id && project.id !== selected.id)) : [];
-  const openProject = preview ? (id: string) => go({ campaign: id }) : undefined;
+  const openProject = preview ? (id: string) => go(id==='home'?{}:id==='about'?{about:'1'}:{ campaign: id }) : undefined;
   const colours = FONT_PAIRS[site.theme.fonts];
 
   const tiles = (items: WebsiteProject[], grid: boolean) => <div className={grid ? 'campaign-home-grid' : undefined}>
@@ -144,6 +144,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     {current.about ? <>
       <WebsiteAboutContent site={site} illustrative={illustrative} onChange={onAboutChange} />
       <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('about', id, field, text) : undefined} sections={site.sections.about} projects={targets} base={base} onProject={openProject} />
+      <WebsiteGallery site={site} pageId="about" images={websiteGallery(site,'about')} label="About photo gallery" projects={targets} base={base} onProject={openProject}/>
     </> : selected ? <>
       <EditableRegion site={site} id={selected.id+':opening'}><section className="campaign-screen">
         {site.pageMotion[selected.id]?.enabled&&site.pageMotion[selected.id].clips.length?<HomepageMotion motion={site.pageMotion[selected.id]} preview={preview}/>:<Media url={site.covers[selected.id] || selected.image_url} label="Campaign cover image" eager />}
