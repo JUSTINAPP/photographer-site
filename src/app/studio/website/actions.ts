@@ -47,14 +47,15 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   if (mode === 'unpublish') values.published = null;
   const { data, error } = await db.from('studio_websites')
     .upsert(values, { onConflict: 'workspace_id', defaultToNull: false })
-    .select('public_id, published, draft').single();
+    .select('public_id, published, draft, slug').single();
   if (error) return { error: 'The website could not be saved. Please try again.' };
   revalidatePath('/studio/media');
   revalidatePath('/studio/website');
   revalidatePath('/studio/settings');
   revalidatePath('/studio/website/preview');
   revalidatePath('/sites/' + data.public_id);
-  return { id: data.public_id as string, published: !!data.published, draft:normaliseWebsite(data.draft) };
+  if(data.slug)revalidatePath('/'+data.slug);
+  return { slug:data.slug as string|null, id: data.public_id as string, published: !!data.published, draft:normaliseWebsite(data.draft) };
 }
 
 export async function addWebsiteProject(form: FormData) {

@@ -1,28 +1,14 @@
-import GalleryWebsite from '@/components/GalleryWebsite';
-import { notFound } from 'next/navigation';
-import CampaignWebsite from '@/components/CampaignWebsite';
-import EditorialWebsite from '@/components/EditorialWebsite';
-import { configured, database } from '@/lib/supabase';
-import { homepageWork, normaliseWebsite, publishedWebsiteWork, type WebsiteProject } from '@/lib/website';
-
-export default async function PublishedWebsite({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ about?: string; campaign?: string }> }) {
-  const { id } = await params;
-  if (!configured() || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)) notFound();
-  const db = await database();
-  const { data } = await db.rpc('published_studio_website', { site_id: id }).maybeSingle();
-  const result = data as { settings: unknown; projects: WebsiteProject[] } | null;
-  if (!result) notFound();
-  const site = normaliseWebsite(result.settings);
-  const projects = publishedWebsiteWork(result.settings, result.projects);
-  const work = homepageWork(site, projects);
-  const view = await searchParams;
-  if (site.theme.layout === 'gallery') {
-    if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
-    return <main><GalleryWebsite site={site} projects={work} allProjects={projects} base={'/sites/' + id} view={view} /></main>;
-  }
-  if (site.theme.layout === 'campaign' || view.campaign || view.about) {
-    if (view.campaign && !projects.some(project => project.id === view.campaign)) notFound();
-    return <main><CampaignWebsite site={site} projects={work} allProjects={projects} base={'/sites/' + id} view={view} /></main>;
-  }
-  return <main><EditorialWebsite site={site} projects={work} allProjects={projects} base={'/sites/' + id} /></main>;
+import {permanentRedirect,notFound} from 'next/navigation';
+import {configured,database} from '@/lib/supabase';
+import {publishedAddress} from '@/lib/published-address';
+import {renderPublishedWebsite} from '@/components/PublishedWebsite';
+export default async function PublishedWebsite({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<Record<string,string|string[]|undefined>>}){
+  const {id}=await params;
+  if(!configured()||!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))notFound();
+  const db=await database();
+  const {data}=await db.rpc('published_studio_address',{site_id:id}).maybeSingle();
+  const address=data as {slug:string}|null;
+  const view=await searchParams;
+  if(address?.slug){const query=new URLSearchParams();for(const [key,value] of Object.entries(view)){if(Array.isArray(value))value.forEach(item=>query.append(key,item));else if(value!==undefined)query.set(key,value);}permanentRedirect(publishedAddress(id,address.slug)+(query.size?'?'+query:''));}
+  return renderPublishedWebsite(id,{about:typeof view.about==='string'?view.about:undefined,campaign:typeof view.campaign==='string'?view.campaign:undefined},'/sites/'+id);
 }

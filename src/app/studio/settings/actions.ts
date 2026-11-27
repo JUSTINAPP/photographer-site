@@ -60,8 +60,8 @@ export async function saveStudioSettings(id: string, section: 'studio' | 'logo' 
 export async function takeWebsiteOffline(id: string) {
   const { db, workspace } = await requireStudioAccess('admin');
   if (id !== workspace.id) finish('website', 'changed');
-  const { data, error } = await db.from('studio_websites').update({ published: null }).eq('workspace_id', id).select('public_id').maybeSingle();
-  if (data) revalidatePath('/sites/' + data.public_id);
+  const { data, error } = await db.from('studio_websites').update({ published: null }).eq('workspace_id', id).select('public_id,slug').maybeSingle();
+  if (data) {revalidatePath('/sites/' + data.public_id);if(data.slug)revalidatePath('/'+data.slug);}
   finish('website', error ? 'error' : 'offline');
 }
 

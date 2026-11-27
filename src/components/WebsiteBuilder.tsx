@@ -1,4 +1,5 @@
 'use client';
+import {publishedAddress} from '@/lib/published-address';
 import {applySavedOpening,resolveMotionPreview,type MotionPreview} from '@/lib/saved-opening';
 import {WebsiteEditing} from './WebsiteEditing';
 import type {AboutTextField} from './WebsiteAboutContent';
@@ -33,8 +34,8 @@ const contentFields = [
   ['email', 'Public enquiry email'],
 ] as const;
 
-export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design', initialPage,publishedInitial,initialMotionPreview }: {
-  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:MotionPreview;
+export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, publicSlug, isPublished, readOnly = false, initialPanel = 'design', initialPage,publishedInitial,initialMotionPreview }: {
+  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; publicSlug?:string|null; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:MotionPreview;
 }) {
   const controls=useRef<HTMLElement>(null);
   const [agentBusy,setAgentBusy]=useState(false),[motionBusy,setMotionBusy]=useState(false),[previewBusy,setPreviewBusy]=useState(false);
@@ -68,10 +69,11 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   async function saveLook(name:string,references:string[]){
     const look={id:crypto.randomUUID(),name,theme:draft.theme,logoSize:draft.logoSize,homepageLayout:draft.homepageLayout,references};
     const next=normaliseWebsite({...draft,savedLooks:[...draft.savedLooks,look]});
-    const result=await saveWebsite(studioId,next,'draft');if(result.error)throw Error(result.error);setDraft(result.draft??next);setSavedVersion(websiteVersion(result.draft??next));setId(result.id);setNotice('Template and draft saved.');
+    const result=await saveWebsite(studioId,next,'draft');if(result.error)throw Error(result.error);setDraft(result.draft??next);setSavedVersion(websiteVersion(result.draft??next));setId(result.id);setSlug(result.slug);setNotice('Template and draft saved.');
   }
   const [live, setLive] = useState(isPublished);
   const [id, setId] = useState(publicId);
+  const [slug,setSlug]=useState(publicSlug);
   const [notice, setNotice] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -96,7 +98,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         const saved=result.draft??currentDraft;setDraft(saved);setSavedVersion(websiteVersion(saved));
         if(mode==='publish'){setPublishedVersion(websiteVersion(saved));setPublishedRevision(String(Date.now()));}
         setLive(!!result.published);
-        setId(result.id);
+        setId(result.id);setSlug(result.slug);
         setConfirmed(false);
         setNotice(mode === 'publish' ? 'Your latest changes are live. Open the published site to check them.' : mode === 'unpublish' ? 'Website taken offline. Your draft is saved.' : 'Draft saved.');
       } catch {
@@ -232,6 +234,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </div>
         <div hidden={panel !== 'publish'}>
         <h2>Make your changes live</h2>
+        {slug&&<p>Your Fresnel address: <strong>www.fresnelstudio.com/{slug}</strong><br/>Use this address until you connect your own domain. Publishing updates the same address.</p>}
         <ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & open draft preview ↗</ActionButton>
         <div className="publish-version-notice"><strong>{unpublished?'Your live site has an earlier version.':'Ready to review your website.'}</strong><p>1. Preview draft saves your edits and opens a private preview. 2. Publish changes makes your latest edits visible to everyone on the live website.</p></div>
         {draft.motion.enabled&&<p className={videoNeedsGeneration?'agent-error':'opening-ready'}>{videoNeedsGeneration?'Your opening has changed. Generate the video in Opening before publishing.':'✓ Opening video ready · desktop and mobile'}</p>}
@@ -241,7 +244,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         <label className="rights-check"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I have permission to publish this content.</label>
         <ActionButton busy={pending && operation === 'publish'} className="primary-button" disabled={busy || !confirmed || videoNeedsGeneration} onClick={() => save('publish')}>{pending && operation === 'publish' ? 'Publishing…' : live ? 'Publish changes' : 'Publish website'}</ActionButton>
         {pending && operation === 'publish' && <progress className="website-publish-progress" aria-label="Publishing website" />}
-        {live && id && <p><Link prefetch={false} href={'/sites/' + id+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link></p>}
+        {live && id && <p><Link prefetch={false} href={publishedAddress(id,slug)+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link></p>}
         {live && <ActionButton busy={pending && operation === 'unpublish'} className="secondary-button" disabled={busy} onClick={() => save('unpublish')}>Take website offline</ActionButton>}
         </div>
         <div className="website-save-strip"><small className="builder-save-status" role="status">{agentBusy?'Updating preview…':motionBusy?'Preparing your opening…':unsaved?'Unsaved draft changes':'Draft saved'}</small>
@@ -257,7 +260,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
             <button aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>Mobile</button>
           </div>
           {readOnly?<Link prefetch={false} href="/studio/website/preview">Preview saved draft ↗</Link>:<ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & open draft preview ↗</ActionButton>}
-          {live && id && <Link prefetch={false} href={'/sites/' + id+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link>}
+          {live && id && <Link prefetch={false} href={publishedAddress(id,slug)+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link>}
         </div>
         {!readOnly && panel === 'pages' && <div className="inline-edit-guide"><p><strong>{inlineEditing ? 'Edit this page directly.' : 'Preview mode'}</strong><br/>{inlineEditing ? 'Type in outlined text. Use section controls to resize or remove blocks, and photo arrows or drag to reorder. Save your draft below.' : 'Turn on text editing to change the About page and your added page sections.'}</p><button type="button" className="secondary-button" disabled={busy} aria-pressed={inlineEditing} onClick={()=>setInlineEditing(value=>!value)}>{inlineEditing ? 'Preview without edit outlines' : 'Edit text on page'}</button></div>}
         {unpublished&&<p className="builder-version-hint">Private draft · The preview below updates as you edit. Save & open draft preview to check it full size. Publish changes makes it live.</p>}

@@ -14,7 +14,7 @@ export const database = cache(async function database() {
 export const currentUser = cache(async () => (await (await database()).auth.getUser()));
 export const studioBrand = cache(async (studio: string) => {
   const db = await database();
-  return db.from('studio_websites').select('draft_name:draft->>name,published_name:published->>name,public_id').eq('workspace_id', studio).maybeSingle();
+  return db.from('studio_websites').select('draft_name:draft->>name,published_name:published->>name,public_id,slug').eq('workspace_id', studio).maybeSingle();
 });
 export const requireStudio = cache(async function requireStudio(redirectOnMissingAuth = true) {
   if (!configured()) {

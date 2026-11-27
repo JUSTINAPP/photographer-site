@@ -1,3 +1,4 @@
+import {publishedAddress} from '@/lib/published-address';
 import { SubmitButton } from '@/components/ActionFeedback';
 import FresnelMark from '@/components/FresnelMark';
 import Link from 'next/link';
@@ -50,7 +51,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
     studioId = workspace.id;
     studios = session.studios;
     name = brand.data?.draft_name || workspace.name || name;
-    if (brand.data?.published_name !== null && brand.data?.published_name !== undefined) publicPath = '/sites/' + brand.data.public_id;
+    if (brand.data?.published_name !== null && brand.data?.published_name !== undefined) publicPath = publishedAddress(brand.data.public_id,brand.data.slug);
   }
 
   return <div className="studio-shell">

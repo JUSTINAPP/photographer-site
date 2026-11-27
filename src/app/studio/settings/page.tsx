@@ -1,3 +1,4 @@
+import {publishedAddress} from '@/lib/published-address';
 import InviteStudioLink from '@/components/admin/InviteStudioLink';
 import { platformStudios } from '@/lib/platform-admin';
 import { ActionLink, SubmitButton } from '@/components/ActionFeedback';
@@ -27,7 +28,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
   const id = workspace.id;
   const photographer = platformAdmin ? (await platformStudios()).find(item => item.id === id) : undefined;
   const [site, team, domain, projects, media] = await Promise.all([
-    db.from('studio_websites').select('draft,published,public_id').eq('workspace_id', id).maybeSingle(),
+    db.from('studio_websites').select('draft,published,public_id,slug').eq('workspace_id', id).maybeSingle(),
     db.from('studio_team').select('email,role,user_id').eq('workspace_id', id).order('created_at'),
     db.from('studio_domains').select('hostname,verification_token').eq('workspace_id', id).maybeSingle(),
     db.from('projects').select('id,title,category,description,image_url,published').eq('workspace_id', id).order('created_at', { ascending: false }),
@@ -38,7 +39,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
   const draft = normaliseWebsite(site.data?.draft);
   const name = draft.name || workspace.name;
   const live = !!site.data?.published;
-  const path = '/sites/' + site.data?.public_id;
+  const path = publishedAddress(site.data?.public_id??'',site.data?.slug);
   const host = domain.data?.hostname;
   const token = domain.data ? 'fresnel=' + domain.data.verification_token : '';
   const verified = host ? (await portfolioDomainTokens(host)).includes(token) : false;
