@@ -7,6 +7,9 @@ import { notFound } from 'next/navigation';
 import { MarketingHeader, MarketingFooter } from '@/components/MarketingChrome';
 import { contactEmail, informationPages, legalLinks } from '@/content/site-information';
 
+// Portfolio names are resolved at request time; unknown paths must not use static-page fallback.
+export const dynamic='force-dynamic';
+
 type Props = { params: Promise<{ page: string }>;searchParams:Promise<{about?:string;campaign?:string}> };
 const portfolio=cache(async(slug:string)=>{if(!configured()||!validPublishedSlug(slug))return null;const {data}=await (await database()).rpc('published_studio_by_slug',{site_slug:slug}).maybeSingle();return data as {public_id:string;name:string}|null;});
 
