@@ -12,7 +12,7 @@ export default function HomepageMotion({motion,poster='',preview=false,urls,devi
  useEffect(()=>{const q=matchMedia('(prefers-reduced-motion: reduce)'),size=matchMedia('(max-width: 650px)');const update=()=>{setAllowed(!q.matches&&!(navigator as Navigator&{connection?:{saveData:boolean}}).connection?.saveData);setMobile(size.matches)};update();q.addEventListener('change',update);size.addEventListener('change',update);return()=>{q.removeEventListener('change',update);size.removeEventListener('change',update)}},[]);
  useEffect(()=>{if(!preview||!root.current)return;const observer=new ResizeObserver(entries=>setMobile(entries[0].contentRect.width<650));observer.observe(root.current);return()=>observer.disconnect()},[preview]);
  const encodedSrc=encoded?(useMobile?encoded.mobile||encoded.desktop:encoded.desktop):'';
- useEffect(()=>{setShot(0);setPlaying(allowed)},[allowed,editKey]);
+ useEffect(()=>{setShot(0);setPlaying(allowed)},[allowed,editKey,encodedSrc]);
  useEffect(()=>{if(!playing||encoded||!motion.clips.length)return;const timer=setTimeout(()=>setShot(n=>(n+1)%motion.clips.length),motion.clips[shot]?.duration*1000||2000);return()=>clearTimeout(timer)},[playing,shot,encodedSrc,editKey]);
  useEffect(()=>{if(!video.current)return;if(playing)void video.current.play().catch(()=>setPlaying(false));else video.current.pause()},[playing,encodedSrc,useMobile,shot]);
  const clip=motion.clips[shot];const still=poster||motion.clips.find(c=>c.kind==='photo')?.url||'';

@@ -113,7 +113,7 @@ export function normaliseWebsite(input: unknown) {
     const href=typeof item.href==='string'?(item.href.startsWith('mailto:')&&/^[^\s<>]+$/.test(item.href)?item.href:websiteImage(item.href)):'';
     return page||href?[{label:item.label.slice(0,80),page,href}]:[];
   }) : [];
-  const hiddenBlocks=Array.isArray(data.hiddenBlocks)?data.hiddenBlocks.filter((key):key is string=>typeof key==='string'&&/^[a-zA-Z0-9:-]{1,100}$/.test(key)).slice(0,200):[];
+  const hiddenBlocks=Array.isArray(data.hiddenBlocks)?data.hiddenBlocks.filter((key):key is string=>typeof key==='string'&&/^[a-zA-Z0-9:-]{1,100}$/.test(key)).slice(0,500):[];
   const blockStyles:Record<string,{heading?:number;body?:number}>={};
   if(data.blockStyles&&typeof data.blockStyles==='object')for(const [key,value] of Object.entries(data.blockStyles).slice(0,200)){
     if(!/^[a-zA-Z0-9:-]{1,100}$/.test(key)||!value||typeof value!=='object')continue;
@@ -127,8 +127,8 @@ export function normaliseWebsite(input: unknown) {
   }
   const filmGalleries:Record<string,string[]>={};
   if(data.filmGalleries&&typeof data.filmGalleries==='object')for(const [id,items] of Object.entries(data.filmGalleries).slice(0,150))if(projectId.test(id)&&Array.isArray(items))filmGalleries[id]=[...new Set(items.slice(0,30).flatMap(url=>typeof url==='string'&&websiteImage(url)?[vimeoEmbed(url)||websiteImage(url)]:[]))];
-  const galleryLayouts:Record<string,'grid'|'natural'>={};
-  if(data.galleryLayouts&&typeof data.galleryLayouts==='object')for(const [id,value] of Object.entries(data.galleryLayouts).slice(0,150))if((id==='home'||projectId.test(id))&&(value==='grid'||value==='natural'))galleryLayouts[id]=value;
+  const galleryLayouts:Record<string,'grid'|'natural'|'cards'>={};
+  if(data.galleryLayouts&&typeof data.galleryLayouts==='object')for(const [id,value] of Object.entries(data.galleryLayouts).slice(0,150))if((id==='home'||projectId.test(id))&&(value==='grid'||value==='natural'||value==='cards'))galleryLayouts[id]=value;
   const pageMotion:Record<string,ReturnType<typeof normaliseMotion>>={};
   if(data.pageMotion&&typeof data.pageMotion==='object')for(const [id,value] of Object.entries(data.pageMotion).slice(0,150))if(projectId.test(id)){const motion=normaliseMotion(value);pageMotion[id]={...motion,desktopPath:'',mobilePath:''};}
   return {

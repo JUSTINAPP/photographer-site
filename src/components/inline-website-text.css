@@ -6,3 +6,5 @@
 
 .campaign-caption .inline-website-text{pointer-events:auto;position:relative;z-index:2;}
 .campaign-caption .opening-text-toggle{pointer-events:auto;display:block;font:12px Instrument,Arial,sans-serif;color:#17172c;background:#f7f5ef;border:1px solid #ccc;border-radius:6px;padding:8px 12px;margin-bottom:18px;}
+
+.website-page-list>strong{display:block;padding:10px 8px 4px;font-size:13px;}.website-page-list details>button{display:block;width:100%;text-align:left;}.website-page-list details summary{padding:10px;cursor:pointer;}.match-original summary{font-weight:700;}.match-original ul{padding-left:20px;}

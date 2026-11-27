@@ -61,7 +61,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const [draft, setDraft] = useState(initial);
   const [motionEdit,setMotionEdit]=useState(initial.motion);
   const [motionSession,setMotionSession]=useState(0);
-  const [replaceOpeningPage,setReplaceOpeningPage]=useState<string|undefined>();
+  const [replaceOpeningPage,setReplaceOpeningPage]=useState<string|undefined>('home');
   const latestDraft=useRef(draft);latestDraft.current=draft;
   function captureDraft(){flushSync(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();});return latestDraft.current;}
   const [undo, setUndo] = useState<Website[]>([]);
@@ -78,7 +78,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const [confirmed, setConfirmed] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const inlineEnabled = !readOnly && panel === 'pages' && inlineEditing && !agentBusy && !motionBusy && !pending;
+  const inlineEnabled = !readOnly && panel === 'pages' && inlineEditing && !agentBusy && !motionBusy && !pending && !previewBusy;
   function editAbout(field: AboutTextField, text: string) { setDraft(current => ({...current, [field]: text})); }
   function editSection(page: string, id: string, field: 'heading' | 'text', text: string) {
     setDraft(current => ({...current, sections: {...current.sections, [page]: (current.sections[page] ?? []).map(section => section.id === id ? {...section, [field]: text} : section)}}));
@@ -105,6 +105,15 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         setNotice('The website could not be saved. Check your connection and sign-in.');
       }
     });
+  }
+
+  async function useSavedOpening(entry:Website['motionLibrary'][number],target:string){
+    const next=applySavedOpening({...latestDraft.current,motionLibrary:[entry,...latestDraft.current.motionLibrary.filter(item=>item.id!==entry.id)]},target,entry);
+    flushSync(()=>setDraft(next));setPage(target);setPanel('pages');setPreviewBusy(true);
+    controls.current?.scrollIntoView({behavior:'smooth',block:'start'});
+    try{const result=await saveWebsite(studioId,next,'draft');if(result.error)throw Error(result.error);const saved=result.draft??next;setDraft(saved);setSavedVersion(websiteVersion(saved));setId(result.id);setSlug(result.slug);setNotice('“'+entry.name+'” is now selected and saved as this page’s draft opening. Publish when ready.');}
+    catch(error){setNotice(error instanceof Error?error.message:'The video is selected in the preview but could not be saved. Try Save draft.');throw error;}
+    finally{setPreviewBusy(false);}
   }
 
   async function openLatestPreview(){
@@ -214,8 +223,8 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </details></fieldset>
         </div>
         <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
-        <div hidden={panel !== 'motion'}><MotionEditor key={motionSession} studioId={studioId} motion={motionEdit} media={media} replacePage={replaceOpeningPage} initialPreview={resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl?{desktop:resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl,mobile:resolveMotionPreview(motionEdit,initialMotionPreview).mobileUrl}:undefined} edits={draft.motionLibrary} pages={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} onBusyChange={setMotionBusy} onChange={setMotionEdit} onSaved={entry=>setDraft(current=>({...current,motionLibrary:[entry,...current.motionLibrary.filter(item=>item.id!==entry.id)]}))} onUse={(entry,target)=>{setDraft(current=>applySavedOpening(current,target,entry));setPage(target);setPanel('pages');controls.current?.scrollIntoView({behavior:'smooth',block:'start'});setNotice('“'+entry.name+'” selected for this page. Save your draft, then publish to make it live.');}}/></div>
-        <div hidden={panel !== 'pages'}>
+        <div hidden={panel !== 'motion'}><MotionEditor key={motionSession} studioId={studioId} motion={motionEdit} media={media} replacePage={replaceOpeningPage} initialPreview={resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl?{desktop:resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl,mobile:resolveMotionPreview(motionEdit,initialMotionPreview).mobileUrl}:undefined} edits={draft.motionLibrary} pages={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} onBusyChange={setMotionBusy} onChange={setMotionEdit} onSaved={entry=>setDraft(current=>({...current,motionLibrary:[entry,...current.motionLibrary.filter(item=>item.id!==entry.id)]}))} onUse={useSavedOpening}/></div>
+        <div hidden={panel !== 'pages'} inert={busy}>
         <WebsitePages openingPreview={previewSite.motion} onOpening={()=>{setReplaceOpeningPage('home');setMotionEdit(draft.motion);setMotionSession(value=>value+1);setPanel('motion');}} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
         <summary>Portfolio content</summary>

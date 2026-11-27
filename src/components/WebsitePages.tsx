@@ -1,4 +1,5 @@
 'use client';
+import MatchOriginalWebsite from './MatchOriginalWebsite';
 import {applySavedOpening,selectedSavedOpening} from '@/lib/saved-opening';
 import {PAGE_STARTERS,addWebsitePage,type PageStarter} from '@/lib/page-starters';
 import HomepageMotion from './HomepageMotion';
@@ -45,6 +46,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
     if (picker) pickerRef.current?.scrollIntoView({ block: 'nearest' });
   }, [picker]);
   const [query, setQuery] = useState('');
+  const [pageQuery,setPageQuery]=useState('');
   const [dragging, setDragging] = useState<number | null>(null);
   const ordered = orderWebsiteProjects(projects.filter(project=>!draft.removedPages.includes(project.id)), draft.projectOrder);
   const campaign = draft.theme.layout === 'campaign';
@@ -166,10 +168,14 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       {message && <p role="status">{message}</p>}
     </form>}
     {!creating&&message&&<p role="status">{message}</p>}
+    <MatchOriginalWebsite studioId={studioId} site={draft} onApply={(update,matched)=>{onProjects(matched);setDraft(update);onPage('home');setPicker(null);}}/>
+    <p>Menu pages are the main sections. Campaign pages hold each shoot’s expanded gallery.</p>
+    <label>Find a page or campaign<input value={pageQuery} onChange={e=>setPageQuery(e.target.value)} placeholder="Search by name"/></label>
     <nav className="website-page-list" aria-label="Pages">
-      {[{ id: 'home', title: 'Homepage' }, { id: 'about', title: 'About + Services' }, ...ordered].map(item =>
-        <button type="button" key={item.id} aria-current={page === item.id ? 'page' : undefined}
-          onClick={() => { onPage(item.id); setPicker(null); }}>{draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}
+      <strong>Menu pages</strong>
+      {[{id:'home',title:'Homepage'},{id:'about',title:'About + Services'},...ordered.filter(item=>draft.navigation.some(link=>link.page===item.id))].filter(item=>item.title.toLowerCase().includes(pageQuery.toLowerCase())).map(item=><button type="button" key={item.id} aria-current={page===item.id?'page':undefined} onClick={()=>{onPage(item.id);setPicker(null);}}>{draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}
+      <strong>Campaign galleries</strong>
+      {['Portfolio','Advertising','Motion','Personal','Other campaigns'].map(group=>{const items=ordered.filter(item=>!draft.navigation.some(link=>link.page===item.id)&&(draft.collections[item.id]||'Other campaigns')===group&&item.title.toLowerCase().includes(pageQuery.toLowerCase()));return items.length?<details key={group} open={!!pageQuery||items.some(item=>item.id===page)}><summary>{group} · {items.length}</summary>{items.map(item=><button type="button" key={item.id} aria-current={page===item.id?'page':undefined} onClick={()=>{onPage(item.id);setPicker(null);}}>{item.title} · {websiteGallery(draft,item.id).length} photos</button>)}</details>:null;})}
     </nav>
     {draft.removedPages.length>0&&<details><summary>Removed pages ({draft.removedPages.length})</summary><p>These pages are hidden from your website. Their content and media are kept so you can restore them.</p>{projects.filter(item=>draft.removedPages.includes(item.id)).map(item=><button type="button" className="secondary-button" key={item.id} onClick={()=>{setDraft(current=>({...current,removedPages:current.removedPages.filter(id=>id!==item.id)}));onPage(item.id);}}>Restore {draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}</details>}
     <ImportNavigation projects={projects} studioId={studioId} draft={draft} onChange={patch=>setDraft(current=>({...current,...patch}))} onProjects={onProjects}/>
@@ -177,6 +183,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
     <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} onRebuild={rebuild} />
     <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
 
+    {project&&<label>Campaign collection<select value={draft.collections[project.id]||''} onChange={e=>setDraft(current=>({...current,collections:{...current.collections,[project.id]:e.target.value}}))}><option value="">Other campaigns</option>{['Portfolio','Advertising','Motion','Personal'].map(name=><option key={name} value={name}>{name}</option>)}</select></label>}
     {project&&<div className="page-remove-card"><p>Remove this whole page from the website, including its menu entry and homepage tile. Your media and project stay in the library. You can restore it from Removed pages.</p><button type="button" className="secondary-button" onClick={()=>{setDraft(current=>({...current,removedPages:[...new Set([...current.removedPages,project.id])]}));onPage('home');setPicker(null);}}>Remove this page</button></div>}
     {page !== 'about' && <details><summary>Extra sections and layouts</summary>
     <WebsiteSectionEditor key={page} page={page} sections={draft.sections[page] ?? []} media={media} projects={projects}
@@ -204,7 +211,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       {!project && !draft.motion.enabled && draft.video && <div className="opening-selection"><h3>Selected homepage opening · showreel</h3><video controls muted playsInline src={draft.video} preload="metadata"/><button type="button" className="secondary-button" onClick={()=>setPicker('video')}>Replace showreel</button><button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,video:''}))}>Use a still photo instead</button></div>}
       {!project && !draft.motion.enabled && !draft.video && draft.motion.clips.length>0 && <button type="button" className="secondary-button" onClick={()=>setDraft(current=>({...current,motion:{...current.motion,enabled:true}}))}>Use my saved opening video</button>}
       {project&&<PageOpeningEditor site={draft} page={project.id} media={media} onChange={setDraft}/>}
-      <label>Gallery layout<select value={draft.galleryLayouts[page]||'grid'} onChange={e=>setDraft(current=>({...current,galleryLayouts:{...current.galleryLayouts,[page]:e.target.value as 'grid'|'natural'}}))}><option value="grid">Uniform cropped grid</option><option value="natural">Original proportions · masonry</option></select></label>
+      <label>Gallery layout<select value={draft.galleryLayouts[page]||'grid'} onChange={e=>setDraft(current=>({...current,galleryLayouts:{...current.galleryLayouts,[page]:e.target.value as 'grid'|'natural'|'cards'}}))}><option value="grid">Uniform cropped grid</option><option value="natural">Original proportions · masonry</option><option value="cards">Campaign covers · original proportions</option></select></label>
       <h3>{project ? 'Project cover' : draft.motion.enabled || draft.video ? 'Loading poster · shown before your video starts' : 'Homepage opening · still photo'}</h3>
       {(project || (!draft.motion.enabled && !draft.video)) && cover && <SmartImage variant="thumb" className="page-editor-cover" src={cover} alt="" referrerPolicy="no-referrer" />}
       <div className="page-editor-actions">
@@ -229,7 +236,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
       </div>}
 
       <>
-        <h3>{project ? 'Project gallery' : 'Homepage photo gallery'}</h3>
+        <h3>{draft.galleryLayouts[page]==='cards'?(project?'Collection campaign covers':'Homepage campaign covers'):project?'Project gallery':'Homepage photo gallery'}</h3>
         <p>{gallery.length} photos. Drag photos or use the arrows to reorder them. Change the size of any frame.</p>
         <button className="secondary-button" disabled={gallery.length >= galleryLimit} onClick={() => setPicker('gallery')}>Add photos from Media</button>
         {!gallery.length && <p>No photos on this page yet.</p>}
@@ -275,7 +282,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
           <button type="button" aria-pressed={draft.homepageLayout === 'full'} onClick={() => setDraft({ ...draft, homepageLayout: 'full' })}>{campaign ? 'Full-screen tiles' : 'Full width'}</button>
           <button type="button" aria-pressed={draft.homepageLayout === 'grid'} onClick={() => setDraft({ ...draft, homepageLayout: 'grid' })}>Grid</button>
         </div>
-        <h3>Projects on the homepage</h3>
+        <h3>{draft.homeGallery?.some(image=>image.link)?'Additional project tiles':'Projects on the homepage'}</h3>{draft.homeGallery?.some(image=>image.link)&&<p>Your campaign covers are already linked in the gallery above. These optional tiles add another section below them.</p>}
         <p>Tick the projects you want to include. Use the arrows to set their order and click a title to change its cover or gallery.</p>
         {!ordered.length && <p>Add or import work from <Link href="/studio/projects">Projects</Link>.</p>}
         <ol className="page-campaign-order">{ordered.map((item, index) => <li key={item.id}>

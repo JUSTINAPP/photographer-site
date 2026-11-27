@@ -192,7 +192,7 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
     const projectColumns = 'id,title,category,description,image_url,published,source_url';
     const existing = await db.from('projects').select(projectColumns).eq('workspace_id', studioId);
     if (existing.error) return { error: 'Could not check for existing project drafts.' };
-    const sourceKey = (url: string) => url.replace(/\/$/, '');
+    const {projectSourceKey:sourceKey}=await import('@/lib/original-portfolio');
     let allProjects = existing.data;
     const bySource = new Map(allProjects.map(project => [sourceKey(project.source_url), project]));
     const fresh = [...new Map(prepared.filter(project => !bySource.has(sourceKey(project.source_url))).map(project => [sourceKey(project.source_url), {
@@ -209,7 +209,8 @@ export async function rebuildPortfolioCollections(studioId: string, input: strin
     }
     const pages = prepared.flatMap(({ source_url, category, photos, film }) => {
       const project = bySource.get(sourceKey(source_url));
-      return project ? [{ id: project.id, category, photos, film }] : [];
+      const source=prepared.find(item=>item.source_url===source_url);
+      return project ? [{ id: project.id, title:source?.title||project.title,source_url, category, photos, film }] : [];
     });
     revalidatePath('/studio/projects');
     return { projects: allProjects, pages, added, unmatched: unmatched.size, review: [...unmatched.values()].slice(0, 100), missing: scan.missing, instagram: websiteImage(scan.instagram) };
@@ -249,4 +250,22 @@ export async function importWebsiteNavigation(studioId:string,input:string){
   const pages=internal.flatMap(item=>{const project=projects.find(project=>project.source_url===canonical(item.source));const source=scan.pages.find(page=>page.source===canonical(item.source));if(!project||!source)return [];return [{id:project.id,film:source.media.map(item=>vimeoSource(item.url)).find(Boolean)||'',films:[...new Set(source.media.filter(item=>item.kind==='video').map(item=>vimeoSource(item.url)||websiteImage(item.url)).filter(Boolean))],photos:[...new Set(source.media.filter(item=>item.kind==='photo').flatMap(item=>byUrl.get(mediaIdentity(item.url))?.source_url??[]))]}];});
   revalidatePath('/studio/projects');return {source:scan.source,added:imported.added,navigation,pages,projects:projects as WebsiteProject[],warnings:[...scan.warnings,...internal.filter(item=>!navigation.some(link=>link.label===item.label)).map(item=>'Could not match menu page: '+item.label)]};
  }catch{return {error:'Could not read the source menu. Check the website address and try again.'};}
+}
+
+/** Match source collections using existing Media only. No media import or customer publication. */
+export async function matchOriginalPortfolio(studioId:string,input:string){
+ const result=await rebuildPortfolioCollections(studioId,input,false);
+ if(!result.pages||!result.projects)return {error:result.error||'The original galleries could not be matched.'};
+ const {db,workspace}=await requireStudioAccess('edit');if(workspace.id!==studioId)return {error:'The active studio changed. Reopen the editor.'};
+ const {importWebsiteUrl}=await import('@/lib/public-url');const {projectSourceKey}=await import('@/lib/original-portfolio');
+ const source=importWebsiteUrl(input).href;
+ const {portfolioCollections}=await import('@/lib/portfolio-collections');
+ let projects=result.projects;
+ const parents:{id:string;name:string}[]=[];
+ for(const group of portfolioCollections.filter(group=>group.path!=='/'&&result.pages.some(page=>page.category===group.name))){
+  const address=new URL(group.path,source).href;let project=projects.find(item=>projectSourceKey(item.source_url)===projectSourceKey(address));
+  if(!project){const saved=await db.from('projects').upsert({workspace_id:studioId,source_url:address,title:group.name,category:group.name,description:'',published:false,image_url:result.pages.find(page=>page.category===group.name)?.photos[0]||null},{onConflict:'workspace_id,source_url',ignoreDuplicates:true});if(saved.error)return {error:'Could not prepare the collection pages.'};const loaded=await db.from('projects').select('id,title,category,description,image_url,published,source_url').eq('workspace_id',studioId);if(loaded.error)return {error:'Could not load the matched collection pages.'};projects=loaded.data;project=projects.find(item=>projectSourceKey(item.source_url)===projectSourceKey(address));}
+  if(project)parents.push({id:project.id,name:group.name});
+ }
+ return {plan:{source,pages:result.pages,parents,instagram:result.instagram,unmatched:result.unmatched,missing:result.missing},projects};
 }
