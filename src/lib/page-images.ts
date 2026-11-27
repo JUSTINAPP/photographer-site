@@ -16,3 +16,5 @@ export function imagePageTarget(link:string|undefined,projects:WebsiteProject[],
  if(link==='about')return {id:'about',title:'About + Services',href:base+'?about=1'};
  const page=projects.find(project=>project.id===link);return page?{id:page.id,title:page.title,href:base+'?campaign='+encodeURIComponent(page.id)}:null;
 }
+/** Apply one confirmed picker selection against the latest draft in a single state update. */
+export function addPageImages(site:Website,page:string,images:GalleryImage[],projects:WebsiteProject[]){return images.reduce((next,image)=>addPageImage(next,page,image,projects),site);}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {addPageImage,pageImages,setPageImages,imagePageTarget} from '../src/lib/page-images';
+import {addPageImages,addPageImage,pageImages,setPageImages,imagePageTarget} from '../src/lib/page-images';
 import {normaliseWebsite,publishWebsiteSnapshot,publishedWebsiteWork} from '../src/lib/website';
 const id='11111111-1111-4111-8111-111111111111';const project={id,title:'Campaign A',category:'Portfolio',description:'',image_url:'https://example.com/cover.jpg',published:false};
 test('adding a campaign cover links it once and avoids a second automatic homepage tile',()=>{
@@ -15,4 +15,8 @@ test('About page images and Home/About link targets survive saving and publicati
 });
 test('responsive variants reuse a frame and keep its existing display size',()=>{
  const url='https://images.squarespace-cdn.com/content/v1/studio/photo.jpg';let site=normaliseWebsite({homeGallery:[{url,size:'wide',alt:'Photo'}]});site=addPageImage(site,'home',{url:url+'?format=1000w',size:'grid',alt:'Campaign A',link:id},[project]);assert.equal(site.homeGallery?.length,1);assert.equal(site.homeGallery?.[0].size,'wide');assert.equal(site.homeGallery?.[0].url,url);
+});
+
+test('confirming several selected images applies all of them once to the latest page gallery',()=>{
+ const images=[{url:'https://example.com/a.jpg',size:'grid' as const,alt:'A'},{url:'https://example.com/b.jpg',size:'grid' as const,alt:'B',link:id}];const original=normaliseWebsite({homeGallery:[{url:'https://example.com/existing.jpg',size:'wide'}],homepageProjects:[id]});const next=addPageImages(original,'home',images,[project]);assert.equal(next.homeGallery?.length,3);assert.equal(next.homeGallery?.[2].link,id);assert.deepEqual(next.homepageProjects,[]);assert.equal(addPageImages(next,'home',images,[project]).homeGallery?.length,3);assert.equal(normaliseWebsite(JSON.parse(JSON.stringify(next))).homeGallery?.length,3);
 });

@@ -12,7 +12,7 @@ export default function WebsiteGallery({ site, images, label, projects = [], bas
   const edit=useWebsiteEditing();const [dragged,setDragged]=useState<number|null>(null);
   function move(from:number,to:number){if(to<0||to>=images.length||from===to)return;const next=[...images];const [item]=next.splice(from,1);next.splice(to,0,item);edit?.gallery(pageId,next);}
   if (!images.length) return null;
-  return <section className={"campaign-gallery website-photo-gallery"+(site.galleryLayouts[pageId]==='natural'?' gallery-natural':site.galleryLayouts[pageId]==='cards'?' gallery-cards':'')} aria-label={label}>
+  return <section className={"campaign-gallery website-photo-gallery"+(site.galleryLayouts[pageId]==='natural'?' gallery-natural':site.galleryLayouts[pageId]==='cards'?' gallery-cards':'')} aria-label={label} data-page-gallery={pageId}>
     {images.map((image, index) => {
       const target = imagePageTarget(image.link,projects,base||'');
       const photo = <><SmartImage className="campaign-media" src={image.url} alt={image.alt} loading="lazy" referrerPolicy="no-referrer" />{site.galleryLayouts[pageId]==='cards'&&target&&<span className="campaign-cover-label">{image.alt||target.title}</span>}</>;
