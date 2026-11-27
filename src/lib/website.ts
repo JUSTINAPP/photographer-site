@@ -3,7 +3,7 @@ import {normaliseMotion} from './home-motion';
 import { portfolioCollections } from './portfolio-collections';
 import { vimeoEmbed } from './import-identity';
 import type { WebsiteSection } from './website-sections';
-import { normaliseTheme, PRESETS } from './website-theme';
+import { FONT_PAIRS, normaliseTheme, PRESETS, type FontPair } from './website-theme';
 
 export const editorialTheme = normaliseTheme(PRESETS.editorial.theme);
 
@@ -147,6 +147,10 @@ export function normaliseWebsite(input: unknown) {
     showIntro: data.showIntro !== false,
     logo: /^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/]+={0,2}$/i.test(logo) ? logo : '',
     logoSize,
+    logoMode:data.logoMode==='text'?'text' as const:'auto' as const,
+    wordmarkText:typeof data.wordmarkText==='string'?field('wordmarkText',100):null,
+    wordmarkFont:typeof data.wordmarkFont==='string'&&Object.hasOwn(FONT_PAIRS,data.wordmarkFont)?data.wordmarkFont as FontPair:'site' as const,
+    wordmarkSpacing:typeof data.wordmarkSpacing==='number'&&Number.isFinite(data.wordmarkSpacing)?Math.max(0,Math.min(.6,data.wordmarkSpacing)):null,
     logoDark:cleanLogo('logoDark'),logoLight:cleanLogo('logoLight'),favicon:cleanLogo('favicon'),faviconLight:cleanLogo('faviconLight'),
     currentWebsite: websiteImage(field('currentWebsite', 2048)),
     name: field('name', 100),

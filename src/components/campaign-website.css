@@ -120,3 +120,5 @@
 .campaign-gallery.gallery-cards .campaign-media{height:auto;aspect-ratio:auto;object-fit:contain;}
 .campaign-cover-label{display:block;padding:20px 0;text-align:center;color:var(--color-ink,#171717);font-size:13px;}
 @media(max-width:600px){.campaign-gallery.gallery-cards{grid-template-columns:1fr;gap:20px;}}
+
+.campaign-header .campaign-wordmark{min-width:0;max-width:65%;}

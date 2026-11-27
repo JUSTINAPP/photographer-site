@@ -5,6 +5,11 @@
  */
 
 export const FONT_PAIRS = {
+  baskerville: {
+    label: 'Libre Baskerville · David’s wordmark',
+    display: '"Libre Baskerville", Georgia, serif',
+    text: '"Instrument", "Helvetica Neue", Arial, sans-serif',
+  },
   classic: {
     label: "Classic",
     display: '"Editorial", "Iowan Old Style", Georgia, serif',

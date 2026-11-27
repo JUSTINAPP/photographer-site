@@ -3,6 +3,7 @@ import {publishedAddress} from '@/lib/published-address';
 import {applySavedOpening,resolveMotionPreview,type MotionPreview} from '@/lib/saved-opening';
 import {WebsiteEditing} from './WebsiteEditing';
 import type {AboutTextField} from './WebsiteAboutContent';
+import TextLogoEditor from './TextLogoEditor';
 import SmartImage from '@/components/SmartImage';
 
 
@@ -170,10 +171,10 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           })}
         </div>
         {campaign && <p><Link href="/examples/campaign-stories" target="_blank" rel="noopener noreferrer">Explore the full-screen template ↗</Link></p>}
-        <fieldset className="design-options"><legend>Typography</legend>
+        <TextLogoEditor site={draft} onChange={patch=>setDraft(current=>({...current,...patch}))}/><fieldset className="design-options"><legend>Typography</legend>
           <div className="template-options">{Object.entries(FONT_PAIRS).map(([key, font]) =>
             <button key={key} aria-pressed={draft.theme.fonts === key} onClick={() => updateTheme({ fonts: key as SiteTheme['fonts'] })}>
-              <span style={{ fontFamily: font.display }}>{draft.name || 'Studio name'}</span><small>{font.label}</small>
+              <span style={{ fontFamily: font.display }}>{draft.wordmarkText ?? (draft.name || 'Studio name')}</span><small>{font.label}</small>
             </button>
           )}</div>
         </fieldset>
@@ -222,7 +223,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </fieldset>
         </details></fieldset>
         </div>
-        <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
+        <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><TextLogoEditor site={draft} onChange={patch=>setDraft(current=>({...current,...patch}))}/><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit,logoMode:'auto'}));}}/></div>
         <div hidden={panel !== 'motion'}><MotionEditor key={motionSession} studioId={studioId} motion={motionEdit} media={media} replacePage={replaceOpeningPage} initialPreview={resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl?{desktop:resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl,mobile:resolveMotionPreview(motionEdit,initialMotionPreview).mobileUrl}:undefined} edits={draft.motionLibrary} pages={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} onBusyChange={setMotionBusy} onChange={setMotionEdit} onSaved={entry=>setDraft(current=>({...current,motionLibrary:[entry,...current.motionLibrary.filter(item=>item.id!==entry.id)]}))} onUse={useSavedOpening}/></div>
         <div hidden={panel !== 'pages'} inert={busy}>
         <WebsitePages openingPreview={previewSite.motion} onOpening={()=>{setReplaceOpeningPage('home');setMotionEdit(draft.motion);setMotionSession(value=>value+1);setPanel('motion');}} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
