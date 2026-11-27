@@ -469,3 +469,29 @@ button[aria-busy="true"] { cursor: default; }
 }
 
 .studio-loading-page{min-height:100vh;display:grid;grid-template-columns:235px 1fr;background:#fff;color:#14162b}.studio-loading-page aside{background:#f5f2ec;padding:30px 24px}.studio-loading-page main{padding:45px}.loading-line{height:16px;max-width:460px;background:#efede8;border-radius:6px;margin:24px 0}.loading-title{height:48px;max-width:320px}.loading-panels{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}.loading-panels>div{height:150px;border:1px solid #efede8;border-radius:8px}.studio-nav-loading.is-pending{opacity:0;animation:loading-feedback .15s linear .15s forwards}@keyframes loading-feedback{to{opacity:1}}@media(max-width:700px){.studio-loading-page{grid-template-columns:1fr}.studio-loading-page aside{display:none}.studio-loading-page main{padding:24px}.loading-panels{grid-template-columns:1fr}}
+
+/* Keep workspace navigation within the viewport; long editors scroll beside it. */
+@media (min-width: 701px) {
+  .studio-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .studio-sidebar > :not(nav) { flex-shrink: 0; }
+  .studio-sidebar > nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+  .studio-sidebar .studio-sidebar-footer {
+    flex-shrink: 0;
+    margin-top: 0;
+    border-top: 1px solid var(--line);
+  }
+}
