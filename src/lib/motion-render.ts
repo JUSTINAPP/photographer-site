@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import sharp from 'sharp';
 import {readPublicFile} from './importer';
+import {motionVideoFilter,MOTION_FPS} from './motion-video-filter';
 import type {HomeMotion} from './home-motion';
 export async function runVideo(args:string[],timeout=45000){
  if(!ffmpeg)throw Error('Video encoding is unavailable on this server.');
@@ -24,11 +25,8 @@ export async function renderMotion(motion:HomeMotion){
  for(const shape of ['desktop','mobile'] as const){
  const [w,h]=shape==='desktop'?[1280,720]:[720,1280];const parts:string[]=[];
  for(const [i,clip] of motion.clips.entries()){
- const dest=join(folder,shape+i+'.mp4');parts.push(dest);const frames=Math.ceil(clip.duration*24);
- const scale=`scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}:(iw-ow)*${clip.focusX/100}:(ih-oh)*${clip.focusY/100},setsar=1`;
- const movement=clip.kind==='photo'&&clip.move&&motion.style!=='graphic'?`,zoompan=z='1+0.035*on/${frames}':x='(iw-iw/zoom)*${clip.focusX/100}':y='(ih-ih/zoom)*${clip.focusY/100}':d=1:s=${w}x${h}:fps=24`:'';
- const fade=motion.style==='calm'?`,fade=t=in:st=0:d=0.15,fade=t=out:st=${Math.max(0,clip.duration-.15)}:d=0.15`:'';
- await runVideo(['-hide_banner','-loglevel','error','-y','-threads','1','-protocol_whitelist','file,pipe','-format_whitelist','mov,matroska,webm,image2,jpeg_pipe',...(clip.kind==='photo'?['-loop','1']:['-ss',String(clip.start)]),'-i',sources[i],'-t',String(clip.duration),'-vf',scale+(clip.kind==='video'?',tpad=stop_mode=clone:stop_duration=6':'')+',fps=24'+movement+fade+',format=yuv420p','-an','-c:v','libx264','-preset','veryfast','-crf','27','-maxrate',shape==='desktop'?'1800k':'1100k','-bufsize',shape==='desktop'?'3600k':'2200k','-threads','1','-r','24','-movflags','+faststart',dest]);
+ const dest=join(folder,shape+i+'.mp4');parts.push(dest);const {frames,filter}=motionVideoFilter(motion,clip,w,h);
+ await runVideo(['-hide_banner','-loglevel','error','-y','-threads','1','-protocol_whitelist','file,pipe','-format_whitelist','mov,matroska,webm,image2,jpeg_pipe',...(clip.kind==='photo'?['-loop','1','-framerate',String(MOTION_FPS)]:['-ss',String(clip.start)]),'-i',sources[i],'-frames:v',String(frames),'-vf',filter,'-an','-c:v','libx264','-preset','veryfast','-crf','27','-maxrate',shape==='desktop'?'1800k':'1100k','-bufsize',shape==='desktop'?'3600k':'2200k','-threads','1','-r',String(MOTION_FPS),'-movflags','+faststart',dest]);
  }
  const list=join(folder,shape+'.txt');await writeFile(list,parts.map(p=>`file '${p}'`).join('\n'));const output=join(folder,shape+'.mp4');
  await runVideo(['-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',list,'-c','copy','-movflags','+faststart',output]);outputs[shape]=await readFile(output);if(outputs[shape].length>20000000)throw Error('The opening is too large. Try fewer shots.');
