@@ -1,3 +1,4 @@
+import {reconcileMotionEdit} from '@/lib/motion-edit';
 import {requireStudioAccess} from '@/lib/supabase';
 import {normaliseMotion,motionKey} from '@/lib/home-motion';
 import {renderMotion} from '@/lib/motion-render';
@@ -6,7 +7,7 @@ const active=new Set<string>();
 export async function POST(request:Request){
  const {db,workspace}=await requireStudioAccess('edit');if(active.has(workspace.id))return Response.json({error:'An opening is already being generated. Please wait.'},{status:429});
  active.add(workspace.id);try{
- const body=await request.json();const motion=normaliseMotion(body.motion);if(!motion.clips.length)throw Error('Select at least one photo or direct video file.');
+ const body=await request.json();const motion=reconcileMotionEdit(normaliseMotion(body.motion));if(!motion.clips.length)throw Error('Select at least one photo or direct video file.');
  const {data,error}=await db.from('studio_media').select('id,source_url,kind').eq('workspace_id',workspace.id).in('id',motion.clips.map(c=>c.mediaId));if(error)throw Error('Could not read your selected media.');
  for(const clip of motion.clips){const source=data.find(s=>s.id===clip.mediaId);if(!source||source.kind!==clip.kind)throw Error('A selected file is no longer in this studio. Reopen the media picker.');clip.url=source.source_url;if(clip.kind==='video'&&!/\.(mp4|webm|mov)([?#]|$)/i.test(clip.url))throw Error('Vimeo embeds cannot be cut into a video. Upload or link the original MP4 file.');}
  const result=await renderMotion(motion);const token=crypto.randomUUID();const paths:{desktop:string;mobile:string}={desktop:'',mobile:''};const urls:{desktop:string;mobile:string}={desktop:'',mobile:''};
