@@ -1,4 +1,5 @@
 'use client';
+import {applySavedOpening,resolveMotionPreview,type MotionPreview} from '@/lib/saved-opening';
 import {WebsiteEditing} from './WebsiteEditing';
 import type {AboutTextField} from './WebsiteAboutContent';
 import SmartImage from '@/components/SmartImage';
@@ -33,11 +34,11 @@ const contentFields = [
 ] as const;
 
 export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design', initialPage,publishedInitial,initialMotionPreview }: {
-  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:{key:string;desktop:string;mobile:string};
+  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:MotionPreview;
 }) {
   const controls=useRef<HTMLElement>(null);
   const [agentBusy,setAgentBusy]=useState(false),[motionBusy,setMotionBusy]=useState(false),[previewBusy,setPreviewBusy]=useState(false);
-  const [motionPreview,setMotionPreview]=useState(initialMotionPreview);
+  const [motionPreview]=useState(initialMotionPreview);
   const [savedVersion,setSavedVersion]=useState(websiteVersion(initial));
   const [publishedVersion,setPublishedVersion]=useState(publishedInitial?websiteVersion(publishedInitial):'');
   const [publishedRevision,setPublishedRevision]=useState('');
@@ -59,6 +60,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const [draft, setDraft] = useState(initial);
   const [motionEdit,setMotionEdit]=useState(initial.motion);
   const [motionSession,setMotionSession]=useState(0);
+  const [replaceOpeningPage,setReplaceOpeningPage]=useState<string|undefined>();
   const latestDraft=useRef(draft);latestDraft.current=draft;
   function captureDraft(){flushSync(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();});return latestDraft.current;}
   const [undo, setUndo] = useState<Website[]>([]);
@@ -117,7 +119,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const unpublished=live&&currentVersion!==publishedVersion;
   const busy=pending||agentBusy||motionBusy||previewBusy;
   const videoNeedsGeneration=draft.motion.enabled&&!draft.hiddenBlocks.includes('home:opening')&&!motionReady(draft.motion);
-  const previewSite = normaliseWebsite({...draft,motion:motionPreview?.key===draft.motion.renderKey?{...draft.motion,desktopUrl:motionPreview.desktop,mobileUrl:motionPreview.mobile}:draft.motion});
+  const previewSite = normaliseWebsite({...draft,motion:resolveMotionPreview(draft.motion,motionPreview)});
   const campaign = draft.theme.layout === 'campaign';
   const displayProjects=editableProjects.map(project=>({...project,...draft.pageCopy[project.id]}));
   const work = homepageWork(previewSite, displayProjects);
@@ -210,9 +212,9 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </details></fieldset>
         </div>
         <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
-        <div hidden={panel !== 'motion'}><MotionEditor key={motionSession} studioId={studioId} motion={motionEdit} media={media} initialPreview={initialMotionPreview?.key===motionEdit.renderKey?initialMotionPreview:undefined} edits={draft.motionLibrary} pages={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} onBusyChange={setMotionBusy} onChange={setMotionEdit} onSaved={entry=>setDraft(current=>({...current,motionLibrary:[entry,...current.motionLibrary.filter(item=>item.id!==entry.id)]}))} onUse={(entry,target)=>{setDraft(current=>({...current,...(target==='home'?{motion:{...entry.motion,enabled:true}}:{pageMotion:{...current.pageMotion,[target]:{...entry.motion,enabled:true}}}),hiddenBlocks:current.hiddenBlocks.filter(key=>key!==target+':opening')}));setPage(target);setNotice('“'+entry.name+'” selected for this page. Save your draft, then publish to make it live.');}}/></div>
+        <div hidden={panel !== 'motion'}><MotionEditor key={motionSession} studioId={studioId} motion={motionEdit} media={media} replacePage={replaceOpeningPage} initialPreview={resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl?{desktop:resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl,mobile:resolveMotionPreview(motionEdit,initialMotionPreview).mobileUrl}:undefined} edits={draft.motionLibrary} pages={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} onBusyChange={setMotionBusy} onChange={setMotionEdit} onSaved={entry=>setDraft(current=>({...current,motionLibrary:[entry,...current.motionLibrary.filter(item=>item.id!==entry.id)]}))} onUse={(entry,target)=>{setDraft(current=>applySavedOpening(current,target,entry));setPage(target);setPanel('pages');controls.current?.scrollIntoView({behavior:'smooth',block:'start'});setNotice('“'+entry.name+'” selected for this page. Save your draft, then publish to make it live.');}}/></div>
         <div hidden={panel !== 'pages'}>
-        <WebsitePages openingPreview={previewSite.motion} onOpening={()=>{setMotionEdit(draft.motion);setMotionSession(value=>value+1);setPanel('motion');}} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
+        <WebsitePages openingPreview={previewSite.motion} onOpening={()=>{setReplaceOpeningPage('home');setMotionEdit(draft.motion);setMotionSession(value=>value+1);setPanel('motion');}} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
         <summary>Portfolio content</summary>
         {contentFields.map(([key, label]) => (

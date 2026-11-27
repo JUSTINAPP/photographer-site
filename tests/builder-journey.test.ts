@@ -22,8 +22,8 @@ test('explicit black logo overrides a dark page palette',()=>{
 });
 test('opening survives saving and the published snapshot with its playable public outputs',()=>{
  let motion=normaliseMotion({enabled:true,clips:[{mediaId:workspace,url:'https://example.com/photo.jpg',duration:2,kind:'photo'}],desktopPath:workspace+'/motion/'+workspace+'-desktop.mp4',mobilePath:workspace+'/motion/'+workspace+'-mobile.mp4'});motion={...motion,renderKey:motionKey(motion)};assert.equal(motionReady(motion),true);
- const draft=normaliseWebsite({name:'Studio',motion});const published=normaliseWebsite(JSON.parse(JSON.stringify({...publishWebsiteSnapshot(draft,[]),motion:{...motion,desktopPath:'',mobilePath:'',desktopUrl:'https://example.com/desktop.mp4',mobileUrl:'https://example.com/mobile.mp4'}})));
- assert.equal(published.motion.enabled,true);assert.equal(published.motion.desktopUrl,'https://example.com/desktop.mp4');assert.equal(published.motion.renderKey,motionKey(published.motion));assert.equal(websiteVersion(draft),websiteVersion(published));
+ const draft=normaliseWebsite({name:'Studio',motion});const published=normaliseWebsite(JSON.parse(JSON.stringify({...publishWebsiteSnapshot(draft,[]),motion:{...motion,desktopPath:'',mobilePath:'',desktopUrl:'https://example.com/storage/v1/object/public/studio-web-assets/'+motion.desktopPath,mobileUrl:'https://example.com/storage/v1/object/public/studio-web-assets/'+motion.mobilePath}})));
+ assert.equal(published.motion.enabled,true);assert.equal(published.motion.desktopUrl,'https://example.com/storage/v1/object/public/studio-web-assets/'+motion.desktopPath);assert.equal(published.motion.renderKey,motionKey(published.motion));assert.equal(websiteVersion(draft),websiteVersion(published));
  assert.notEqual(websiteVersion({...draft,motion:{...motion,enabled:false}}),websiteVersion(published));
 });
 

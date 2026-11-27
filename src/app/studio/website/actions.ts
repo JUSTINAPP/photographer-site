@@ -1,5 +1,6 @@
 'use server';
 
+import {persistSavedMotion} from '@/lib/saved-opening';
 import {motionReady} from '@/lib/home-motion';
 import { saveImportedMedia } from '@/app/studio/media/actions';
 import { mediaIdentity } from '@/lib/import-identity';
@@ -16,7 +17,7 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   const { logo, logoDark, logoLight, favicon, faviconLight, currentWebsite, motionLibrary } = normaliseWebsite(current.data?.draft);
   const draft = { ...normaliseWebsite(input), logo, logoDark, logoLight, favicon, faviconLight, currentWebsite, motionLibrary };
   // Signed preview links are short-lived UI data, never saved in a draft.
-  draft.motion={...draft.motion,desktopUrl:'',mobileUrl:''};
+  draft.motion=persistSavedMotion(draft.motion,motionLibrary);
   if (mode === 'publish' && !draft.name) return { error: 'Add a portfolio name before publishing.' };
   const values: { workspace_id: string; draft: typeof draft; published?: (typeof draft & { projectSnapshot?: WebsiteProject[] }) | null } = {
     workspace_id: workspace.id, draft,
