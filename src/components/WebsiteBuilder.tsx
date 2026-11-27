@@ -7,7 +7,8 @@ import SmartImage from '@/components/SmartImage';
 import { ActionButton } from '@/components/ActionFeedback';
 
 import Link from 'next/link';
-import {useRouter} from 'next/navigation';
+import {flushSync} from 'react-dom';
+import {draftPreviewUrl,saveThenPreview} from '@/lib/website-preview';
 import {websiteVersion} from '@/lib/website-version';
 import {motionReady,type HomeMotion} from '@/lib/home-motion';
 import { useEffect, useRef, useMemo, useState, useTransition, type CSSProperties } from 'react';
@@ -34,7 +35,7 @@ const contentFields = [
 export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, isPublished, readOnly = false, initialPanel = 'design', initialPage,publishedInitial,initialMotionPreview }: {
   studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:{key:string;desktop:string;mobile:string};
 }) {
-  const router=useRouter();const controls=useRef<HTMLElement>(null);
+  const controls=useRef<HTMLElement>(null);
   const [agentBusy,setAgentBusy]=useState(false),[motionBusy,setMotionBusy]=useState(false),[previewBusy,setPreviewBusy]=useState(false);
   const [motionPreview,setMotionPreview]=useState(initialMotionPreview);
   const [savedVersion,setSavedVersion]=useState(websiteVersion(initial));
@@ -56,6 +57,8 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const [editableProjects, setEditableProjects] = useState(projects);
   const [operation, setOperation] = useState<'draft' | 'publish' | 'unpublish'>('draft');
   const [draft, setDraft] = useState(initial);
+  const latestDraft=useRef(draft);latestDraft.current=draft;
+  function captureDraft(){flushSync(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();});return latestDraft.current;}
   const [undo, setUndo] = useState<Website[]>([]);
   function applyDesign(changes: DesignPatch) {setUndo(h=>[...h.slice(-19),draft]);setDraft(current=>normaliseWebsite({...current,...changes}));setPage('home');}
   async function saveLook(name:string,references:string[]){
@@ -79,18 +82,19 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   }
 
   function save(mode: 'draft' | 'publish' | 'unpublish') {
+    const currentDraft=captureDraft();
     setNotice('');
     setOperation(mode);
     startTransition(async () => {
       try {
-        const result = await saveWebsite(studioId, draft, mode);
+        const result = await saveWebsite(studioId, currentDraft, mode);
         if (result.error) { setNotice(result.error); return; }
-        const saved=result.draft??draft;setDraft(saved);setSavedVersion(websiteVersion(saved));
+        const saved=result.draft??currentDraft;setDraft(saved);setSavedVersion(websiteVersion(saved));
         if(mode==='publish'){setPublishedVersion(websiteVersion(saved));setPublishedRevision(String(Date.now()));}
         setLive(!!result.published);
         setId(result.id);
         setConfirmed(false);
-        setNotice(mode === 'publish' ? 'Website published.' : mode === 'unpublish' ? 'Website taken offline. Your draft is saved.' : 'Draft saved.');
+        setNotice(mode === 'publish' ? 'Your latest changes are live. Open the published site to check them.' : mode === 'unpublish' ? 'Website taken offline. Your draft is saved.' : 'Draft saved.');
       } catch {
         setNotice('The website could not be saved. Check your connection and sign-in.');
       }
@@ -105,10 +109,12 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   }
   async function openLatestPreview(){
     if(agentBusy||motionBusy||pending||previewBusy)return;
-    setPreviewBusy(true);setNotice('Saving your latest changes before opening the draft…');
-    try{const result=await saveWebsite(studioId,draft,'draft');if(result.error){setNotice(result.error);return;}
-      setSavedVersion(websiteVersion(result.draft??draft));router.push('/studio/website/preview?revision='+Date.now());
-    }catch{setNotice('Could not save the latest draft. Please try again.');}finally{setPreviewBusy(false)}
+    const currentDraft=captureDraft();
+    setPreviewBusy(true);setNotice('Saving your changes, then opening this page’s private preview…');
+    try{await saveThenPreview(currentDraft,snapshot=>saveWebsite(studioId,snapshot,'draft'),saved=>{
+      setDraft(saved);setSavedVersion(websiteVersion(saved));
+      window.location.assign(draftPreviewUrl(studioId,page,String(Date.now())));
+    });}catch(error){setNotice(error instanceof Error?error.message:'Could not save the latest draft. Please try again.');}finally{setPreviewBusy(false)}
   }
   const currentVersion=useMemo(()=>websiteVersion(draft),[draft]);
   const unsaved=currentVersion!==savedVersion;
@@ -227,8 +233,9 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </details>
         </div>
         <div hidden={panel !== 'publish'}>
-        <h2>Publish your latest draft</h2>
-        <div className="publish-version-notice"><strong>{unpublished?'Your live site has an earlier version.':'Ready to review your website.'}</strong><p>Saving a draft keeps your edits private. Publish changes below to put this exact design and opening video on the live website.</p></div>
+        <h2>Make your changes live</h2>
+        <ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & open draft preview ↗</ActionButton>
+        <div className="publish-version-notice"><strong>{unpublished?'Your live site has an earlier version.':'Ready to review your website.'}</strong><p>1. Preview draft saves your edits and opens a private preview. 2. Publish changes makes your latest edits visible to everyone on the live website.</p></div>
         {draft.motion.enabled&&<p className={videoNeedsGeneration?'agent-error':'opening-ready'}>{videoNeedsGeneration?'Your opening has changed. Generate the video in Opening before publishing.':'✓ Opening video ready · desktop and mobile'}</p>}
         {videoNeedsGeneration&&<button type="button" className="secondary-button" onClick={()=>setPanel('motion')}>Finish my opening video →</button>}
         <p>Review your desktop and mobile preview, then save or publish. AI edits stay in your draft until you publish.</p><ul className="builder-checklist"><li>{draft.name?'✓':'○'} Portfolio name</li><li>{draft.homeGallery?.length||work.length?'✓':'○'} Homepage photographs or projects</li><li>{draft.logo?'✓':'○'} Logo (optional)</li></ul>
@@ -241,7 +248,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </div>
         <div className="website-save-strip"><small className="builder-save-status" role="status">{agentBusy?'Updating preview…':motionBusy?'Preparing your opening…':unsaved?'Unsaved draft changes':'Draft saved'}</small>
           <ActionButton busy={pending && operation === 'draft'} className="secondary-button" disabled={busy} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save draft'}</ActionButton>
-          {panel !== 'publish' && <button className="primary-button" disabled={busy} onClick={() => setPanel('publish')}>Review & publish</button>}
+          {panel !== 'publish' && <button className="primary-button" disabled={busy} onClick={() => setPanel('publish')}>Publishing options</button>}
         </div>
         <p role="status">{pending ? operation === 'publish' ? 'Publishing your website…' : 'Saving…' : notice}</p>
       </section>}
@@ -251,11 +258,11 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
             <button aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>Desktop</button>
             <button aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>Mobile</button>
           </div>
-          {readOnly?<Link prefetch={false} href="/studio/website/preview">Preview saved draft ↗</Link>:<ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & preview latest draft ↗</ActionButton>}
+          {readOnly?<Link prefetch={false} href="/studio/website/preview">Preview saved draft ↗</Link>:<ActionButton type="button" className="secondary-button" busy={previewBusy} disabled={busy} onClick={openLatestPreview}>Save & open draft preview ↗</ActionButton>}
           {live && id && <Link prefetch={false} href={'/sites/' + id+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link>}
         </div>
         {!readOnly && panel === 'pages' && <div className="inline-edit-guide"><p><strong>{inlineEditing ? 'Edit this page directly.' : 'Preview mode'}</strong><br/>{inlineEditing ? 'Type in outlined text. Use section controls to resize or remove blocks, and photo arrows or drag to reorder. Save your draft below.' : 'Turn on text editing to change the About page and your added page sections.'}</p><button type="button" className="secondary-button" disabled={busy} aria-pressed={inlineEditing} onClick={()=>setInlineEditing(value=>!value)}>{inlineEditing ? 'Preview without edit outlines' : 'Edit text on page'}</button></div>}
-        {unpublished&&<p className="builder-version-hint">You are editing the draft. Publish changes to update the live site.</p>}
+        {unpublished&&<p className="builder-version-hint">Private draft · The preview below updates as you edit. Save & open draft preview to check it full size. Publish changes makes it live.</p>}
         {!campaign && draft.theme.layout !== 'gallery' && !draft.image && !draft.motion.enabled && draft.theme.hero !== 'text' && <p className="design-preview-note">Sample cover for preview. Set your cover in Portfolio content.</p>}
         <WebsiteEditing.Provider value={inlineEnabled?{site:draft,page,update:patch=>setDraft(current=>({...current,...patch})),project:(id,patch)=>setDraft(current=>({...current,pageCopy:{...current.pageCopy,[id]:{...current.pageCopy[id],...patch}}})),gallery:(target,images)=>setDraft(current=>target==='home'?({...current,homeGallery:images??[]}):({...current,placements:{...current.placements,[target]:images??[]}})),sections:(target,sections)=>setDraft(current=>({...current,sections:{...current.sections,[target]:sections}}))}:null}>
         <div className={'design-preview-frame ' + device+(inlineEnabled?' inline-editing-active':'')}>
@@ -265,7 +272,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
             <EditorialWebsite onAboutChange={inlineEnabled ? editAbout : undefined} onSectionChange={inlineEnabled ? editSection : undefined} site={{ ...previewSite, image: previewSite.image || sampleImage }} projects={work} allProjects={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} preview onProject={id => { setPage(id); setPanel('pages'); }} />}
         </div>
         </WebsiteEditing.Provider>
-        {!readOnly && panel === 'pages' && <div className="inline-preview-save"><p><strong>{unsaved ? 'You have unsaved text or page changes.' : 'Draft saved.'}</strong><br/>Saving keeps this private. Publish when you want visitors to see it.</p><ActionButton type="button" busy={pending && operation === 'draft'} className="primary-button" disabled={busy} onClick={()=>save('draft')}>{pending ? 'Saving…' : 'Save page draft'}</ActionButton><button type="button" className="secondary-button" disabled={busy} onClick={()=>setPanel('publish')}>Review &amp; publish</button><span role="status">{notice}</span></div>}
+        {!readOnly && panel === 'pages' && <div className="inline-preview-save"><p><strong>{unsaved ? 'You have unsaved text or page changes.' : 'Draft saved.'}</strong><br/>Saving keeps this private. Publish when you want visitors to see it.</p><ActionButton type="button" busy={pending && operation === 'draft'} className="primary-button" disabled={busy} onClick={()=>save('draft')}>{pending ? 'Saving…' : 'Save page draft'}</ActionButton><button type="button" className="secondary-button" disabled={busy} onClick={()=>setPanel('publish')}>Publishing options</button><span role="status">{notice}</span></div>}
       </section>
     </div>
   );
