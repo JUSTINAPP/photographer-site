@@ -11,5 +11,5 @@ test('page motion and original proportions survive save and publication independ
 test('removed project opening stays restorable privately and has no public motion payload',()=>{
  const site=normaliseWebsite({hiddenBlocks:[id+':opening'],pageMotion:{[id]:{enabled:true,clips:[clip],desktopUrl:'https://example.com/private.mp4'},[other]:{enabled:true,clips:[clip]}}});
  const published=publishWebsiteSnapshot(site,[{id,title:'Portraits',category:'People',description:'',image_url:null}]);
- assert.equal(site.pageMotion[id].clips.length,1);assert.equal(site.pageMotion[id].desktopUrl,'');assert.equal(published.pageMotion[id],undefined);assert.equal(published.pageMotion[other],undefined);assert.ok(published.hiddenBlocks.includes(id+':opening'));
+ assert.equal(site.pageMotion[id].clips.length,1);assert.equal(site.pageMotion[id].desktopPath,'');assert.equal(published.pageMotion[id],undefined);assert.equal(published.pageMotion[other],undefined);assert.ok(published.hiddenBlocks.includes(id+':opening'));
 });

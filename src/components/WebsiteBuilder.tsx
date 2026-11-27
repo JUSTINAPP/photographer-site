@@ -57,6 +57,8 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
   const [editableProjects, setEditableProjects] = useState(projects);
   const [operation, setOperation] = useState<'draft' | 'publish' | 'unpublish'>('draft');
   const [draft, setDraft] = useState(initial);
+  const [motionEdit,setMotionEdit]=useState(initial.motion);
+  const [motionSession,setMotionSession]=useState(0);
   const latestDraft=useRef(draft);latestDraft.current=draft;
   function captureDraft(){flushSync(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();});return latestDraft.current;}
   const [undo, setUndo] = useState<Website[]>([]);
@@ -101,12 +103,6 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
     });
   }
 
-  async function saveOpening(motion:HomeMotion){
-    const next=normaliseWebsite({...draft,motion:{...motion,enabled:true}});
-    setDraft(next);const result=await saveWebsite(studioId,next,'draft');
-    if(result.error)throw Error('Video files are ready, but the draft could not be saved: '+result.error);
-    setDraft(result.draft??next);setSavedVersion(websiteVersion(result.draft??next));setId(result.id);setNotice('Opening saved in your draft. Publish changes to update the live site.');
-  }
   async function openLatestPreview(){
     if(agentBusy||motionBusy||pending||previewBusy)return;
     const currentDraft=captureDraft();
@@ -214,9 +210,9 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </details></fieldset>
         </div>
         <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit}));}}/></div>
-        <div hidden={panel !== 'motion'}><MotionEditor studioId={studioId} motion={draft.motion} media={media} initialPreview={initialMotionPreview} onGenerated={saveOpening} onPreviewReady={(urls,key)=>setMotionPreview({...urls,key})} onBusyChange={setMotionBusy} onPublish={()=>{setPanel('publish');controls.current?.scrollIntoView({behavior:'smooth',block:'start'});}} onChange={motion=>{setDraft(current=>({...current,motion}));setPage('home');}}/></div>
+        <div hidden={panel !== 'motion'}><MotionEditor key={motionSession} studioId={studioId} motion={motionEdit} media={media} initialPreview={initialMotionPreview?.key===motionEdit.renderKey?initialMotionPreview:undefined} edits={draft.motionLibrary} pages={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} onBusyChange={setMotionBusy} onChange={setMotionEdit} onSaved={entry=>setDraft(current=>({...current,motionLibrary:[entry,...current.motionLibrary.filter(item=>item.id!==entry.id)]}))} onUse={(entry,target)=>{setDraft(current=>({...current,...(target==='home'?{motion:{...entry.motion,enabled:true}}:{pageMotion:{...current.pageMotion,[target]:{...entry.motion,enabled:true}}}),hiddenBlocks:current.hiddenBlocks.filter(key=>key!==target+':opening')}));setPage(target);setNotice('“'+entry.name+'” selected for this page. Save your draft, then publish to make it live.');}}/></div>
         <div hidden={panel !== 'pages'}>
-        <WebsitePages openingPreview={previewSite.motion} onOpening={()=>setPanel('motion')} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
+        <WebsitePages openingPreview={previewSite.motion} onOpening={()=>{setMotionEdit(draft.motion);setMotionSession(value=>value+1);setPanel('motion');}} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
         <details className="design-content">
         <summary>Portfolio content</summary>
         {contentFields.map(([key, label]) => (

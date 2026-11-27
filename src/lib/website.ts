@@ -130,9 +130,10 @@ export function normaliseWebsite(input: unknown) {
   const galleryLayouts:Record<string,'grid'|'natural'>={};
   if(data.galleryLayouts&&typeof data.galleryLayouts==='object')for(const [id,value] of Object.entries(data.galleryLayouts).slice(0,150))if((id==='home'||projectId.test(id))&&(value==='grid'||value==='natural'))galleryLayouts[id]=value;
   const pageMotion:Record<string,ReturnType<typeof normaliseMotion>>={};
-  if(data.pageMotion&&typeof data.pageMotion==='object')for(const [id,value] of Object.entries(data.pageMotion).slice(0,150))if(projectId.test(id)){const motion=normaliseMotion(value);pageMotion[id]={...motion,renderKey:'',desktopPath:'',mobilePath:'',desktopUrl:'',mobileUrl:''};}
+  if(data.pageMotion&&typeof data.pageMotion==='object')for(const [id,value] of Object.entries(data.pageMotion).slice(0,150))if(projectId.test(id)){const motion=normaliseMotion(value);pageMotion[id]={...motion,desktopPath:'',mobilePath:''};}
   return {
     removedPages:Array.isArray(data.removedPages)?[...new Set(data.removedPages.filter((id):id is string=>typeof id==='string'&&projectId.test(id)))].slice(0,150):[],
+    motionLibrary:Array.isArray(data.motionLibrary)?data.motionLibrary.slice(0,150).flatMap(item=>item&&typeof item.id==='string'&&projectId.test(item.id)&&typeof item.name==='string'?[{id:item.id,name:item.name.slice(0,150),motion:normaliseMotion(item.motion)}]:[]):[],
     galleryLayouts,pageMotion,
     filmGalleries, navigation, hiddenBlocks, blockStyles, pageCopy,
     placements, covers, projectOrder, sections, related, collections, films,
@@ -246,6 +247,7 @@ export function publishWebsiteSnapshot(site: Website, projects: WebsiteProject[]
     Object.fromEntries(Object.entries(entries).filter(([page]) => publicPages.has(page)));
   return {
     ...site,
+    motionLibrary:[],
     navigation:site.navigation.filter(item=>!site.removedPages.includes(item.page)),
     sections:Object.fromEntries(Object.entries(keepPages(site.sections)).map(([page,sections])=>[page,sections.filter(section=>!site.hiddenBlocks.includes('section:'+section.id))])),
     related: keepPages(site.related),

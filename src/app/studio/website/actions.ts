@@ -13,8 +13,8 @@ export async function saveWebsite(studioId: string, input: unknown, mode: 'draft
   if (workspace.id !== studioId) return { error: 'The active studio changed. Reopen Website design before saving.' };
   const current = await db.from('studio_websites').select('draft').eq('workspace_id', workspace.id).maybeSingle();
   if (current.error) return { error: 'The website settings could not be loaded.' };
-  const { logo, logoDark, logoLight, favicon, faviconLight, currentWebsite } = normaliseWebsite(current.data?.draft);
-  const draft = { ...normaliseWebsite(input), logo, logoDark, logoLight, favicon, faviconLight, currentWebsite };
+  const { logo, logoDark, logoLight, favicon, faviconLight, currentWebsite, motionLibrary } = normaliseWebsite(current.data?.draft);
+  const draft = { ...normaliseWebsite(input), logo, logoDark, logoLight, favicon, faviconLight, currentWebsite, motionLibrary };
   // Signed preview links are short-lived UI data, never saved in a draft.
   draft.motion={...draft.motion,desktopUrl:'',mobileUrl:''};
   if (mode === 'publish' && !draft.name) return { error: 'Add a portfolio name before publishing.' };
