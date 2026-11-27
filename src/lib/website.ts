@@ -132,6 +132,7 @@ export function normaliseWebsite(input: unknown) {
   const pageMotion:Record<string,ReturnType<typeof normaliseMotion>>={};
   if(data.pageMotion&&typeof data.pageMotion==='object')for(const [id,value] of Object.entries(data.pageMotion).slice(0,150))if(projectId.test(id)){const motion=normaliseMotion(value);pageMotion[id]={...motion,renderKey:'',desktopPath:'',mobilePath:'',desktopUrl:'',mobileUrl:''};}
   return {
+    removedPages:Array.isArray(data.removedPages)?[...new Set(data.removedPages.filter((id):id is string=>typeof id==='string'&&projectId.test(id)))].slice(0,150):[],
     galleryLayouts,pageMotion,
     filmGalleries, navigation, hiddenBlocks, blockStyles, pageCopy,
     placements, covers, projectOrder, sections, related, collections, films,
@@ -190,7 +191,7 @@ export function websiteGallery(site: Website, project: string): GalleryImage[] {
 
 export function homepageWork(site: Website, projects: WebsiteProject[]) {
   const selected = site.homepageProjects && new Set(site.homepageProjects);
-  return orderWebsiteProjects(projects.map(project=>({...project,...site.pageCopy[project.id]})).filter(project => selected ? selected.has(project.id) : project.published !== false), site.projectOrder);
+  return orderWebsiteProjects(projects.map(project=>({...project,...site.pageCopy[project.id]})).filter(project => !site.removedPages.includes(project.id)&&(selected ? selected.has(project.id) : project.published !== false)), site.projectOrder);
 }
 
 export function publishedWebsiteWork(settings: unknown, fallback: WebsiteProject[]) {
@@ -229,7 +230,7 @@ export function reachableWebsiteWork(site: Website, projects: WebsiteProject[]) 
   const pending = ['home', 'about', ...site.navigation.map(item=>item.page).filter(id=>projectId.test(id)), ...homepageWork(site, projects).map(project => project.id)];
   for (let index = 0; index < pending.length; index++) {
     const page = pending[index];
-    if (selected.has(page) || (page !== 'home' && page !== 'about' && !byId.has(page))) continue;
+    if (site.removedPages.includes(page) || selected.has(page) || (page !== 'home' && page !== 'about' && !byId.has(page))) continue;
     selected.add(page);
     const frames = page === 'home' ? site.homeGallery ?? [] : websiteGallery(site, page);
     pending.push(...frames.flatMap(image => image.link ? [image.link] : []));
@@ -245,8 +246,10 @@ export function publishWebsiteSnapshot(site: Website, projects: WebsiteProject[]
     Object.fromEntries(Object.entries(entries).filter(([page]) => publicPages.has(page)));
   return {
     ...site,
+    navigation:site.navigation.filter(item=>!site.removedPages.includes(item.page)),
     sections:Object.fromEntries(Object.entries(keepPages(site.sections)).map(([page,sections])=>[page,sections.filter(section=>!site.hiddenBlocks.includes('section:'+section.id))])),
     related: keepPages(site.related),
+    pageCopy:keepPages(site.pageCopy),
     placements: keepPages(site.placements),
     galleryLayouts:keepPages(site.galleryLayouts),
     pageMotion:Object.fromEntries(Object.entries(keepPages(site.pageMotion)).filter(([id])=>!site.hiddenBlocks.includes(id+':opening'))),

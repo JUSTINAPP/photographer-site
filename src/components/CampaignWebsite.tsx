@@ -57,9 +57,9 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
     name, projects: work.filter(project => site.collections[project.id] === name),
   })).filter(group => group.projects.length);
   const ungrouped = work.filter(project => !site.collections[project.id]);
-  const targets = allProjects?.length ? allProjects : work;
+  const targets = (allProjects?.length ? allProjects : work).filter(project=>!site.removedPages.includes(project.id));
   const selectedSource = targets.find(project => project.id === current.campaign) ?? (previewProject?.id === current.campaign ? previewProject : undefined);
-  const selected=selectedSource?{...selectedSource,...site.pageCopy[selectedSource.id]}:undefined;
+  const selected=selectedSource&&!site.removedPages.includes(selectedSource.id)?{...selectedSource,...site.pageCopy[selectedSource.id]}:undefined;
   const illustrative = sample || (preview && !projects.length && site.homepageProjects === null && !previewProject);
   const headerLook = headerPresentation(site.theme,scrolled||!!current.about,true);
   const name = site.name || 'Your studio';

@@ -21,6 +21,7 @@ import WebsiteSections from './WebsiteSections';
 import WebsiteGallery from './WebsiteGallery';
 import './portfolio-builder.css';
 export default function GalleryWebsite({site,projects,allProjects=projects,preview=false,base='',view={},onPreviewPage,onAboutChange,onSectionChange}:{onAboutChange?:AboutTextChange;onSectionChange?:(page:string,id:string,field:'heading'|'text',value:string)=>void;site:Website;projects:WebsiteProject[];allProjects?:WebsiteProject[];preview?:boolean;base?:string;view?:{campaign?:string;about?:string};onPreviewPage?:(id:string)=>void}){
+ allProjects=allProjects.filter(project=>!site.removedPages.includes(project.id));
  const edit=useWebsiteEditing();
  const [index,setIndex]=useState(0),[playing,setPlaying]=useState(true),[allowed,setAllowed]=useState(false);
  const {root,look:headerLook}=usePortfolioHeader(site.theme,preview);

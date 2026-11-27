@@ -24,6 +24,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
   onSectionChange?: (page: string, id: string, field: 'heading' | 'text', value: string) => void;
   site: Website; projects: WebsiteProject[]; preview?: boolean; base?: string; onProject?: (id: string) => void; allProjects?: WebsiteProject[];
 }) {
+  allProjects=allProjects.filter(project=>!site.removedPages.includes(project.id));
   const edit=useWebsiteEditing();
   const {root,look:headerLook}=usePortfolioHeader(site.theme,preview);
   const social = site.instagram && (preview ? <span>Instagram</span> : <a href={site.instagram} rel="noreferrer">Instagram ↗</a>);

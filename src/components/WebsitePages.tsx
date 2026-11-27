@@ -1,4 +1,5 @@
 'use client';
+import {PAGE_STARTERS,addWebsitePage,type PageStarter} from '@/lib/page-starters';
 import HomepageMotion from './HomepageMotion';
 import PageOpeningEditor from './PageOpeningEditor';
 import {motionSeconds} from '@/lib/home-motion';
@@ -33,6 +34,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   media: WebsiteMedia[]; page: string; onPage: (page: string) => void;
 }) {
   const [creating, setCreating] = useState(false);
+  const [starter,setStarter]=useState<PageStarter>('natural');
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
   const [picker, setPicker] = useState<'cover' | 'video' | 'gallery' | null>(null);
@@ -43,7 +45,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
   }, [picker]);
   const [query, setQuery] = useState('');
   const [dragging, setDragging] = useState<number | null>(null);
-  const ordered = orderWebsiteProjects(projects, draft.projectOrder);
+  const ordered = orderWebsiteProjects(projects.filter(project=>!draft.removedPages.includes(project.id)), draft.projectOrder);
   const campaign = draft.theme.layout === 'campaign';
   const included = new Set(homepageWork(draft, projects).map(item => item.id));
   const project = projects.find(item => item.id === page);
@@ -144,29 +146,36 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
           });
           if (!result.project) { setMessage(result.error || 'Could not create the page.'); return; }
           const added=result.project;onProjects([...projects,added]);
-          setDraft(current=>({...current,projectOrder:[...current.projectOrder,added.id],homepageProjects:[...new Set([...homepageWork(current,projects).map(project=>project.id),added.id])],navigation:current.navigation.length?[...current.navigation,{label:added.title,page:added.id,href:''}]:current.navigation}));
+          setDraft(current=>addWebsitePage(current,added.id,added.title,starter,homepageWork(current,projects).map(project=>project.id)));
           onPage(result.project.id);
           setPicker(null);
           setCreating(false);
+          setMessage('Your new page is ready. Add photographs or films from Media, edit the text, then save your draft.');
         } catch { setMessage('Could not create the page. Please try again.'); }
       });
     }}>
+      <h3>Choose a starting layout</h3><p>Your new page uses your website’s colours, fonts and navigation. You can change its layout and add content afterwards.</p>
+      <div className="page-starter-grid">{PAGE_STARTERS.map(style=><button type="button" key={style.id} aria-pressed={starter===style.id} className="page-starter" onClick={()=>setStarter(style.id)}><span aria-hidden="true" className={'page-starter-preview starter-'+style.id}>{[1,2,3,4,5,6].map(n=><i key={n}/>)}</span><strong>{style.name}</strong><small>{style.description}</small></button>)}</div>
       <label>Page name<input name="title" required maxLength={180} /></label>
-      <label>Category<input name="category" placeholder="Fashion, nautical or lifestyle" maxLength={80} /></label>
-      <label>Page introduction<textarea name="description" rows={3} maxLength={2000} /></label>
-      <ActionButton busy={pending} className="secondary-button" disabled={pending}>{pending ? 'Creating…' : 'Create page'}</ActionButton>
+      <label>Small label (optional)<input name="category" placeholder="For example, Portraits" maxLength={80} /></label>
+      <label>Page introduction (optional)<textarea name="description" rows={3} maxLength={2000} /></label>
+      <ActionButton busy={pending} className="secondary-button" disabled={pending}>{pending ? 'Creating…' : 'Create '+PAGE_STARTERS.find(style=>style.id===starter)!.name.toLowerCase()}</ActionButton>
+      <button type="button" className="secondary-button" disabled={pending} onClick={()=>setCreating(false)}>Cancel</button><p>The page opens here for editing. Save your draft, then publish when you want it live.</p>
       {message && <p role="status">{message}</p>}
     </form>}
+    {!creating&&message&&<p role="status">{message}</p>}
     <nav className="website-page-list" aria-label="Pages">
       {[{ id: 'home', title: 'Homepage' }, { id: 'about', title: 'About + Services' }, ...ordered].map(item =>
         <button type="button" key={item.id} aria-current={page === item.id ? 'page' : undefined}
           onClick={() => { onPage(item.id); setPicker(null); }}>{draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}
     </nav>
+    {draft.removedPages.length>0&&<details><summary>Removed pages ({draft.removedPages.length})</summary><p>These pages are hidden from your website. Their content and media are kept so you can restore them.</p>{projects.filter(item=>draft.removedPages.includes(item.id)).map(item=><button type="button" className="secondary-button" key={item.id} onClick={()=>{setDraft(current=>({...current,removedPages:current.removedPages.filter(id=>id!==item.id)}));onPage(item.id);}}>Restore {draft.navigation.find(link=>link.page===item.id)?.label||item.title}</button>)}</details>}
     <ImportNavigation projects={projects} studioId={studioId} draft={draft} onChange={patch=>setDraft(current=>({...current,...patch}))} onProjects={onProjects}/>
     {draft.hiddenBlocks.length>0&&<details><summary>Removed sections ({draft.hiddenBlocks.length})</summary><p>Removed from this website only. Restore any section below.</p>{draft.hiddenBlocks.map(id=><button type="button" className="secondary-button" key={id} onClick={()=>setDraft(current=>({...current,hiddenBlocks:current.hiddenBlocks.filter(key=>key!==id)}))}>Restore {id.split(':').pop()?.replaceAll('-',' ')}</button>)}</details>}
     <RestoreWebsitePages id={studioId} source={draft.currentWebsite} onRestore={restore} onRebuild={rebuild} />
     <h3>Editing {project?.title || (page === 'about' ? 'About + Services' : 'Homepage')}</h3>
 
+    {project&&<div className="page-remove-card"><p>Remove this whole page from the website, including its menu entry and homepage tile. Your media and project stay in the library. You can restore it from Removed pages.</p><button type="button" className="secondary-button" onClick={()=>{setDraft(current=>({...current,removedPages:[...new Set([...current.removedPages,project.id])]}));onPage('home');setPicker(null);}}>Remove this page</button></div>}
     {page !== 'about' && <details><summary>Extra sections and layouts</summary>
     <WebsiteSectionEditor key={page} page={page} sections={draft.sections[page] ?? []} media={media} projects={projects}
       onChange={sections => setDraft(current => ({ ...current, sections: { ...current.sections, [page]: sections } }))} />
@@ -235,7 +244,7 @@ export default function WebsitePages({ studioId, draft, setDraft, projects, onPr
           <label>Alt text<input value={image.alt} maxLength={220} onChange={event => updateGallery(gallery.map((item, i) => i === index ? { ...item, alt: event.target.value } : item))} /></label>
           <label>Link photo to a campaign<select value={image.link ?? ''} onChange={event => updateGallery(gallery.map((item, i) =>
             i === index ? { ...item, link: event.target.value || undefined } : item))}>
-            <option value="">No link</option>{projects.filter(item => item.id !== page).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+            <option value="">No link</option>{projects.filter(item => item.id !== page&&!draft.removedPages.includes(item.id)).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
           </select></label>
           <div className="page-editor-actions">
             <button className="secondary-button" aria-label={'Move frame ' + (index + 1) + ' up'} disabled={index === 0} onClick={() => updateGallery(moveItem(gallery, index, index - 1))}>↑</button>
