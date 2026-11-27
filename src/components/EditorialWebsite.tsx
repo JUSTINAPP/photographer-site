@@ -42,7 +42,7 @@ export default function EditorialWebsite({ site, projects, preview = false, base
         </MobilePortfolioMenu>
       </header>
       <EditableRegion site={site} id="home:opening">{site.motion.enabled && site.motion.clips.length ? <HomepageMotion motion={site.motion} poster={site.image} preview={preview}/> : site.video?<div className="homepage-motion"><video src={site.video} poster={site.image} muted autoPlay loop playsInline preload="metadata" aria-label="Homepage showreel"/></div>: <section className={'editorial-intro editorial-intro-' + site.theme.hero}>
-        <InlineWebsiteText as="h1" value={site.headline||name} label="Homepage opening title" onChange={edit?value=>edit.update({headline:value}):undefined}/>
+        <InlineWebsiteText as="h1" value={site.showOpeningText?(site.openingTitle??(site.headline||name)):''} label="Homepage opening title" onChange={edit?value=>edit.update({openingTitle:value,showOpeningText:true}):undefined}/>
         {site.image && site.theme.hero !== 'text' && <SmartImage variant="hero" priority src={site.image} alt={site.imageAlt} referrerPolicy="no-referrer" />}
       </section>}</EditableRegion>
       <WebsiteSections site={site} onTextChange={onSectionChange ? (id, field, text) => onSectionChange('home', id, field, text) : undefined} sections={site.sections.home} projects={allProjects} base={base} onProject={onProject} />

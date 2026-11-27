@@ -44,7 +44,7 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
   site: Website; projects: WebsiteProject[]; base?: string; view?: View; preview?: boolean; sample?: boolean; onPreviewPage?: (page: string) => void; previewProject?: WebsiteProject; allProjects?: WebsiteProject[];
 }) {
   const edit=useWebsiteEditing();
-  const text=(field:'heroLabel'|'headline'|'introLabel'|'introText'|'contactLabel'|'contactTitle')=>edit?(value:string)=>edit.update({[field]:value}):undefined;
+  const text=(field:'heroLabel'|'openingTitle'|'openingScrollLabel'|'headline'|'introLabel'|'introText'|'contactLabel'|'contactTitle')=>edit?(value:string)=>edit.update({[field]:value}):undefined;
   const [localView, setLocalView] = useState<View>({});
   const [scrolled, setScrolled] = useState(false);
   const [playVideo, setPlayVideo] = useState(false);
@@ -166,10 +166,10 @@ export default function CampaignWebsite({ site, projects, base, view, preview = 
         {site.motion.enabled && site.motion.clips.length ? <HomepageMotion motion={site.motion} poster={site.image} preview={preview}/> : site.video && playVideo
           ? <video ref={video} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} className="campaign-media" src={site.video} poster={site.image ? imageDisplayUrl(site.image,1280) : undefined} preload="metadata" muted autoPlay loop playsInline aria-label="Studio showreel" />
           : <Media url={site.image} label="Full-screen showreel" eager />}
-        <div className="campaign-caption"><InlineWebsiteText value={site.heroLabel} label="Homepage opening label" maxLength={100} onChange={text('heroLabel')}/><InlineWebsiteText as="h1" value={site.headline||name} label="Homepage opening title" maxLength={220} onChange={text('headline')}/>
-          {navigation({}, 'Scroll to explore ↓', undefined, 'work')}
+        {(site.showOpeningText||edit||(site.video&&playVideo))&&<div className="campaign-caption">{edit&&<button type="button" className="opening-text-toggle" onClick={()=>edit.update({showOpeningText:!site.showOpeningText})}>{site.showOpeningText?'Hide opening text':'Show opening text'}</button>}{site.showOpeningText&&<><InlineWebsiteText value={site.heroLabel} label="Homepage opening label" maxLength={100} onChange={text('heroLabel')}/><InlineWebsiteText as="h1" value={site.openingTitle??(site.headline||name)} label="Homepage opening title" maxLength={220} onChange={text('openingTitle')}/>
+          {edit?<InlineWebsiteText value={site.openingScrollLabel} label="Homepage scroll hint" maxLength={100} onChange={text('openingScrollLabel')}/>:site.openingScrollLabel?navigation({},site.openingScrollLabel,undefined,'work'):null}</>}
           {site.video && playVideo && <button className="campaign-video-toggle" type="button" onClick={toggleVideo}>{paused ? 'Play film' : 'Pause film'}</button>}
-        </div>
+        </div>}
       </section></EditableRegion>
       {site.showIntro ? <EditableRegion site={site} id="home:introduction"><section className="campaign-copy" id={preview ? undefined : 'work'} data-anchor="work">
         <InlineWebsiteText className="campaign-kicker" value={site.introLabel} label="Homepage introduction label" maxLength={100} onChange={text('introLabel')}/><InlineWebsiteText as="h2" value={site.introText} label="Homepage introduction text" multiline onChange={text('introText')} placeholder="Click to add a short introduction"/>
