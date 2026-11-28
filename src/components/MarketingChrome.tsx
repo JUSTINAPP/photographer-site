@@ -1,9 +1,7 @@
-import { ActionLink } from '@/components/ActionFeedback';
 import { company, informationPages, legalLinks } from '@/content/site-information';
 import FresnelMark from './FresnelMark';
 import Link from 'next/link';
-import {ArrowUpRight} from 'lucide-react';
-export function MarketingHeader(){return <header className="mk-header"><Link className="mk-logo" href="/"><FresnelMark/>Fresnel Studios<span>FOR IMAGE MAKERS</span></Link><nav aria-label="Main navigation"><Link href="/#website-tools">Websites</Link><Link href="/examples/rowan-vale">Example site ↗</Link><Link href="/pricing">Pricing</Link><Link href="/demo">Demo</Link><Link href="/login">Sign in</Link><ActionLink href="/signup" className="mk-nav-cta">Start free <ArrowUpRight size={14}/></ActionLink></nav></header>}
+export {default as MarketingHeader} from './MarketingHeader';
 export function MarketingFooter() {
   return (
     <footer className="mk-footer mk-footer-directory">
