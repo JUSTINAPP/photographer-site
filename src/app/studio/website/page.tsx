@@ -22,7 +22,7 @@ export default async function WebsiteSettings({ searchParams }: { searchParams: 
   const motionPreview=await draftMotionPreview(db,workspace.id,draft.motion);
   return (
     <StudioShell active="Website" email={user.email}>
-      <div className="studio-page-heading"><div><h1>Website editor</h1><p>Build with your AI design partner, or use the controls. Review every change in the live preview.</p></div><div className="settings-links">{isStudioAdmin(role) && <ActionLink className="secondary-button" href="/studio/settings">Settings</ActionLink>}</div></div>
+      <div className="studio-page-heading"><div><h1>Website editor</h1><p>Shape your design, edit your pages and review changes before publishing.</p></div><div className="settings-links">{isStudioAdmin(role) && <ActionLink className="secondary-button" href="/studio/settings">Settings</ActionLink>}</div></div>
       {site.error || projects.error || media.error
         ? <p role="alert">The website builder could not load. Please try again later.</p>
         : <WebsiteBuilder initialPage={page} initialPanel={panel === 'pages' ? 'pages' : 'design'} studioId={workspace.id} readOnly={!canEditWebsite(role)} initial={draft} publishedInitial={site.data?.published?normaliseWebsite(site.data.published):undefined} initialMotionPreview={motionPreview} projects={projects.data ?? []} media={media.data ?? []} publicId={site.data?.public_id} publicSlug={site.data?.slug} isPublished={!!site.data?.published} />}

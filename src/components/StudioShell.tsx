@@ -98,7 +98,7 @@ export default async function StudioShell({ children, active = 'Overview', demo 
         {platformAdmin && <Link className="studio-help-link" href="/admin">Fresnel master admin →</Link>}
         {email && <span>{email}</span>}
         {demo ? <Link href="/login">Private account sign-in ↗</Link> : <form action="/auth/signout" method="post"><button>Sign out</button></form>}
-        <Link href="/" className="studio-credit"><FresnelMark /> Fresnel Studios</Link>
+        <Link href="/" className="studio-credit"><FresnelMark /> Fresnel Studio</Link>
       </div>
     </aside>
     <div className="studio-body">

@@ -517,3 +517,7 @@ button[aria-busy="true"] { cursor: default; }
 
 .marketing h1 em,.marketing h2 em{font-family:Instrument,Arial,sans-serif;font-style:normal;font-weight:400}
 @media(max-width:1000px){.mk-header-modern.menu-open nav{flex-wrap:nowrap}.mk-nav-group,.mk-header-modern nav>a{flex-shrink:0}}
+
+/* Studio chrome shares the public site's sans-serif typography. Portfolio previews keep their own theme. */
+.studio-shell{color:#1b1e19;--muted:#697064;--line:#e2e4dc}.studio-sidebar{background:#f4f2eb}.studio-page-heading h1{font-family:Instrument,Arial,sans-serif;font-size:34px;font-weight:500;line-height:1.15;letter-spacing:-1.2px;margin-bottom:10px}.studio-page-heading p:not(.eyebrow){font-size:13px;line-height:1.7;color:#697064;max-width:760px}.studio-sidebar .studio-brand{font-family:Instrument,Arial,sans-serif;font-weight:500}.studio-sidebar nav a.active,.studio-sidebar nav a[aria-current=page]{background:#1b2119;color:#fff}.studio-credit{font-family:Instrument,Arial,sans-serif}
+@media(max-width:700px){.studio-page-heading h1{font-size:29px;letter-spacing:-.8px}.studio-page-heading{gap:16px;margin-bottom:25px}}
