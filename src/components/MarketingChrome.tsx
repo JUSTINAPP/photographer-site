@@ -3,18 +3,18 @@ import { company, informationPages, legalLinks } from '@/content/site-informatio
 import FresnelMark from './FresnelMark';
 import Link from 'next/link';
 import {ArrowUpRight} from 'lucide-react';
-export function MarketingHeader(){return <header className="mk-header"><Link className="mk-logo" href="/"><FresnelMark/>Fresnel Studios<span>FOR IMAGE MAKERS</span></Link><nav aria-label="Main navigation"><Link href="/#platform">The platform</Link><Link href="/examples/rowan-vale">Example site ↗</Link><Link href="/pricing">Pricing</Link><Link href="/demo">Demo</Link><Link href="/login">Sign in</Link><ActionLink href="/signup" className="mk-nav-cta">Start free <ArrowUpRight size={14}/></ActionLink></nav></header>}
+export function MarketingHeader(){return <header className="mk-header"><Link className="mk-logo" href="/"><FresnelMark/>Fresnel Studios<span>FOR IMAGE MAKERS</span></Link><nav aria-label="Main navigation"><Link href="/#website-tools">Websites</Link><Link href="/examples/rowan-vale">Example site ↗</Link><Link href="/pricing">Pricing</Link><Link href="/demo">Demo</Link><Link href="/login">Sign in</Link><ActionLink href="/signup" className="mk-nav-cta">Start free <ArrowUpRight size={14}/></ActionLink></nav></header>}
 export function MarketingFooter() {
   return (
     <footer className="mk-footer mk-footer-directory">
       <div>
         <Link className="mk-logo" href="/"><FresnelMark />Fresnel Studios</Link>
-        <p>Portfolio and production tools for photographers and studios.</p>
+        <p>Distinctive photography websites, with studio tools behind them.</p>
         <p>{company}</p>
       </div>
       <div className="mk-footer-links">
         <span>PRODUCT</span>
-        <Link href="/#features">Features</Link>
+        <Link href="/#website-tools">Website features</Link>
         <Link href="/ai">AI and imagery</Link>
         <Link href="/mobile">Mobile access</Link>
         <Link href="/pricing">Proposed plans</Link>

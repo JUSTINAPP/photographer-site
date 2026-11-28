@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export type PlanPrice = { id: string; name: string; monthly: number; annual: number };
 export const defaultPrices: PlanPrice[] = [
-  { id: 'independent', name: 'Independent', monthly: 49, annual: 39 },
+  { id: 'independent', name: 'Website', monthly: 22, annual: 19 },
   { id: 'studio', name: 'Studio', monthly: 89, annual: 69 },
   { id: 'production', name: 'Production', monthly: 149, annual: 119 },
 ];
