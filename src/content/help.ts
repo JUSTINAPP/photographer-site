@@ -321,19 +321,19 @@ export const helpArticles: HelpArticle[] = [
       {
         "title": "Start with the brief",
         "instructions": [
-          "Open Moodboards and create a board. Give it a title and describe the light, atmosphere, location or direction you want the team to understand."
+          "Open Moodboards and create a board. Use the clearly labelled example to see a complete board, or start blank. Give it a title and brief, then describe the light, colour, styling, composition and location."
         ]
       },
       {
         "title": "Add references and captions",
         "instructions": [
-          "Add publicly accessible HTTPS image references and short captions explaining what matters about each reference. Choose the editorial or grid presentation and review the preview."
+          "Choose from Media to add your own photographs. Add a Pinterest Pin, board or other website in Source link, then explain what you like about it. A source link is clickable; add a direct HTTPS image URL separately if you want an image displayed on the board."
         ]
       },
       {
         "title": "Prepare a presentation",
         "instructions": [
-          "Use the print or PDF option to prepare the board for sharing. Check the final pages and image framing before sending it to your team."
+          "Label each reference, add a caption and source credit, then use the arrows to arrange the order. Choose an editorial or grid layout and check the live preview. Save the board to your private studio, then use Print / save PDF for your presentation."
         ]
       }
     ],
