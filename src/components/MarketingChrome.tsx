@@ -6,7 +6,7 @@ export function MarketingFooter() {
   return (
     <footer className="mk-footer mk-footer-directory">
       <div>
-        <Link className="mk-logo" href="/"><FresnelMark />Fresnel Studios</Link>
+        <Link className="mk-logo" href="/"><FresnelMark />Fresnel Studio</Link>
         <p>Distinctive photography websites, with studio tools behind them.</p>
         <p>{company}</p>
       </div>

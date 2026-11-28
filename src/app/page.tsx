@@ -7,7 +7,7 @@ import WebsiteOffer from '@/components/WebsiteOffer';
 import MarketingMotion from '@/components/MarketingMotion';
 
 export const metadata = {
-  title: 'Distinctive photography websites — Fresnel Studios',
+  title: 'Distinctive photography websites — Fresnel Studio',
   description: 'A distinctive website for your photography. Show stills, motion and complete campaigns. Make it your own with Fresnel.'
 };
 

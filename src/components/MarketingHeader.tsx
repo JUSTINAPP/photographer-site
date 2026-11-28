@@ -28,7 +28,7 @@ export default function MarketingHeader({ overlay = false }: { overlay?: boolean
   useEffect(()=>{const update=()=>setScrolled(window.scrollY>32);update();window.addEventListener('scroll',update,{passive:true});return()=>window.removeEventListener('scroll',update)},[]);
   useEffect(()=>{if(!open&&!active)return;const outside=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))close()};const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){close();trigger.current?.focus()}};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape)}},[open,active]);
   return <header ref={root} onBlur={e=>{if(e.relatedTarget&&!e.currentTarget.contains(e.relatedTarget as Node))close()}} className={`mk-header mk-header-modern${overlay?' mk-header-overlay':''}${scrolled?' is-scrolled':''}${open?' menu-open':''}${active?' has-dropdown':''}`}>
-    <Link className="mk-logo" href="/" aria-label="Fresnel Studios home"><FresnelMark/>Fresnel Studios</Link>
+    <Link className="mk-logo" href="/" aria-label="Fresnel Studio home"><FresnelMark/>Fresnel Studio</Link>
     <nav id="marketing-navigation" aria-label="Main navigation">
       {(Object.keys(menus) as MenuName[]).map(name=><div className="mk-nav-group" key={name}>
         <button className="mk-nav-trigger" aria-expanded={active===name} aria-controls={`menu-${name.replaceAll(' ','-')}`} onClick={e=>{trigger.current=e.currentTarget;setActive(active===name?null:name)}}>{name}<ChevronDown size={14}/></button>
