@@ -32,3 +32,5 @@
 
 .website-controls{scroll-margin-top:18px}.website-editor-tabs.design-switch button span{display:inline;font-size:9px;opacity:.55}
 .reference-design-assistant{margin:24px 0;border:1px solid #e2e4dc;border-radius:6px}.reference-design-assistant>summary{padding:18px;font:500 13px Instrument,Arial,sans-serif;cursor:pointer;line-height:1.6}.reference-design-assistant>.design-agent{margin:0;border:0;border-top:1px solid #e2e4dc;border-radius:0 0 6px 6px}
+/* Resolve logo width limits against the preview, rather than the whole editor window. */
+.design-preview-frame{container-type:inline-size}
