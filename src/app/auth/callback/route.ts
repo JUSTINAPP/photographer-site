@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { completeSignIn } from '@/lib/complete-sign-in';
+import { websiteStartCookie, websiteStartPath } from '@/lib/website-start';
 import { database } from '@/lib/supabase';
 import { invitationCookie, studioCookie, workspaceIdPattern } from '@/lib/studio-access';
 
@@ -27,7 +28,8 @@ export async function GET(request: NextRequest) {
   if (result.error) return signInError(result.error);
 
   const platformAdmin = (await db.rpc('is_platform_admin')).data === true;
-  const response = NextResponse.redirect(new URL(platformAdmin ? '/admin' : '/studio', url.origin));
+  const response = NextResponse.redirect(new URL(websiteStartPath(request.cookies.get(websiteStartCookie)?.value) ?? (platformAdmin ? '/admin' : '/studio'), url.origin));
+  response.cookies.set(websiteStartCookie,'',{path:'/',maxAge:0});
   const active = result.studio;
   if (active) response.cookies.set(studioCookie, active, { path: '/', httpOnly: true, sameSite: 'lax', secure: url.protocol === 'https:' });
   response.cookies.set(invitationCookie, '', { path: '/auth/callback', maxAge: 0 });
