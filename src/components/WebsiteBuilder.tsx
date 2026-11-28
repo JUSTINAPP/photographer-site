@@ -36,7 +36,7 @@ const contentFields = [
 ] as const;
 
 export default function WebsiteBuilder({ studioId, initial, projects, media, publicId, publicSlug, isPublished, readOnly = false, initialPanel = 'design', initialPage,publishedInitial,initialMotionPreview }: {
-  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; publicSlug?:string|null; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:MotionPreview;
+  studioId: string; initial: Website; projects: WebsiteProject[]; media: WebsiteMedia[]; publicId?: string; publicSlug?:string|null; isPublished: boolean; readOnly?: boolean; initialPanel?: 'design' | 'pages' | 'brand' | 'motion' | 'publish'; initialPage?: string;publishedInitial?:Website;initialMotionPreview?:MotionPreview;
 }) {
   const controls=useRef<HTMLElement>(null);
   const [agentBusy,setAgentBusy]=useState(false),[motionBusy,setMotionBusy]=useState(false),[previewBusy,setPreviewBusy]=useState(false);
@@ -55,6 +55,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
     window.addEventListener('hashchange', openLinkedPanel);
     return () => window.removeEventListener('hashchange', openLinkedPanel);
   }, []);
+  function navigateStep(next: 'design'|'brand'|'pages'|'motion'|'publish'){setPanel(next);controls.current?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
   const [inlineEditing, setInlineEditing] = useState(true);
   const [page, setPage] = useState(initialPage === 'about' || projects.some(project => project.id === initialPage) ? initialPage! : 'home');
   const [editableProjects, setEditableProjects] = useState(projects);
@@ -141,21 +142,17 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
       {readOnly && <p className="studio-panel">You have view-only access to this portfolio. Use the preview to review the draft.</p>}
       {!readOnly &&
       <section ref={controls} className="studio-panel website-controls">
+        <div className="website-setup-intro"><p className="eyebrow">YOUR WEBSITE, STEP BY STEP</p><p>Bring your work, add your identity, choose a design, then review your pages. Everything stays private until you publish.</p><Link href="/studio/import">1 · Bring across your current website →</Link><span>Already imported? Continue below. Starting fresh? Add photographs in Media. Save any draft changes before opening Import.</span></div>
         <div className="website-editor-tabs design-switch" aria-label="Editor section">
-          {(['design', 'brand', 'pages', 'motion', 'publish'] as const).map((section,index) =>
+          {(['brand', 'design', 'pages', 'motion', 'publish'] as const).map((section,index) =>
             <button key={section} type="button" disabled={busy} aria-pressed={panel === section} onClick={() => {
               setPanel(section);
               if (section === 'design') setPage('home');
-            }}><span>{index+1}</span> {({design:'Create',brand:'Logo',pages:'Pages',motion:'Opening',publish:'Publish'})[section]}</button>
+            }}><span>{index+2}</span> {({design:'Design',brand:'Logo',pages:'Pages',motion:'Video',publish:'Publish'})[section]}</button>
           )}
         </div>
         <div hidden={panel !== 'design'} className="website-design-options">
-        <DesignConversation draft={draft} onApply={applyDesign} canUndo={undo.length>0} onUndo={()=>{setDraft(undo[undo.length-1]);setUndo(h=>h.slice(0,-1));}} onSaveLook={saveLook} onBusyChange={setAgentBusy}/>
-        <fieldset className="builder-manual-fieldset" disabled={busy}><details className="builder-manual"><summary>Choose a template or adjust the design yourself</summary>
-        <h3>My saved templates</h3>
-        {draft.savedLooks.length===0&&<p>Apply a design above, give it a name, then save it here.</p>}
-        <div className="saved-look-options">{draft.savedLooks.map(look=><div key={look.id}><button type="button" onClick={()=>applyDesign({theme:look.theme,logoSize:look.logoSize,homepageLayout:look.homepageLayout})}><strong>{look.name}</strong><small>{look.theme.layout||'editorial'} · {look.theme.palette}</small></button><button type="button" aria-label={'Delete template '+look.name} onClick={()=>setDraft(d=>({...d,savedLooks:d.savedLooks.filter(l=>l.id!==look.id)}))}>×</button></div>)}</div>
-        <h3>Ready-made starting points</h3>
+        <h2>Choose a starting design</h2><p>Choose a look below to see it with your work on the right. You can change it later; your photographs and pages stay in place.</p>
         <div className="template-options">
           {Object.entries(PRESETS).map(([key, preset]) => {
             const theme = normaliseTheme(preset.theme);
@@ -171,6 +168,12 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
           })}
         </div>
         {campaign && <p><Link href="/examples/campaign-stories" target="_blank" rel="noopener noreferrer">Explore the full-screen template ↗</Link></p>}
+
+        <details className="reference-design-assistant"><summary>Optional: refine this design using reference websites</summary><DesignConversation draft={draft} onApply={applyDesign} canUndo={undo.length>0} onUndo={()=>{setDraft(undo[undo.length-1]);setUndo(h=>h.slice(0,-1));}} onSaveLook={saveLook} onBusyChange={setAgentBusy}/></details>
+        <fieldset className="builder-manual-fieldset" disabled={busy}><details className="builder-manual"><summary>Fine-tune fonts, colours and layout</summary>
+        <h3>My saved templates</h3>
+        {draft.savedLooks.length===0&&<p>Apply a design above, give it a name, then save it here.</p>}
+        <div className="saved-look-options">{draft.savedLooks.map(look=><div key={look.id}><button type="button" onClick={()=>applyDesign({theme:look.theme,logoSize:look.logoSize,homepageLayout:look.homepageLayout})}><strong>{look.name}</strong><small>{look.theme.layout||'editorial'} · {look.theme.palette}</small></button><button type="button" aria-label={'Delete template '+look.name} onClick={()=>setDraft(d=>({...d,savedLooks:d.savedLooks.filter(l=>l.id!==look.id)}))}>×</button></div>)}</div>
         <TextLogoEditor site={draft} onChange={patch=>setDraft(current=>({...current,...patch}))}/><fieldset className="design-options"><legend>Typography</legend>
           <div className="template-options">{Object.entries(FONT_PAIRS).map(([key, font]) =>
             <button key={key} aria-pressed={draft.theme.fonts === key} onClick={() => updateTheme({ fonts: key as SiteTheme['fonts'] })}>
@@ -223,7 +226,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         </fieldset>
         </details></fieldset>
         </div>
-        <div hidden={panel !== 'brand'}><h2>Your identity, ready for every screen.</h2><TextLogoEditor site={draft} onChange={patch=>setDraft(current=>({...current,...patch}))}/><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit,logoMode:'auto'}));}}/></div>
+        <div hidden={panel !== 'brand'}><h2>Add your name and logo</h2><p>Upload your logo or a tightly cropped screenshot of it. Fresnel prepares black and white versions plus a browser icon for you to check. Prefer a simple name? Use the text option below.</p><LogoKitEditor logo={draft.logo} size={draft.logoSize} initialKit={draft.logoDark&&draft.logoLight&&draft.favicon?{original:draft.logo,dark:draft.logoDark,light:draft.logoLight,icon:draft.favicon,iconLight:draft.faviconLight,note:'Check the browser icon at its small size. You can choose a separate square mark.'}:undefined} onApprove={async kit=>{const result=await approveLogoKit(studioId,kit);if(result.error)throw Error(result.error);setDraft(current=>({...current,...kit,logoMode:'auto'}));}}/><details className="builder-manual" open={draft.logoMode==='text'}><summary>Prefer a text logo? Type your name instead</summary><TextLogoEditor site={draft} onChange={patch=>setDraft(current=>({...current,...patch}))}/></details></div>
         <div hidden={panel !== 'motion'}><MotionEditor key={motionSession} studioId={studioId} motion={motionEdit} media={media} replacePage={replaceOpeningPage} initialPreview={resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl?{desktop:resolveMotionPreview(motionEdit,initialMotionPreview).desktopUrl,mobile:resolveMotionPreview(motionEdit,initialMotionPreview).mobileUrl}:undefined} edits={draft.motionLibrary} pages={displayProjects.filter(project=>!draft.removedPages.includes(project.id))} onBusyChange={setMotionBusy} onChange={setMotionEdit} onSaved={entry=>setDraft(current=>({...current,motionLibrary:[entry,...current.motionLibrary.filter(item=>item.id!==entry.id)]}))} onUse={useSavedOpening}/></div>
         <div hidden={panel !== 'pages'} inert={busy}>
         <WebsitePages openingPreview={previewSite.motion} onOpening={()=>{setReplaceOpeningPage('home');setMotionEdit(draft.motion);setMotionSession(value=>value+1);setPanel('motion');}} studioId={studioId} draft={draft} setDraft={setDraft} projects={displayProjects} onProjects={setEditableProjects} media={media} page={page} onPage={setPage} />
@@ -257,6 +260,7 @@ export default function WebsiteBuilder({ studioId, initial, projects, media, pub
         {live && id && <p><Link prefetch={false} href={publishedAddress(id,slug)+(publishedRevision?'?v='+publishedRevision:'')}>View published site ↗</Link></p>}
         {live && <ActionButton busy={pending && operation === 'unpublish'} className="secondary-button" disabled={busy} onClick={() => save('unpublish')}>Take website offline</ActionButton>}
         </div>
+        <div className="website-step-navigation"><span>{({brand:'Step 2 · Your name and logo',design:'Step 3 · Choose your design',pages:'Step 4 · Arrange your pages',motion:'Step 5 · Add an opening (optional)',publish:'Step 6 · Review and publish'})[panel]}</span><div>{panel!=='brand'&&<button className="secondary-button" disabled={busy} onClick={()=>navigateStep(({design:'brand',pages:'design',motion:'pages',publish:'motion'} as const)[panel as 'design'|'pages'|'motion'|'publish'])}>← Back</button>}{panel!=='publish'&&<button className="secondary-button" disabled={busy} onClick={()=>navigateStep(({brand:'design',design:'pages',pages:'motion',motion:'publish'} as const)[panel as 'brand'|'design'|'pages'|'motion'])}>{panel==='motion'?'Continue to review':panel==='brand'?'Next: choose a design':panel==='design'?'Next: arrange pages':'Next: opening video'} →</button>}</div><small>Moving between steps keeps your edits here. Save draft before leaving the editor.</small></div>
         <div className="website-save-strip"><small className="builder-save-status" role="status">{agentBusy?'Updating preview…':motionBusy?'Preparing your opening…':unsaved?'Unsaved draft changes':'Draft saved'}</small>
           <ActionButton busy={pending && operation === 'draft'} className="secondary-button" disabled={busy} onClick={() => save('draft')}>{pending && operation === 'draft' ? 'Saving…' : 'Save draft'}</ActionButton>
           {panel !== 'publish' && <button className="primary-button" disabled={busy} onClick={() => setPanel('publish')}>Publishing options</button>}
