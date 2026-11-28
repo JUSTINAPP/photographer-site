@@ -23,7 +23,7 @@ const groups = [
 const helpTopics: Record<string, string> = {
   Website: 'website-design', 'Website design': 'website-design', Settings: 'website-design',
   Media: 'media-library', 'Import website': 'import-portfolio', Projects: 'edit-campaign-pages',
-  Calendar: 'calendar-and-social', Social: 'calendar-and-social',
+  Calendar: 'calendar-and-social', Social: 'calendar-and-social', Moodboards: 'moodboards',
 };
 
 export default async function StudioShell({ children, active = 'Overview', demo = false, email }: {

@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { helpArticles } from '@/content/help';
 
 export const metadata = {
-  title: 'Help centre | Fresnel Studios',
+  title: 'Help centre | Fresnel Studio',
   description: 'Step-by-step guides to building your portfolio and running your studio in Fresnel.',
 };
 
@@ -12,9 +12,9 @@ export default function HelpCentre() {
 
   return <main className="help-home">
     <header className="help-intro">
-      <p className="help-kicker">Fresnel Studios support</p>
+      <p className="help-kicker">Fresnel Studio support</p>
       <h1>Help centre</h1>
-      <p>Follow step-by-step guides with close-ups of the controls you’ll use in Fresnel.</p>
+      <p>Start with your photographs, add your identity, choose a design and publish when you’re ready. These guides explain each step.</p>
     </header>
     {groups.map(group => <section className="help-group" key={group}>
       <h2>{group}</h2>

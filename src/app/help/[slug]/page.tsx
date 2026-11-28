@@ -13,7 +13,7 @@ function articleFor(slug: string) {
 export const generateStaticParams = () => helpArticles.map(({ slug }) => ({ slug }));
 export async function generateMetadata({ params }: Props) {
   const article = articleFor((await params).slug);
-  return { title: article.title + ' | Fresnel Studios', description: article.summary };
+  return { title: article.title + ' | Fresnel Studio', description: article.summary };
 }
 
 export default async function HelpArticle({ params }: Props) {

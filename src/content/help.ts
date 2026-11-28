@@ -19,190 +19,328 @@ type HelpArticle = {
 
 export const helpArticles: HelpArticle[] = [
   {
-    slug: 'website-design', group: 'Website and portfolio', title: 'Design and publish your website',
-    summary: 'Choose a template, check the layout at two screen sizes, then preview or publish your portfolio.',
-    steps: [
+    "slug": "website-design",
+    "group": "Website and portfolio",
+    "title": "Design and publish your website",
+    "summary": "Follow the setup journey: import, identity, design, pages, optional video and publishing.",
+    "steps": [
       {
-        title: 'Choose a starting template',
-        instructions: [
-          'From the studio sidebar, open Website design and select Design. Under Start from a look, click a template card. The preview updates immediately.',
-          'Adjust Typography, then look for Colours, Header and Top of the homepage. These controls vary by template. Campaign Stories uses full-screen media and a white header that appears as visitors scroll.',
-        ],
-        shot: { file: 'choose-template.webp', width: 802, height: 1152 }, caption: 'Choose a template under Start from a look.',
+        "title": "Bring your work with you",
+        "instructions": [
+          "Start with Import website. Enter your current address, choose Preview import and review the photographs, videos and project drafts before saving. Your existing site stays as it is.",
+          "Starting fresh? Skip importing and add photographs in Media."
+        ]
       },
       {
-        title: 'Check desktop and mobile',
-        instructions: [
-          'Use Desktop and Mobile above the preview. On mobile, check that titles fit and important parts of each cover photo stay in frame.',
-          'Click Save design, then Open saved draft for a private preview in a separate tab. Use Back to editor to return to your work.',
-        ],
-        shot: { file: 'preview-size.webp', width: 942, height: 68 }, caption: 'The preview toolbar has Desktop, Mobile and Open saved draft.',
+        "title": "Add your name and logo",
+        "instructions": [
+          "Continue to logo setup. Upload a logo or a cropped screenshot, then check the black, white and browser-icon versions. Alternatively, expand the text-logo option and type your name exactly as you want it shown.",
+          "The logo height slider changes the header logo in the preview as you drag. Save draft to keep the size."
+        ]
       },
       {
-        title: 'Publish when the draft is ready',
-        instructions: [
-          'Open Publish. Confirm that you have permission to publish the content, then choose Publish website. For an already published site, choose Publish changes.',
-          'Wait for publishing to finish, then open the public link from the editor or Website live in the sidebar. Check the homepage and click through to your campaigns.',
-        ],
-        shot: { file: 'publish-website.webp', width: 802, height: 338 }, caption: 'The permission checkbox enables the Publish website button.',
+        "title": "Choose a visible starting design",
+        "instructions": [
+          "Open Design and choose a template under Choose a starting design. Your photographs and pages stay in place while the layout changes.",
+          "Expand Fine-tune fonts, colours and layout for more controls. Optional reference sites and a note about what you like can guide supported design changes; review the result rather than expecting an exact copy."
+        ]
       },
+      {
+        "title": "Build your pages and opening",
+        "instructions": [
+          "Open Pages, select Home page or another page, then add images and choose where each image should link. Check Desktop and Mobile above the preview.",
+          "Video is optional. Create a short opening from photographs or original video clips, save it in Media and choose it for your homepage."
+        ]
+      },
+      {
+        "title": "Review privately, then publish",
+        "instructions": [
+          "Save draft keeps your edits private. Save & open draft preview saves first and opens a full-size private preview. Check image links, mobile framing and your contact details.",
+          "Open Publish, review the publishing options and required permission confirmation, then publish. Use View published site or Website live to check what visitors see."
+        ]
+      }
     ],
-    tip: 'Save design updates the private draft. Publish changes updates what visitors see.',
-    related: ['edit-campaign-pages', 'media-library'],
+    "tip": "Moving between editor steps keeps your edits in the current session. Save draft before leaving the editor. Publishing is a separate action.",
+    "related": [
+      "import-portfolio",
+      "name-and-logo",
+      "edit-campaign-pages",
+      "opening-video"
+    ]
   },
   {
-    slug: 'edit-campaign-pages', group: 'Website and portfolio', title: 'Edit the homepage and campaign pages',
-    summary: 'Build a path from a homepage photo to a campaign, then guide visitors to related work.',
-    steps: [
+    "slug": "name-and-logo",
+    "group": "Website and portfolio",
+    "title": "Set up your name, logo and browser icon",
+    "summary": "Use an uploaded logo or type your name, then see the result in your website header.",
+    "steps": [
       {
-        title: 'Create or select a page',
-        instructions: [
-          'Open Website design → Pages. Choose Homepage, About + Services, or a campaign from the page list.',
-          'Click Add campaign page to start a new campaign. Enter a name, category and short introduction, then click Create campaign. The editor opens that page as a private draft.',
-        ],
-        shot: { file: 'new-campaign.webp', width: 742, height: 672 }, caption: 'The Add campaign page form sits above the page list.',
+        "title": "Choose an image logo or a text logo",
+        "instructions": [
+          "Open Edit website → Logo. Upload logo or screenshot accepts PNG, JPEG or WebP up to 2 MB. Crop a screenshot closely around the mark first.",
+          "Prefer a text logo? Expand the text-logo controls, enter a name or word and choose its font and spacing. Keep your preferred capitalisation or use lowercase."
+        ]
       },
       {
-        title: 'Build the campaign with sections and photos',
-        instructions: [
-          'Use Choose photo under Project cover for the opening image. Under Page sections, choose Full screen for a large image, Split image + text for a photo and a description side by side, or Text only for an introduction or credits.',
-          'In Project gallery, click Add photos from Media. Set each frame to Grid, Full width or Full screen. Drag the thumbnails or use the up and down arrows to arrange them. Add alt text that describes what is in each photo.',
-        ],
-        shot: { file: 'page-sections.webp', width: 742, height: 390 }, caption: 'Choose a section layout to add an image, text, or both.',
+        "title": "Review the prepared versions",
+        "instructions": [
+          "Check the black logo on a light background and the white logo on a dark background. Confirm that fine details remain clear before saving the versions.",
+          "The tool prepares monochrome versions; a blurry screenshot may still need a sharper original."
+        ]
       },
       {
-        title: 'Link a homepage photo to the campaign',
-        instructions: [
-          'Switch back to Homepage and find Homepage photo gallery. Open Link photo to a campaign on the frame you want visitors to click, then choose the campaign.',
-          'For an image added under Page sections, use Link to a campaign on that section instead. Save the design before opening the private preview to check the link.',
-        ],
-        shot: { file: 'gallery-frame.webp', width: 742, height: 534 }, caption: 'A gallery frame has its own size, alt text, campaign link and reorder controls.',
+        "title": "Size it in the live preview",
+        "instructions": [
+          "Drag Logo height and watch the website header on the right. Wide logos also fit within the available header width. Check Desktop and Mobile, then Save draft."
+        ]
       },
       {
-        title: 'Choose and order the campaign tiles',
-        instructions: [
-          'On Homepage, scroll to Projects on the homepage. Tick the projects you want to show, then use the arrows to arrange them. Choose Grid or the full-width option under What appears on the homepage.',
-          'Click a project title in the list to edit its cover or gallery. A campaign linked from a photo can be published without also appearing as a separate homepage tile.',
-        ],
-        shot: { file: 'homepage-projects.webp', width: 742, height: 288 }, caption: 'Tick a project to include it and use the arrows to change its position.',
-      },
-      {
-        title: 'Add More work at the end of a campaign',
-        instructions: [
-          'Open the campaign page and scroll to More work. Tick the campaigns in the order you want their squares to appear. To change the order, untick and tick them again in the new sequence.',
-          'Save the design and preview the whole journey, starting on the homepage and following a campaign through to its More work links.',
-        ],
-        shot: { file: 'more-work.webp', width: 742, height: 366 }, caption: 'More work controls the campaign links at the bottom of the current page.',
-      },
+        "title": "Check the favicon",
+        "instructions": [
+          "A favicon is the small square icon beside the page title in a browser tab. A simple letter or symbol usually reads better than a full name at this size.",
+          "Review the browser-tab example. Choose a separate square icon if the suggested mark is unclear, then save your logo versions and draft."
+        ]
+      }
     ],
-    tip: 'If the media picker looks empty, turn on Show all library items. For imported work, Rebuild from my existing site can match photos already in Media to their order on the source site.',
-    related: ['website-design', 'media-library'],
+    "tip": "Your logo typeface belongs to your website design. Fresnel’s own controls use a consistent sans serif font.",
+    "related": [
+      "website-design",
+      "import-portfolio"
+    ]
   },
   {
-    slug: 'media-library', group: 'Website and portfolio', title: 'Organise media and export crops',
-    summary: 'Find the right photo, shortlist it for the editor and export a JPEG for social.',
-    steps: [
+    "slug": "edit-campaign-pages",
+    "group": "Website and portfolio",
+    "title": "Edit the homepage and campaign pages",
+    "summary": "Build a path from a homepage photo to a campaign, then guide visitors to related work.",
+    "steps": [
       {
-        title: 'Shortlist the files you want to use',
-        instructions: [
-          'Open Media and choose Photos or Videos. Find an asset and tick Select for website to make it easier to find in the editor’s media picker.',
-          'To use it publicly, open Website design → Pages, select a page, and place it as a cover, section image or gallery photo. Then save and publish the site.',
-        ],
-        shot: { file: 'media-card.webp', width: 700, height: 1262 }, caption: 'Each media card has a website selection checkbox, a display name and file actions.',
+        "title": "Choose the page you want to edit",
+        "instructions": [
+          "Open Edit website → Pages. Home page is the main landing page. Other menu pages and campaign galleries remain separate; use the page search to find them.",
+          "Use Add page to create another page, then give it a recognisable name."
+        ]
       },
       {
-        title: 'Organise files by category or year',
-        instructions: [
-          'Use the category tabs and Year filter to narrow the library. The year describes when the work was made. Choose No year set to see files that still need a year.',
-          'Open Organise media to add a category. Tick individual files or select the whole page, then add or remove a custom category, or set a year for the selected files. Leave the year blank to clear it.',
-          'Collections from a rebuilt site appear after you save the website design. Custom media categories are for organising your library.',
-        ],
+        "title": "Add photographs from Media",
+        "instructions": [
+          "Find Images on this page and choose Add image. Select photographs in the picker: a tick on the thumbnail marks each selection. Choose Add selected images to place them on the page. Use Cancel / close to dismiss the picker.",
+          "Use Add campaign cover when you want a photograph to open a campaign gallery. If you cannot find a photograph, search or load the complete Media library."
+        ]
       },
       {
-        title: 'Rename a file or keep a private copy',
-        instructions: [
-          'Enter a recognisable label in Display name and click Save name. Use names you’ll recognise in the media picker, such as the campaign and frame number.',
-          'Use Keep private original to copy a supported file into your studio library. Published placements currently use the original source URL.',
-        ],
+        "title": "Give an image a destination",
+        "instructions": [
+          "On an added image, use Link to page to choose a campaign or another page. Choose No link to display a still image without a destination.",
+          "Use Edit linked page to work on the destination gallery. The cover is the entry point; add the remaining campaign photographs on that page."
+        ]
       },
       {
-        title: 'Export a crop for a particular format',
-        instructions: [
-          'On a photo card, open Crop format and choose Square, Portrait or Reels cover. Click Export JPEG crop. The crop is centred and downloads to your device.',
-          'Check the downloaded photo before posting, especially if the subject is near the edge of the original frame.',
-        ],
+        "title": "Arrange and check your images",
+        "instructions": [
+          "Use the arrows or available drag controls to change the order. Expand Image size & description to adjust the frame and describe the photograph. Remove image takes the placement off this page.",
+          "Check the right-hand preview as you edit. Save & open draft preview to test the full page and follow image links before publishing."
+        ]
       },
+      {
+        "title": "Edit text and review the opening",
+        "instructions": [
+          "Edit outlined text in the preview or use the corresponding fields. Clear a line to remove its words, or switch off opening text to hide the words over the photograph or video.",
+          "Save draft, then publish when the homepage and linked campaign pages are ready."
+        ]
+      }
     ],
-    tip: 'Select for website is a private shortlist. A photo appears publicly when it’s placed on a page and that page is published.',
-    related: ['import-portfolio', 'edit-campaign-pages'],
+    "tip": "Adding a photograph to Media alone does not place it on a website page. Select it in the page image picker and confirm Add selected images.",
+    "related": [
+      "website-design",
+      "media-library"
+    ]
   },
   {
-    slug: 'import-portfolio', group: 'Website and portfolio', title: 'Import an existing portfolio',
-    summary: 'Scan a portfolio URL, review the results and bring the useful projects and assets into your studio.',
-    steps: [
+    "slug": "opening-video",
+    "group": "Website and portfolio",
+    "title": "Create a short homepage opening",
+    "summary": "Turn photographs and original clips into a reusable, silent opening video.",
+    "steps": [
       {
-        title: 'Scan your current website',
-        instructions: [
-          'Open Import website from the studio sidebar. Enter your website address in Your current website, for example www.yourwebsite.com. Click Preview import.',
-          'Wait for Fresnel to scan the homepage, linked pages and any public sitemap. Review any warnings along with the results.',
-        ],
-        shot: { file: 'import-address.webp', width: 1430, height: 194 }, caption: 'Paste the source address here and select Preview import. The screenshot uses the sample importer.',
+        "title": "Choose your shots",
+        "instructions": [
+          "Open Edit website → Video. Select up to eight photographs or original MP4 clips from Media. Selected shots appear in the timeline; remove a shot to take it out of the sequence.",
+          "A playable Vimeo link is useful for viewing, but editing a clip requires the original MP4."
+        ]
       },
       {
-        title: 'Save photos and videos first',
-        instructions: [
-          'In Photos and videos, choose the files you want and click the save button. It shows the number of selected photos and videos. Find them in Media.',
-          'To bring over page titles and covers as well, open Project drafts (optional), choose the pages and click Save project drafts. Find them in Projects.',
-        ],
-        shot: { file: 'import-projects.webp', width: 1430, height: 728 }, caption: 'The import preview lets you review project titles and thumbnails before saving.',
+        "title": "Arrange the sequence",
+        "instructions": [
+          "Reorder shots, choose timing and review crop or movement controls. Keep the sequence within 15 seconds and check both desktop and mobile framing."
+        ]
       },
       {
-        title: 'Recover missing Squarespace images',
-        instructions: [
-          'Try importing the address of the specific gallery first. Fresnel skips media already in your library.',
-          'For photos the scan still misses, open the Assets panel in Squarespace on a computer. Open the image’s three-dot menu, choose File Details, then right-click the preview and save it. Squarespace downloads these images one at a time.',
-          'Saving photos and videos to Media keeps source links. Use Keep private original on individual assets to keep private copies. Published pages still need image URLs that remain available after the move.',
-        ],
+        "title": "Save and choose where to use it",
+        "instructions": [
+          "Name and save the result to Media. Generating a video alone does not replace your current homepage opening.",
+          "Use the option to save and replace the Home opening, or select the saved video in the homepage opening-video control under Pages. Review the preview and save your draft."
+        ]
       },
       {
-        title: 'Arrange the imported work in the editor',
-        instructions: [
-          'Open Website design → Pages and choose an imported campaign. Confirm its cover and gallery order, and choose which projects you want on the homepage.',
-          'For a Squarespace portfolio organised into Portfolio, Advertising, Motion and Personal, open Rebuild from my existing site and click Rebuild draft collections. If the scan lists missing files, click Add missing media and rebuild to save their source links and fill gaps in the draft galleries. Review the galleries and covers, then click Save design to see the collection filters in Media.',
-        ],
-      },
+        "title": "Publish the finished opening",
+        "instructions": [
+          "Check that the photographs, crops and text work together. Opening videos are silent. Publish changes when you want visitors to see the new opening."
+        ]
+      }
     ],
-    tip: 'Import reads publicly accessible pages. If a page or file is missing, check that it opens in a private browser window before trying the scan again.',
-    related: ['media-library', 'edit-campaign-pages'],
+    "tip": "You can reuse a saved opening rather than rebuilding the sequence each time.",
+    "related": [
+      "edit-campaign-pages",
+      "media-library"
+    ]
   },
   {
-    slug: 'calendar-and-social', group: 'Studio workflows', title: 'Plan shoots and social posts',
-    summary: 'Keep shoots, deliveries and planned social posts in view while you work.',
-    steps: [
+    "slug": "media-library",
+    "group": "Website and portfolio",
+    "title": "Organise media and export crops",
+    "summary": "Find the right photo, shortlist it for the editor and export a JPEG for social.",
+    "steps": [
       {
-        title: 'Put a production date on the calendar',
-        instructions: [
-          'Open Calendar. Use Month for the whole schedule, Week for the days around a shoot, or List to scan the month’s entries.',
-          'Choose Add event or click the date in the grid. Enter a title, type, date and any useful notes, then click Save event. Click an existing event to edit it.',
-        ],
-        shot: { file: 'calendar-views.webp', width: 1100, height: 68 }, caption: 'Switch calendar views or move between dates using the toolbar.',
+        "title": "Shortlist the files you want to use",
+        "instructions": [
+          "Open Media and choose Photos or Videos. Find an asset and tick Select for website to make it easier to find in the editor’s media picker.",
+          "To use it publicly, open Edit website → Pages, select a page, and place it as a cover, section image or gallery photo. Then save and publish the site."
+        ]
       },
       {
-        title: 'Prepare a social post',
-        instructions: [
-          'Open Social → New post. Enter a title, choose a channel, write the caption and select media from your library.',
-          'Use Draft while preparing it. To add it to the schedule, enter a date and local time, choose Scheduled for manual posting and click Save post.',
-        ],
-        shot: { file: 'social-post.webp', width: 1300, height: 1370 }, caption: 'The Social form keeps caption, media, timing and status together.',
+        "title": "Organise files by category or year",
+        "instructions": [
+          "Use the category tabs and Year filter to narrow the library. The year describes when the work was made. Choose No year set to see files that still need a year.",
+          "Open Organise media to add a category. Tick individual files or select the whole page, then add or remove a custom category, or set a year for the selected files. Leave the year blank to clear it.",
+          "Collections from a rebuilt site appear after you save the website design. Custom media categories are for organising your library."
+        ]
       },
       {
-        title: 'Record when the post goes out',
-        instructions: [
-          'Publish from the social platform at the time you planned. In Fresnel, open that post, change its status to Posted and click Save post.',
-        ],
+        "title": "Rename a file or keep a private copy",
+        "instructions": [
+          "Enter a recognisable label in Display name and click Save name. Use names you’ll recognise in the media picker, such as the campaign and frame number.",
+          "Use Keep private original to copy a supported file into your studio library. Published placements currently use the original source URL."
+        ]
       },
+      {
+        "title": "Export a crop for a particular format",
+        "instructions": [
+          "On a photo card, open Crop format and choose Square, Portrait or Reels cover. Click Export JPEG crop. The crop is centred and downloads to your device.",
+          "Check the downloaded photo before posting, especially if the subject is near the edge of the original frame."
+        ]
+      }
     ],
-    tip: 'Scheduled for manual posting is a planning status. Fresnel records the intended posting time and you publish from the social platform.',
-    related: ['media-library'],
+    "tip": "Select for website is a private shortlist. A photo appears publicly when it’s placed on a page and that page is published.",
+    "related": [
+      "import-portfolio",
+      "edit-campaign-pages"
+    ]
   },
+  {
+    "slug": "import-portfolio",
+    "group": "Website and portfolio",
+    "title": "Import an existing portfolio",
+    "summary": "Scan a portfolio URL, review the results and bring the useful projects and assets into your studio.",
+    "steps": [
+      {
+        "title": "Scan your current website",
+        "instructions": [
+          "Open Import website from the studio sidebar. Enter your website address in Your current website, for example www.yourwebsite.com. Click Preview import.",
+          "Wait for Fresnel to scan the homepage, linked pages and any public sitemap. Review any warnings along with the results."
+        ]
+      },
+      {
+        "title": "Save photos and videos first",
+        "instructions": [
+          "In Photos and videos, choose the files you want and click the save button. It shows the number of selected photos and videos. Find them in Media.",
+          "To bring over page titles and covers as well, open Project drafts (optional), choose the pages and click Save project drafts. Find them in Projects."
+        ]
+      },
+      {
+        "title": "Recover missing Squarespace images",
+        "instructions": [
+          "Try importing the address of the specific gallery first. Fresnel skips media already in your library.",
+          "For photos the scan still misses, open the Assets panel in Squarespace on a computer. Open the image’s three-dot menu, choose File Details, then right-click the preview and save it. Squarespace downloads these images one at a time.",
+          "Saving photos and videos to Media keeps source links. Use Keep private original on individual assets to keep private copies. Published pages still need image URLs that remain available after the move."
+        ]
+      },
+      {
+        "title": "Continue through logo, design and pages",
+        "instructions": [
+          "After saving your import, choose Continue to logo setup. Check your identity, choose a visible template in Design, then arrange your Home page and campaign galleries in Pages.",
+          "To reuse an existing site structure, look for Match original website in the page controls. Review matched images, covers and any missing items before applying the private draft. Save draft to keep it."
+        ]
+      }
+    ],
+    "tip": "Import reads publicly accessible pages. If a page or file is missing, check that it opens in a private browser window before trying the scan again.",
+    "related": [
+      "name-and-logo",
+      "website-design",
+      "media-library"
+    ]
+  },
+  {
+    "slug": "calendar-and-social",
+    "group": "Studio workflows",
+    "title": "Plan shoots and social posts",
+    "summary": "Keep shoots, deliveries and planned social posts in view while you work.",
+    "steps": [
+      {
+        "title": "Put a production date on the calendar",
+        "instructions": [
+          "Open Calendar. Use Month for the whole schedule, Week for the days around a shoot, or List to scan the month’s entries.",
+          "Choose Add event or click the date in the grid. Enter a title, type, date and any useful notes, then click Save event. Click an existing event to edit it."
+        ]
+      },
+      {
+        "title": "Prepare a social post",
+        "instructions": [
+          "Open Social → New post. Enter a title, choose a channel, write the caption and select media from your library.",
+          "Use Draft while preparing it. To add it to the schedule, enter a date and local time, choose Scheduled for manual posting and click Save post."
+        ]
+      },
+      {
+        "title": "Record when the post goes out",
+        "instructions": [
+          "Publish from the social platform at the time you planned. In Fresnel, open that post, change its status to Posted and click Save post."
+        ]
+      }
+    ],
+    "tip": "Scheduled for manual posting is a planning status. Fresnel records the intended posting time and you publish from the social platform.",
+    "related": [
+      "media-library"
+    ]
+  },
+  {
+    "slug": "moodboards",
+    "group": "Studio workflows",
+    "title": "Prepare a moodboard presentation",
+    "summary": "Bring a brief, reference images and captions together for a shoot.",
+    "steps": [
+      {
+        "title": "Start with the brief",
+        "instructions": [
+          "Open Moodboards and create a board. Give it a title and describe the light, atmosphere, location or direction you want the team to understand."
+        ]
+      },
+      {
+        "title": "Add references and captions",
+        "instructions": [
+          "Add publicly accessible HTTPS image references and short captions explaining what matters about each reference. Choose the editorial or grid presentation and review the preview."
+        ]
+      },
+      {
+        "title": "Prepare a presentation",
+        "instructions": [
+          "Use the print or PDF option to prepare the board for sharing. Check the final pages and image framing before sending it to your team."
+        ]
+      }
+    ],
+    "tip": "Moodboards currently support presentation and PDF output. Client commenting and approval workflows are not connected.",
+    "related": [
+      "calendar-and-social",
+      "media-library"
+    ]
+  }
 ];
